@@ -3,11 +3,22 @@
 
 import React from "react";
 import { useState, useEffect, useRef } from "react";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-import { db } from './firebase';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, where, setDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from './firebase';
 import FoodLibrary from './FoodLibrary';
+import Auth from './Auth';
+import ProfileMenu from './ProfileMenu';
+import DailyGoalsModal from './DailyGoalsModal';
 
 const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
+
+// Helper function to determine time segment
+const getTimeSegment = (date) => {
+  const hours = date.getHours();
+  if (hours >= 0 && hours < 9) return "Morning";
+  if (hours >= 9 && hours < 16) return "Midday";
+  return "Evening";
+};
 
 export default function FoodTracker() {
   const [logs, setLogs] = useState([]); // foodLog entries
@@ -15,14 +26,32 @@ export default function FoodTracker() {
   const [customFood, setCustomFood] = useState({ label: "", calories: "", fat: "", carbs: "", protein: "", fiber: "" });
   const [loading, setLoading] = useState(true);
   const [hiddenFoods, setHiddenFoods] = useState([]);
+  const [editingLog, setEditingLog] = useState(null);
+  const [user, setUser] = useState(null);
   const loadedRef = useRef(false);
   const foodList = FoodLibrary();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  const [userGoals, setUserGoals] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchLogs = async () => {
-      if (!loadedRef.current) {
+      if (!loadedRef.current && user) {
         try {
-          const logsQuery = query(collection(db, 'foodLog'), orderBy('timestamp', 'desc'));
+          const logsQuery = query(
+            collection(db, 'foodLog'),
+            where('userId', '==', user.uid),
+            orderBy('timestamp', 'desc')
+          );
           const querySnapshot = await getDocs(logsQuery);
           const fetchedLogs = querySnapshot.docs.map(doc => ({
             id: doc.id,
@@ -38,7 +67,23 @@ export default function FoodTracker() {
       }
     };
     fetchLogs();
-  }, []);
+  }, [user]);
+
+  // Load user goals from Firestore
+  useEffect(() => {
+    const fetchGoals = async () => {
+      if (user) {
+        const goalsRef = doc(db, 'userGoals', user.uid);
+        const goalsSnap = await getDoc(goalsRef);
+        if (goalsSnap.exists()) {
+          setUserGoals(goalsSnap.data());
+        } else {
+          setUserGoals(null);
+        }
+      }
+    };
+    fetchGoals();
+  }, [user]);
 
   // Helper to get food by ID
   const getFoodById = (id) => foodList.find(f => f.id === id);
@@ -47,12 +92,13 @@ export default function FoodTracker() {
   const logFood = async (foodItem) => {
     const timestamp = new Date().toISOString();
     const food = foodList.find(f => f.label === foodItem.label);
-    if (!food) return;
+    if (!food || !user) return;
     const newLog = {
       foodId: food.id,
       timestamp,
       serving: food.serving || 1,
       units: food.units || 'serving',
+      userId: user.uid
     };
     try {
       const docRef = await addDoc(collection(db, 'foodLog'), newLog);
@@ -108,6 +154,16 @@ export default function FoodTracker() {
     return acc;
   }, {});
 
+  // Group today's logs by time segment
+  const groupByTimeSegment = (dayLogs) => {
+    return dayLogs.reduce((acc, log) => {
+      const segment = getTimeSegment(new Date(log.timestamp));
+      acc[segment] = acc[segment] || [];
+      acc[segment].push(log);
+      return acc;
+    }, { Morning: [], Midday: [], Evening: [] });
+  };
+
   // Calculate daily totals
   const dailyTotals = (logsArr) => {
     return logsArr.reduce((acc, log) => {
@@ -145,12 +201,88 @@ export default function FoodTracker() {
     setHiddenFoods([]);
   };
 
+  // Calculate food frequencies for the past 3 days
+  const getFoodFrequencies = () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    
+    return logs.reduce((acc, log) => {
+      const logDate = new Date(log.timestamp);
+      if (logDate >= threeDaysAgo) {
+        acc[log.foodId] = (acc[log.foodId] || 0) + 1;
+      }
+      return acc;
+    }, {});
+  };
+
+  // Sort food list by frequency
+  const getSortedFoodList = () => {
+    const frequencies = getFoodFrequencies();
+    return [...foodList].sort((a, b) => {
+      const freqA = frequencies[a.id] || 0;
+      const freqB = frequencies[b.id] || 0;
+      return freqB - freqA;
+    });
+  };
+
+  // Save user goals to Firestore
+  const handleSaveGoals = async (goals) => {
+    if (!user) return;
+    const goalsRef = doc(db, 'userGoals', user.uid);
+    await setDoc(goalsRef, goals);
+    setUserGoals(goals);
+  };
+
+  // Use userGoals or fallback to defaultGoals
+  let goals = userGoals || defaultGoals;
+  let modalInitialGoals = goals;
+  if (userGoals && userGoals.macroPercents) {
+    modalInitialGoals = {
+      calories: userGoals.calories,
+      ...userGoals.macroPercents,
+    };
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
       {loading ? (
         <div className="text-center py-4">Loading...</div>
+      ) : !user ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <h1 className="text-3xl font-bold text-center mb-6">
+            <span role="img" aria-label="Chef">👨🏻‍🍳</span> GORDON <span role="img" aria-label="Chef">👨🏻‍🍳</span>
+          </h1>
+          <Auth />
+        </div>
       ) : (
         <>
+          <div className="relative flex items-center justify-center mb-6">
+            <h1 className="text-3xl font-bold absolute left-1/2 transform -translate-x-1/2 w-full text-center">
+              <span role="img" aria-label="Chef">👨🏻‍🍳</span> GORDON <span role="img" aria-label="Chef">👨🏻‍🍳</span>
+            </h1>
+            <div className="ml-auto z-10">
+              <img
+                src={user.photoURL}
+                alt={user.displayName}
+                className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 hover:border-blue-500"
+                onClick={() => setProfileMenuOpen(v => !v)}
+              />
+              {profileMenuOpen && (
+                <ProfileMenu
+                  onClose={() => setProfileMenuOpen(false)}
+                  onOpenGoals={() => { setGoalsModalOpen(true); }}
+                  onSignOut={() => { auth.signOut(); setProfileMenuOpen(false); }}
+                />
+              )}
+            </div>
+          </div>
+          {goalsModalOpen && (
+            <DailyGoalsModal
+              onClose={() => setGoalsModalOpen(false)}
+              initialGoals={modalInitialGoals}
+              onSave={handleSaveGoals}
+            />
+          )}
           <div className="bg-white rounded-lg shadow p-4 space-y-4">
             <div className="flex justify-end mb-2">
               <button
@@ -164,7 +296,7 @@ export default function FoodTracker() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {foodList && foodList.length > 0 ? (
                 <>
-                  {foodList.filter(item => !hiddenFoods.includes(item.id || item.label)).map(item => (
+                  {getSortedFoodList().filter(item => !hiddenFoods.includes(item.id || item.label)).map(item => (
                     <div key={item.id || item.label} className="relative">
                       <button
                         onClick={() => logFood(item)}
@@ -247,7 +379,7 @@ export default function FoodTracker() {
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-2">Daily Summary</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {Object.keys(defaultGoals).map(k => renderProgressBar(k, dailyTotals(todayLogs)[k], defaultGoals[k]))}
+              {Object.keys(defaultGoals).map(k => renderProgressBar(k, dailyTotals(todayLogs)[k], goals[k]))}
             </div>
           </div>
 
@@ -255,72 +387,173 @@ export default function FoodTracker() {
             <table className="min-w-full text-sm text-left">
               <thead>
                 <tr className="border-b">
-                  <th className="px-2 py-1">Date & Time</th>
                   <th className="px-2 py-1">Food</th>
                   <th className="px-2 py-1">Amount</th>
                   <th className="px-2 py-1">Unit</th>
-                  {Object.keys(defaultGoals).map(k => <th key={k} className="px-2 py-1">{k}</th>)}
+                  <th className="px-2 py-1">
+                    <span role="img" aria-label="Calories">🍽️</span> Calories
+                  </th>
+                  <th className="px-2 py-1">
+                    <span role="img" aria-label="Fat">🥑</span> Fat
+                  </th>
+                  <th className="px-2 py-1">
+                    <span role="img" aria-label="Carbs">🍞</span> Carbs
+                  </th>
+                  <th className="px-2 py-1">
+                    <span role="img" aria-label="Protein">🍗</span> Protein
+                  </th>
+                  <th className="px-2 py-1">
+                    <span role="img" aria-label="Fiber">🌱</span> Fiber
+                  </th>
                   <th className="px-2 py-1">❌</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(groupByDate).map(([date, dayLogs]) => {
                   const dailyTotal = dailyTotals(dayLogs);
+                  const segments = groupByTimeSegment(dayLogs);
                   return (
                     <React.Fragment key={date}>
                       <tr className="bg-gray-100 font-semibold">
-                        <td colSpan={9}>{date} — {Object.entries(dailyTotal).map(([k, v]) => `${k}: ${Math.round(v)}`).join(", ")}</td>
+                        <td colSpan={3} className="px-2 py-2">
+                          <span role="img" aria-label="Calendar">🗓️</span> {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="px-2 py-2">{Math.round(dailyTotal.calories)}</td>
+                        <td className="px-2 py-2">{Math.round(dailyTotal.fat)}g</td>
+                        <td className="px-2 py-2">{Math.round(dailyTotal.carbs)}g</td>
+                        <td className="px-2 py-2">{Math.round(dailyTotal.protein)}g</td>
+                        <td className="px-2 py-2">{Math.round(dailyTotal.fiber)}g</td>
+                        <td></td>
                       </tr>
-                      {dayLogs.map(e => {
-                        const d = new Date(e.timestamp);
-                        const dateVal = d.toISOString().slice(0, 10);
-                        const timeVal = d.toTimeString().slice(0, 5);
-                        const food = getFoodById(e.foodId);
-                        const multiplier = food ? (e.serving / (food.serving || 1)) : 1;
-                        return (
-                          <tr key={e.id} className="border-t">
-                            <td className="px-2 py-1">
-                              <div className="flex flex-col text-xs gap-1">
-                                <input
-                                  type="date"
-                                  className="border rounded px-1"
-                                  value={dateVal}
-                                  onChange={ev => updateLog(e.id, "date", ev.target.value)}
-                                />
-                                <input
-                                  type="time"
-                                  className="border rounded px-1"
-                                  value={timeVal}
-                                  onChange={ev => updateLog(e.id, "time", ev.target.value)}
-                                />
-                              </div>
-                            </td>
-                            <td className="px-2 py-1">{food ? food.label : e.foodId}</td>
-                            <td className="px-2 py-1">
-                              <input
-                                type="number"
-                                step="0.1"
-                                value={e.serving}
-                                className="w-16 border rounded px-1"
-                                onChange={ev => updateLog(e.id, "serving", ev.target.value)}
-                              />
-                            </td>
-                            <td className="px-2 py-1">{e.units}</td>
-                            {Object.keys(defaultGoals).map(k => (
-                              <td key={k} className="px-2 py-1">{food ? Math.round((food[k] || 0) * multiplier) : ''}</td>
-                            ))}
-                            <td className="px-2 py-1">
-                              <button onClick={() => deleteLog(e.id)} className="text-red-600">❌</button>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {Object.entries(segments).map(([segment, segmentLogs]) => (
+                        segmentLogs.length > 0 && (
+                          <React.Fragment key={segment}>
+                            <tr className="bg-gray-50">
+                              <td colSpan={3} className="px-2 py-1 font-medium">{segment}</td>
+                              {(() => {
+                                const segmentTotal = dailyTotals(segmentLogs);
+                                return (
+                                  <>
+                                    <td className="px-2 py-1">{Math.round(segmentTotal.calories)}</td>
+                                    <td className="px-2 py-1">{Math.round(segmentTotal.fat)}g</td>
+                                    <td className="px-2 py-1">{Math.round(segmentTotal.carbs)}g</td>
+                                    <td className="px-2 py-1">{Math.round(segmentTotal.protein)}g</td>
+                                    <td className="px-2 py-1">{Math.round(segmentTotal.fiber)}g</td>
+                                    <td></td>
+                                  </>
+                                );
+                              })()}
+                            </tr>
+                            {segmentLogs.map(e => {
+                              const food = getFoodById(e.foodId);
+                              const multiplier = food ? (e.serving / (food.serving || 1)) : 1;
+                              return (
+                                <tr 
+                                  key={e.id} 
+                                  className="border-t hover:bg-gray-50 cursor-pointer"
+                                  onClick={() => setEditingLog(e)}
+                                >
+                                  <td className="px-2 py-1">{food ? food.label : e.foodId}</td>
+                                  <td className="px-2 py-1">{e.serving}</td>
+                                  <td className="px-2 py-1">{e.units}</td>
+                                  {Object.keys(defaultGoals).map(k => (
+                                    <td key={k} className="px-2 py-1">{food ? Math.round((food[k] || 0) * multiplier) : ''}</td>
+                                  ))}
+                                  <td className="px-2 py-1">
+                                    <button 
+                                      onClick={(ev) => {
+                                        ev.stopPropagation();
+                                        deleteLog(e.id);
+                                      }} 
+                                      className="text-red-600"
+                                    >
+                                      ❌
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        )
+                      ))}
                     </React.Fragment>
                   );
                 })}
               </tbody>
             </table>
           </div>
+
+          {/* Edit Log Modal */}
+          {editingLog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Edit Entry</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full border rounded px-2 py-1"
+                      value={new Date(editingLog.timestamp).toISOString().slice(0, 10)}
+                      onChange={ev => {
+                        const newDate = new Date(editingLog.timestamp);
+                        const [year, month, day] = ev.target.value.split('-');
+                        newDate.setFullYear(year, month - 1, day);
+                        setEditingLog({ ...editingLog, timestamp: newDate.toISOString() });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Time of Day</label>
+                    <select
+                      className="w-full border rounded px-2 py-1"
+                      value={getTimeSegment(new Date(editingLog.timestamp))}
+                      onChange={ev => {
+                        const newDate = new Date(editingLog.timestamp);
+                        const [hours, minutes] = ev.target.value === "Morning" ? [4, 0] :
+                                               ev.target.value === "Midday" ? [12, 0] :
+                                               [20, 0];
+                        newDate.setHours(hours, minutes);
+                        setEditingLog({ ...editingLog, timestamp: newDate.toISOString() });
+                      }}
+                    >
+                      <option value="Morning">Morning</option>
+                      <option value="Midday">Midday</option>
+                      <option value="Evening">Evening</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Amount</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="w-full border rounded px-2 py-1"
+                      value={editingLog.serving}
+                      onChange={ev => setEditingLog({ ...editingLog, serving: parseFloat(ev.target.value) || 1 })}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                      onClick={() => setEditingLog(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      onClick={() => {
+                        updateLog(editingLog.id, "timestamp", editingLog.timestamp);
+                        updateLog(editingLog.id, "serving", editingLog.serving);
+                        setEditingLog(null);
+                      }}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
