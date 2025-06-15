@@ -480,22 +480,99 @@ export default function FoodTracker() {
                     <>
                       <div className="mb-2">
                         <label className="block text-sm font-medium mb-1">Search Nutritionix</label>
-                        <div className="flex gap-2">
-                          <input
-                            className="border rounded px-2 py-1 flex-1"
-                            placeholder="e.g. 3 beef tacos"
-                            value={foodList.nutritionixQuery || ''}
-                            onChange={e => foodList.setNutritionixQuery(e.target.value)}
-                            disabled={foodList.nutritionixLoading}
-                          />
-                          <button
-                            className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
-                            disabled={foodList.nutritionixLoading || !foodList.nutritionixQuery}
-                            onClick={() => foodList.fetchNutritionix(foodList.nutritionixQuery, addToCart)}
-                            type="button"
-                          >
-                            {foodList.nutritionixLoading ? 'Searching...' : 'Search'}
-                          </button>
+                        <div className="flex flex-col gap-1 relative">
+                          <div className="flex gap-2">
+                            <input
+                              className="border rounded px-2 py-1 flex-1"
+                              placeholder="e.g. 3 beef tacos"
+                              value={foodList.nutritionixQuery || ''}
+                              onChange={e => {
+                                foodList.setNutritionixQuery(e.target.value);
+                                foodList.setShowDbDropdown && foodList.setShowDbDropdown(true);
+                              }}
+                              disabled={foodList.nutritionixLoading}
+                              autoComplete="off"
+                            />
+                            <button
+                              className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
+                              disabled={foodList.nutritionixLoading || !foodList.nutritionixQuery}
+                              onClick={() => foodList.fetchNutritionix(foodList.nutritionixQuery, addToCart)}
+                              type="button"
+                            >
+                              {foodList.nutritionixLoading ? 'Searching...' : 'Search'}
+                            </button>
+                          </div>
+                          {foodList.nutritionixQuery && (
+                            <ul className="z-20 bg-white border border-gray-200 rounded w-full mt-1 max-h-56 overflow-auto shadow-lg">
+                              {foodList.dbResults && foodList.dbResults.length > 0 && foodList.dbResults.map((food, idx) => (
+                                <li
+                                  key={food.id || food.label + idx}
+                                  className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
+                                  onClick={() => foodList.handleSelectDbFood && foodList.handleSelectDbFood(food)}
+                                >
+                                  <span>
+                                    {food.label}
+                                    {food.nutrition && (
+                                      <>
+                                        {' '}<span>🍽️{food.nutrition.calories ?? 0}</span>
+                                        <span> 🥑{food.nutrition.fat ?? 0}g</span>
+                                        <span> 🍞{food.nutrition.carbs ?? 0}g</span>
+                                        <span> 🍗{food.nutrition.protein ?? 0}g</span>
+                                        <span> 🌱{food.nutrition.fiber ?? 0}g</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </li>
+                              ))}
+                              {Array.isArray(foodList.nutritionixPreview) && foodList.nutritionixPreview.filter(apiFood => !foodList.dbResults.some(f => f.label.toLowerCase() === apiFood.label.toLowerCase())).map((apiFood, idx) => (
+                                <li
+                                  key={apiFood.label + idx}
+                                  className="px-3 py-2 cursor-pointer text-sm flex items-center justify-between bg-blue-50 border border-blue-200"
+                                  style={{ transition: 'background 0.2s' }}
+                                >
+                                  <span
+                                    className="flex-1"
+                                    onClick={async () => {
+                                      // Save to library and add to cart
+                                      if (foodList.saveNutritionixToLibrary) {
+                                        await foodList.saveNutritionixToLibrary(apiFood);
+                                      }
+                                      if (foodList.onNutritionixAdd) {
+                                        foodList.onNutritionixAdd(apiFood);
+                                      }
+                                    }}
+                                  >
+                                    {apiFood.label}
+                                    {apiFood.nutrition && (
+                                      <>
+                                        {' '}<span>🍽️{apiFood.nutrition.calories ?? 0}</span>
+                                        <span> 🥑{apiFood.nutrition.fat ?? 0}g</span>
+                                        <span> 🍞{apiFood.nutrition.carbs ?? 0}g</span>
+                                        <span> 🍗{apiFood.nutrition.protein ?? 0}g</span>
+                                        <span> 🌱{apiFood.nutrition.fiber ?? 0}g</span>
+                                      </>
+                                    )}
+                                  </span>
+                                  <button
+                                    className="ml-2 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 rounded-full p-1 flex items-center justify-center border border-blue-300"
+                                    title="Add to Library"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (foodList.saveNutritionixToLibrary) {
+                                        await foodList.saveNutritionixToLibrary(apiFood);
+                                      }
+                                      // Optionally, visually update the row to white (handled by re-render)
+                                    }}
+                                  >
+                                    <span className="text-lg font-bold">+</span>
+                                  </button>
+                                </li>
+                              ))}
+                              {(!foodList.dbResults || foodList.dbResults.length === 0) && (!Array.isArray(foodList.nutritionixPreview) || foodList.nutritionixPreview.length === 0) && (
+                                <li className="px-3 py-2 text-gray-400 cursor-default text-sm">No results found</li>
+                              )}
+                            </ul>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
                       </div>
