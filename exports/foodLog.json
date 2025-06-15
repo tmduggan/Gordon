@@ -1,0 +1,401 @@
+{
+  "2025-06-13T08:00:00.000Z_Rtu2tpzY4EjkjQwn354H": {
+    "timestamp": "2025-06-13T08:00:00.000Z",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2",
+    "serving": 1,
+    "foodId": "Rtu2tpzY4EjkjQwn354H",
+    "units": "bowl"
+  },
+  "22iD4ga9XAI40swrVyWW": {
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2",
+    "timestamp": "2025-06-13T08:00:00.000Z",
+    "serving": 1,
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "units": "package"
+  },
+  "67zunQw0t1NIZkMl4iJt": {
+    "foodId": "13ubYpJ330JiU1O2ePjQ",
+    "timestamp": "2025-06-09T14:36:11.690Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "6mYFef0c7gw0CAm5AIUt": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-09T17:44:00.807Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "8bgoETZmGkjUdD8GAzhs": {
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2",
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-13T08:00:00.000Z",
+    "units": "package",
+    "serving": 1
+  },
+  "AJs4uwXR8qhaO2dgMxXA": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-08T22:52:58.797Z",
+    "serving": 2,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "AhHpV5R7MOqECLbcDqEG": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T00:26:48.278Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "BXbm0NQkN4JZ6UQeCxbk": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-07T20:29:39.267Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "CrYK44TqIH2kqM1dCLXC": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-11T17:34:30.007Z",
+    "units": "g",
+    "serving": 400,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "EFpCGD7QtvwcKDbcT3K7": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-10T01:52:17.934Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "F5hT8kW8NDBW4VTXtugN": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-10T01:49:15.609Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "JQunys6QeUDKitl46WMe": {
+    "serving": 27,
+    "units": "g",
+    "foodId": "YWOOfrxyNBDZV9ifIfqA",
+    "timestamp": "2025-06-12T08:00:45.025Z",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "KSmi1eqpXVEaQZqWhyzS": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-10T01:52:16.534Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "Kx0J5GGodxmBKfCUZMqR": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-08T23:47:49.946Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "KydAEdT49Jmk8zsTi36N": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-08T23:47:49.946Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "N8tjpzsrMJuABya0MPTA": {
+    "foodId": "YWOOfrxyNBDZV9ifIfqA",
+    "timestamp": "2025-06-09T12:40:06.029Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "NWuee02vd6eHecRDfvXt": {
+    "foodId": "CDBklRr8E1uLE6GSq4iC",
+    "timestamp": "2025-06-10T01:52:23.467Z",
+    "serving": 1,
+    "units": "egg",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "OCQijhaYCzqHHi8l7McQ": {
+    "foodId": "XzFlMM9zmXOnV5iMuNBs",
+    "timestamp": "2025-06-09T23:10:37.031Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "OSNLbdSeHfngD4xCp76K": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T00:26:48.278Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "PuImicPEn3uxFbS7M2y5": {
+    "foodId": "nLy4R6pm1Cr00zebBC0l",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2",
+    "units": "burger",
+    "timestamp": "2025-06-13T08:00:00.000Z",
+    "serving": 1
+  },
+  "QsNTjtrw2SEb014Ayb5x": {
+    "foodId": "13ubYpJ330JiU1O2ePjQ",
+    "timestamp": "2025-06-11T16:34:35.304Z",
+    "units": "g",
+    "serving": 300,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "REIMfoqeXQVu2vtrmOqJ": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T00:26:43.257Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "S59ShDjRO4Zz2zid8BSn": {
+    "foodId": "CDBklRr8E1uLE6GSq4iC",
+    "timestamp": "2025-06-10T01:52:24.768Z",
+    "serving": 1,
+    "units": "egg",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "TwqMyX58JZb5TGYvGahK": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T00:26:43.257Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "UKya0taZoK7ttCrQM2Js": {
+    "serving": 1,
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "units": "bowl",
+    "timestamp": "2025-06-12T14:04:32.779Z",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "V9xaLTela68dQznrBiuP": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-07T16:35:35.765Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "WlvUvwKnmA9ziziZiFlS": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-10T01:52:14.985Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "YY8DEiFLJ6rbqpzsD7hU": {
+    "foodId": "13ubYpJ330JiU1O2ePjQ",
+    "timestamp": "2025-06-08T22:53:37.798Z",
+    "serving": 1.1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "ZTtR4fmYm66Daf4mx18A": {
+    "foodId": "b0CmVSofVCIIHgg3QZmV",
+    "timestamp": "2025-06-08T17:05:23.587Z",
+    "serving": 4,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "ZdV3erOUbELzOw9k9Ufj": {
+    "serving": 1,
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "timestamp": "2025-06-11T17:35:42.798Z",
+    "units": "bowl",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "ZqIFe1mYGHV507W8jZxS": {
+    "units": "egg",
+    "timestamp": "2025-06-11T17:34:22.024Z",
+    "foodId": "CDBklRr8E1uLE6GSq4iC",
+    "serving": 6,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "avoGTs3EHsmbfULXc0we": {
+    "foodId": "XzFlMM9zmXOnV5iMuNBs",
+    "timestamp": "2025-06-08T00:26:37.349Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "bTZOridNSELN1B0XUvTf": {
+    "foodId": "oiykmplTbDBwxsLYAv0w",
+    "units": "g",
+    "timestamp": "2025-06-12T08:00:35.563Z",
+    "serving": 50,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "bYaImOCl2a2MW1tn73Ef": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-09T17:43:50.250Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "eRPvZ2nOCKMpkCsP46PI": {
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "timestamp": "2025-06-09T23:11:42.853Z",
+    "serving": 1,
+    "units": "bowl",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "ezWCeL89XDEmovmjtRrN": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-09T17:43:50.250Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "fOeqo9bJjizmdVlbi35B": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-07T15:43:48.919Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "gjJfYSq2sZAue9GdJzkn": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-07T17:44:49.820Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "hhnxlWCkyMcOuftofC7R": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-07T20:29:39.267Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "i57QDUMnRAz7VI2rQtnB": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T22:52:56.881Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "iXIEqLVnM2oZXGlmZ7Ua": {
+    "foodId": "CDBklRr8E1uLE6GSq4iC",
+    "timestamp": "2025-06-10T01:49:12.329Z",
+    "serving": 1,
+    "units": "egg",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "kCIZayktdmSfRkzFnKwA": {
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "timestamp": "2025-06-09T12:37:36.175Z",
+    "serving": 1,
+    "units": "bowl",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "lysrKzo5m7qCm7jqAKkX": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "serving": 100,
+    "units": "g",
+    "timestamp": "2025-06-12T08:00:39.777Z",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "nowibXHPLR8xlLI3vopX": {
+    "foodId": "XzFlMM9zmXOnV5iMuNBs",
+    "timestamp": "2025-06-09T23:11:04.803Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "o2ws9Sr8AW34ML7ugeNj": {
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "timestamp": "2025-06-08T22:53:06.163Z",
+    "serving": 1,
+    "units": "bowl",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "o4HujyKgUcEMEqPolG5b": {
+    "foodId": "CDBklRr8E1uLE6GSq4iC",
+    "timestamp": "2025-06-08T17:05:33.117Z",
+    "serving": 1,
+    "units": "egg",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "oe0t8sCdLWDwh5I0nkEs": {
+    "units": "g",
+    "serving": 100,
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-11T21:11:16.002Z",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "qJ2nnfAwQFanTU0ZgZj5": {
+    "units": "g",
+    "foodId": "oiykmplTbDBwxsLYAv0w",
+    "timestamp": "2025-06-12T14:43:29.727Z",
+    "serving": 50,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "rPI4fQz7AWychnVzBeO9": {
+    "foodId": "f2YOp9urJcOTJysuhJH6",
+    "timestamp": "2025-06-08T22:52:56.881Z",
+    "serving": 1,
+    "units": "package",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "reW7ON6NrRtmSrQ4o9Fu": {
+    "units": "roll",
+    "timestamp": "2025-06-13T08:00:00.000Z",
+    "foodId": "zOxbrZVNz3VqQ15VPyXU",
+    "serving": 1,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "rj5pQEqEkSvvYdlsHH6J": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-08T22:52:39.150Z",
+    "serving": 2,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "rt6AK9QiQIoBCTI2Eq16": {
+    "timestamp": "2025-06-11T21:11:40.761Z",
+    "units": "bowl",
+    "foodId": "r8EPfUbAzM2bdnoaf7Fy",
+    "serving": 1,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "ru9D8DxKzQl04pg5a8YG": {
+    "foodId": "anDUCzGPrMQo4seFUjDF",
+    "timestamp": "2025-06-07T16:35:35.765Z",
+    "serving": 1,
+    "units": "burger",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "uXQjld0btUhMOlvhlTxV": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-07T15:43:42.747Z",
+    "serving": 1,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "uXj8Y0lHoQ5FHO0W3tQQ": {
+    "timestamp": "2025-06-11T21:11:21.528Z",
+    "units": "g",
+    "serving": 27,
+    "foodId": "YWOOfrxyNBDZV9ifIfqA",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "vI90MCzeMGfhIgvvKeB2": {
+    "foodId": "3JpT4QIfhXyj8OhPhV4r",
+    "timestamp": "2025-06-09T12:37:45.161Z",
+    "serving": 2,
+    "units": "g",
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  },
+  "vLlfAZX8PLo9xIbEO6tz": {
+    "foodId": "13ubYpJ330JiU1O2ePjQ",
+    "timestamp": "2025-06-12T14:04:38.760Z",
+    "units": "g",
+    "serving": 100,
+    "userId": "GLsdSrRYnkM16UnViF2KoCPViTs2"
+  }
+}

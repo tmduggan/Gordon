@@ -1,0 +1,125 @@
+react-dom_client.js?v=b7a9ed2d:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.js:21 [2025-06-14T17:50:37.782Z]  @firebase/firestore: Firestore (11.9.0): enableIndexedDbPersistence() will be deprecated in the future, you can use `FirestoreSettings.cache` instead.
+defaultLogHandler @ chunk-BL7CDIX5.js?v=b7a9ed2d:1206
+warn @ chunk-BL7CDIX5.js?v=b7a9ed2d:1270
+__PRIVATE_logWarn @ firebase_firestore.js?v=b7a9ed2d:2632
+enableIndexedDbPersistence @ firebase_firestore.js?v=b7a9ed2d:16164
+(anonymous) @ firebase.js:21
+FoodLibrary.jsx:20 Fetching food library...
+FoodLibrary.jsx:20 Fetching food library...
+FoodLibrary.jsx:22 Query snapshot: QuerySnapshot {_firestore: Firestore, _userDataWriter: __PRIVATE_ExpUserDataWriter, _snapshot: _ViewSnapshot, metadata: SnapshotMetadata, query: _CollectionReference}
+FoodLibrary.jsx:43 Fetched foods: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+FoodLibrary.jsx:22 Query snapshot: QuerySnapshot {_firestore: Firestore, _userDataWriter: __PRIVATE_ExpUserDataWriter, _snapshot: _ViewSnapshot, metadata: SnapshotMetadata, query: _CollectionReference}
+FoodLibrary.jsx:43 Fetched foods: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+App.jsx:24 Uncaught ReferenceError: setFoodCart is not defined
+    at addToCart (App.jsx:24:3)
+    at onClick (App.jsx:370:40)
+    at HTMLUnknownElement.callCallback2 (react-dom_client.js?v=b7a9ed2d:3680:22)
+    at Object.invokeGuardedCallbackDev (react-dom_client.js?v=b7a9ed2d:3705:24)
+    at invokeGuardedCallback (react-dom_client.js?v=b7a9ed2d:3739:39)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom_client.js?v=b7a9ed2d:3742:33)
+    at executeDispatch (react-dom_client.js?v=b7a9ed2d:7046:11)
+    at processDispatchQueueItemsInOrder (react-dom_client.js?v=b7a9ed2d:7066:15)
+    at processDispatchQueue (react-dom_client.js?v=b7a9ed2d:7075:13)
+    at dispatchEventsForPlugins (react-dom_client.js?v=b7a9ed2d:7083:11)
+addToCart @ App.jsx:24
+onClick @ App.jsx:370
+callCallback2 @ react-dom_client.js?v=b7a9ed2d:3680
+invokeGuardedCallbackDev @ react-dom_client.js?v=b7a9ed2d:3705
+invokeGuardedCallback @ react-dom_client.js?v=b7a9ed2d:3739
+invokeGuardedCallbackAndCatchFirstError @ react-dom_client.js?v=b7a9ed2d:3742
+executeDispatch @ react-dom_client.js?v=b7a9ed2d:7046
+processDispatchQueueItemsInOrder @ react-dom_client.js?v=b7a9ed2d:7066
+processDispatchQueue @ react-dom_client.js?v=b7a9ed2d:7075
+dispatchEventsForPlugins @ react-dom_client.js?v=b7a9ed2d:7083
+(anonymous) @ react-dom_client.js?v=b7a9ed2d:7206
+batchedUpdates$1 @ react-dom_client.js?v=b7a9ed2d:18966
+batchedUpdates @ react-dom_client.js?v=b7a9ed2d:3585
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=b7a9ed2d:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom_client.js?v=b7a9ed2d:5484
+dispatchEvent @ react-dom_client.js?v=b7a9ed2d:5478
+dispatchDiscreteEvent @ react-dom_client.js?v=b7a9ed2d:5455
+react-dom_client.js?v=b7a9ed2d:3756 Uncaught ReferenceError: setFoodCart is not defined
+    at addToCart (App.jsx:24:3)
+    at onClick (App.jsx:370:40)
+    at HTMLUnknownElement.callCallback2 (react-dom_client.js?v=b7a9ed2d:3680:22)
+    at Object.invokeGuardedCallbackDev (react-dom_client.js?v=b7a9ed2d:3705:24)
+    at invokeGuardedCallback (react-dom_client.js?v=b7a9ed2d:3739:39)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom_client.js?v=b7a9ed2d:3742:33)
+    at executeDispatch (react-dom_client.js?v=b7a9ed2d:7046:11)
+    at processDispatchQueueItemsInOrder (react-dom_client.js?v=b7a9ed2d:7066:15)
+    at processDispatchQueue (react-dom_client.js?v=b7a9ed2d:7075:13)
+    at dispatchEventsForPlugins (react-dom_client.js?v=b7a9ed2d:7083:11)
+addToCart @ App.jsx:24
+onClick @ App.jsx:370
+callCallback2 @ react-dom_client.js?v=b7a9ed2d:3680
+invokeGuardedCallbackDev @ react-dom_client.js?v=b7a9ed2d:3705
+invokeGuardedCallback @ react-dom_client.js?v=b7a9ed2d:3739
+invokeGuardedCallbackAndCatchFirstError @ react-dom_client.js?v=b7a9ed2d:3742
+executeDispatch @ react-dom_client.js?v=b7a9ed2d:7046
+processDispatchQueueItemsInOrder @ react-dom_client.js?v=b7a9ed2d:7066
+processDispatchQueue @ react-dom_client.js?v=b7a9ed2d:7075
+dispatchEventsForPlugins @ react-dom_client.js?v=b7a9ed2d:7083
+(anonymous) @ react-dom_client.js?v=b7a9ed2d:7206
+batchedUpdates$1 @ react-dom_client.js?v=b7a9ed2d:18966
+batchedUpdates @ react-dom_client.js?v=b7a9ed2d:3585
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=b7a9ed2d:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom_client.js?v=b7a9ed2d:5484
+dispatchEvent @ react-dom_client.js?v=b7a9ed2d:5478
+dispatchDiscreteEvent @ react-dom_client.js?v=b7a9ed2d:5455
+App.jsx:24 Uncaught ReferenceError: setFoodCart is not defined
+    at addToCart (App.jsx:24:3)
+    at onClick (App.jsx:370:40)
+    at HTMLUnknownElement.callCallback2 (react-dom_client.js?v=b7a9ed2d:3680:22)
+    at Object.invokeGuardedCallbackDev (react-dom_client.js?v=b7a9ed2d:3705:24)
+    at invokeGuardedCallback (react-dom_client.js?v=b7a9ed2d:3739:39)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom_client.js?v=b7a9ed2d:3742:33)
+    at executeDispatch (react-dom_client.js?v=b7a9ed2d:7046:11)
+    at processDispatchQueueItemsInOrder (react-dom_client.js?v=b7a9ed2d:7066:15)
+    at processDispatchQueue (react-dom_client.js?v=b7a9ed2d:7075:13)
+    at dispatchEventsForPlugins (react-dom_client.js?v=b7a9ed2d:7083:11)
+addToCart @ App.jsx:24
+onClick @ App.jsx:370
+callCallback2 @ react-dom_client.js?v=b7a9ed2d:3680
+invokeGuardedCallbackDev @ react-dom_client.js?v=b7a9ed2d:3705
+invokeGuardedCallback @ react-dom_client.js?v=b7a9ed2d:3739
+invokeGuardedCallbackAndCatchFirstError @ react-dom_client.js?v=b7a9ed2d:3742
+executeDispatch @ react-dom_client.js?v=b7a9ed2d:7046
+processDispatchQueueItemsInOrder @ react-dom_client.js?v=b7a9ed2d:7066
+processDispatchQueue @ react-dom_client.js?v=b7a9ed2d:7075
+dispatchEventsForPlugins @ react-dom_client.js?v=b7a9ed2d:7083
+(anonymous) @ react-dom_client.js?v=b7a9ed2d:7206
+batchedUpdates$1 @ react-dom_client.js?v=b7a9ed2d:18966
+batchedUpdates @ react-dom_client.js?v=b7a9ed2d:3585
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=b7a9ed2d:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom_client.js?v=b7a9ed2d:5484
+dispatchEvent @ react-dom_client.js?v=b7a9ed2d:5478
+dispatchDiscreteEvent @ react-dom_client.js?v=b7a9ed2d:5455
+react-dom_client.js?v=b7a9ed2d:3756 Uncaught ReferenceError: setFoodCart is not defined
+    at addToCart (App.jsx:24:3)
+    at onClick (App.jsx:370:40)
+    at HTMLUnknownElement.callCallback2 (react-dom_client.js?v=b7a9ed2d:3680:22)
+    at Object.invokeGuardedCallbackDev (react-dom_client.js?v=b7a9ed2d:3705:24)
+    at invokeGuardedCallback (react-dom_client.js?v=b7a9ed2d:3739:39)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom_client.js?v=b7a9ed2d:3742:33)
+    at executeDispatch (react-dom_client.js?v=b7a9ed2d:7046:11)
+    at processDispatchQueueItemsInOrder (react-dom_client.js?v=b7a9ed2d:7066:15)
+    at processDispatchQueue (react-dom_client.js?v=b7a9ed2d:7075:13)
+    at dispatchEventsForPlugins (react-dom_client.js?v=b7a9ed2d:7083:11)
+addToCart @ App.jsx:24
+onClick @ App.jsx:370
+callCallback2 @ react-dom_client.js?v=b7a9ed2d:3680
+invokeGuardedCallbackDev @ react-dom_client.js?v=b7a9ed2d:3705
+invokeGuardedCallback @ react-dom_client.js?v=b7a9ed2d:3739
+invokeGuardedCallbackAndCatchFirstError @ react-dom_client.js?v=b7a9ed2d:3742
+executeDispatch @ react-dom_client.js?v=b7a9ed2d:7046
+processDispatchQueueItemsInOrder @ react-dom_client.js?v=b7a9ed2d:7066
+processDispatchQueue @ react-dom_client.js?v=b7a9ed2d:7075
+dispatchEventsForPlugins @ react-dom_client.js?v=b7a9ed2d:7083
+(anonymous) @ react-dom_client.js?v=b7a9ed2d:7206
+batchedUpdates$1 @ react-dom_client.js?v=b7a9ed2d:18966
+batchedUpdates @ react-dom_client.js?v=b7a9ed2d:3585
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=b7a9ed2d:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom_client.js?v=b7a9ed2d:5484
+dispatchEvent @ react-dom_client.js?v=b7a9ed2d:5478
+dispatchDiscreteEvent @ react-dom_client.js?v=b7a9ed2d:5455

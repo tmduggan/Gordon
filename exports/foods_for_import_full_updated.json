@@ -1,0 +1,332 @@
+{
+  "berries": {
+    "label": "Berries",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 50,
+      "fat": 0.33,
+      "carbs": 12,
+      "protein": 1,
+      "fiber": 2.67,
+      "sodium": 1,
+      "potassium": 153,
+      "vitamin_c": 58.8,
+      "vitamin_b6": 0.1,
+      "iron": 0.7
+    },
+    "tags": []
+  },
+  "whey_protein": {
+    "label": "Whey protein",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 120,
+      "fat": 1,
+      "carbs": 3,
+      "protein": 25,
+      "fiber": 0,
+      "sodium": 50,
+      "potassium": 160,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.5,
+      "iron": 0.2
+    },
+    "tags": []
+  },
+  "fried_eggs": {
+    "label": "Fried Eggs",
+    "default_serving": {
+      "label": "1 egg",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 85,
+      "fat": 6,
+      "carbs": 1,
+      "protein": 6,
+      "fiber": 0,
+      "sodium": 124,
+      "potassium": 126,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.1,
+      "iron": 1.2
+    },
+    "tags": []
+  },
+  "sauteed_chicken": {
+    "label": "Sauteed Chicken",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 194,
+      "fat": 8.82,
+      "carbs": 0,
+      "protein": 22.93,
+      "fiber": 0,
+      "sodium": 63,
+      "potassium": 256,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.5,
+      "iron": 0.7
+    },
+    "tags": []
+  },
+  "cereal": {
+    "label": "Cereal",
+    "default_serving": {
+      "label": "1 bowl",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 286,
+      "fat": 5,
+      "carbs": 44,
+      "protein": 10,
+      "fiber": 3,
+      "sodium": 190,
+      "potassium": 120,
+      "vitamin_c": 6,
+      "vitamin_b6": 0.8,
+      "iron": 8.1
+    },
+    "tags": []
+  },
+  "sauteed_green_beans": {
+    "label": "Sauteed Green Beans",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 120,
+      "fat": 7,
+      "carbs": 10,
+      "protein": 2,
+      "fiber": 3,
+      "sodium": 6,
+      "potassium": 211,
+      "vitamin_c": 12,
+      "vitamin_b6": 0.2,
+      "iron": 1
+    },
+    "tags": []
+  },
+  "collagen_powder": {
+    "label": "Collagen Powder",
+    "default_serving": {
+      "label": "27g",
+      "grams": 27
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 90,
+      "fat": 1,
+      "carbs": 4,
+      "protein": 18,
+      "fiber": 2,
+      "sodium": 110,
+      "potassium": 0,
+      "vitamin_c": 0,
+      "vitamin_b6": 0,
+      "iron": 0
+    },
+    "tags": []
+  },
+  "rice": {
+    "label": "Rice",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 100,
+      "fat": 0,
+      "carbs": 22,
+      "protein": 2,
+      "fiber": 0,
+      "sodium": 1,
+      "potassium": 35,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.1,
+      "iron": 1.2
+    },
+    "tags": []
+  },
+  "beef_burger": {
+    "label": "Beef Burger",
+    "default_serving": {
+      "label": "1 burger",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 680,
+      "fat": 34,
+      "carbs": 48,
+      "protein": 38,
+      "fiber": 2,
+      "sodium": 530,
+      "potassium": 340,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.4,
+      "iron": 2.4
+    },
+    "tags": []
+  },
+  "corn_tortilla": {
+    "label": "Corn Tortilla",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 50,
+      "fat": 0.5,
+      "carbs": 10.5,
+      "protein": 1,
+      "fiber": 1,
+      "sodium": 11,
+      "potassium": 130,
+      "vitamin_c": 0,
+      "vitamin_b6": 0,
+      "iron": 0.7
+    },
+    "tags": []
+  },
+  "ramen": {
+    "label": "Ramen",
+    "default_serving": {
+      "label": "1 package",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 380,
+      "fat": 14,
+      "carbs": 52,
+      "protein": 8,
+      "fiber": 2,
+      "sodium": 1500,
+      "potassium": 220,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.1,
+      "iron": 2.2
+    },
+    "tags": []
+  },
+  "chicken_burger": {
+    "label": "Chicken Burger",
+    "default_serving": {
+      "label": "1 burger",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 520,
+      "fat": 18,
+      "carbs": 48,
+      "protein": 30,
+      "fiber": 2,
+      "sodium": 600,
+      "potassium": 300,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.4,
+      "iron": 1.8
+    },
+    "tags": []
+  },
+  "banana": {
+    "label": "Banana",
+    "default_serving": {
+      "label": "100g",
+      "grams": 100
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 105,
+      "fat": 0,
+      "carbs": 27,
+      "protein": 1,
+      "fiber": 3,
+      "sodium": 1,
+      "potassium": 358,
+      "vitamin_c": 8.7,
+      "vitamin_b6": 0.4,
+      "iron": 0.3
+    },
+    "tags": []
+  },
+  "oatmeal": {
+    "label": "Oatmeal",
+    "default_serving": {
+      "label": "1 bowl",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 230,
+      "fat": 3,
+      "carbs": 42,
+      "protein": 5,
+      "fiber": 4,
+      "sodium": 2,
+      "potassium": 150,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.1,
+      "iron": 1.7
+    },
+    "tags": []
+  },
+  "sushi_roll": {
+    "label": "Sushi Roll",
+    "default_serving": {
+      "label": "1 roll",
+      "grams": 1
+    },
+    "base_unit": "g",
+    "base_amount": 100,
+    "nutrition": {
+      "calories": 225,
+      "fat": 6,
+      "carbs": 20,
+      "protein": 14,
+      "fiber": 1,
+      "sodium": 400,
+      "potassium": 150,
+      "vitamin_c": 0,
+      "vitamin_b6": 0.2,
+      "iron": 1.5
+    },
+    "tags": []
+  }
+}

@@ -21,6 +21,7 @@ const getTimeSegment = (date) => {
 };
 
 export default function FoodTracker() {
+  const [foodCart, setFoodCart] = useState([]);
   const [logs, setLogs] = useState([]); // foodLog entries
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customFood, setCustomFood] = useState({ label: "", calories: "", fat: "", carbs: "", protein: "", fiber: "" });
@@ -29,10 +30,29 @@ export default function FoodTracker() {
   const [editingLog, setEditingLog] = useState(null);
   const [user, setUser] = useState(null);
   const loadedRef = useRef(false);
-  const foodList = FoodLibrary();
+
+  // Add to cart helper (now inside the component)
+  const addToCart = (food, quantity = 1) => {
+    setFoodCart(cart => {
+      const idx = cart.findIndex(item => item.label === food.label && item.units === food.units);
+      if (idx !== -1) {
+        // If already in cart, increment quantity
+        const updated = [...cart];
+        updated[idx].quantity += quantity;
+        return updated;
+      } else {
+        return [...cart, { ...food, quantity }];
+      }
+    });
+  };
+
+  const foodList = FoodLibrary({ onNutritionixAdd: addToCart });
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [userGoals, setUserGoals] = useState(null);
+  const [showAllFoodsToggle, setShowAllFoodsToggle] = useState(false);
+  const [cartDate, setCartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [cartSegment, setCartSegment] = useState('Morning');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -88,23 +108,58 @@ export default function FoodTracker() {
   // Helper to get food by ID
   const getFoodById = (id) => foodList.find(f => f.id === id);
 
+  // Helper to save a food to Firestore if it doesn't exist
+  const saveFoodIfNeeded = async (food) => {
+    if (!food || !food.label) return null;
+    // Normalize ID
+    const foodId = (food.id || food.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32));
+    // Check if food already exists in foodList
+    if (foodList.some(f => f.id === foodId)) return foodId;
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, 'foods', foodId), { ...food, id: foodId });
+      // Optionally update local foodList
+      foodList.push({ ...food, id: foodId });
+      return foodId;
+    } catch (err) {
+      console.error('Error saving new food to Firestore:', err, food);
+      return null;
+    }
+  };
+
   // Log a new food to foodLog
   const logFood = async (foodItem) => {
+    console.log("logFood called", foodItem);
     const timestamp = new Date().toISOString();
-    const food = foodList.find(f => f.label === foodItem.label);
-    if (!food || !user) return;
+    let food = foodList.find(f => f.label === foodItem.label);
+    if (!food) {
+      // Try to save the food first
+      const newFoodId = await saveFoodIfNeeded(foodItem);
+      if (newFoodId) {
+        food = { ...foodItem, id: newFoodId };
+      } else {
+        console.warn("Could not save new food:", foodItem);
+        return;
+      }
+    }
+    if (!user) {
+      console.warn("No user logged in");
+      return;
+    }
     const newLog = {
       foodId: food.id,
       timestamp,
       serving: food.serving || 1,
-      units: food.units || 'serving',
+      units: food.units || food.default_serving?.label || 'serving',
       userId: user.uid
     };
     try {
-      const docRef = await addDoc(collection(db, 'foodLog'), newLog);
-      setLogs([{ id: docRef.id, ...newLog }, ...logs]);
+      const customId = `${timestamp}_${food.id}`;
+      await setDoc(doc(db, 'foodLog', customId), newLog);
+      setLogs([{ id: customId, ...newLog }, ...logs]);
+      console.log("Successfully logged food:", newLog);
     } catch (error) {
-      console.error("Error adding food log:", error);
+      console.error("Error adding food log:", error, newLog);
     }
   };
 
@@ -168,10 +223,10 @@ export default function FoodTracker() {
   const dailyTotals = (logsArr) => {
     return logsArr.reduce((acc, log) => {
       const food = getFoodById(log.foodId);
-      if (food) {
-        const multiplier = log.serving / (food.serving || 1);
+      if (food && food.nutrition) {
+        const multiplier = log.serving / (food.default_serving?.grams || 1);
         Object.keys(defaultGoals).forEach(k => {
-          acc[k] += (food[k] || 0) * multiplier;
+          acc[k] += (food.nutrition[k] || 0) * multiplier;
         });
       }
       return acc;
@@ -243,6 +298,76 @@ export default function FoodTracker() {
     };
   }
 
+  // Remove from cart
+  const removeFromCart = (label, units) => {
+    setFoodCart(cart => cart.filter(item => !(item.label === label && item.units === units)));
+  };
+
+  // Update quantity in cart
+  const updateCartQuantity = (label, units, newQty) => {
+    setFoodCart(cart => cart.map(item =>
+      item.label === label && item.units === units ? { ...item, quantity: newQty } : item
+    ));
+  };
+
+  // Log all foods in cart
+  const logCart = async () => {
+    console.log("logCart called", foodCart);
+    if (!user) {
+      console.warn("No user logged in");
+      return;
+    }
+    if (foodCart.length === 0) {
+      console.warn("Cart is empty");
+      return;
+    }
+    const logDate = new Date(cartDate);
+    // Set time for segment
+    const [hours, minutes] = cartSegment === 'Morning' ? [4, 0] : cartSegment === 'Midday' ? [12, 0] : [20, 0];
+    logDate.setHours(hours, minutes, 0, 0);
+    for (const item of foodCart) {
+      let food = foodList.find(f => f.label === item.label && (f.units === item.units || f.default_serving?.label === item.units));
+      if (!food) {
+        // Try to save the food first
+        const newFoodId = await saveFoodIfNeeded(item);
+        if (newFoodId) {
+          food = { ...item, id: newFoodId };
+        } else {
+          console.warn("Could not save new food for cart item:", item);
+          continue;
+        }
+      }
+      for (let i = 0; i < item.quantity; i++) {
+        const timestamp = logDate.toISOString();
+        const newLog = {
+          foodId: food.id,
+          timestamp,
+          serving: item.serving || 1,
+          units: item.units || food.default_serving?.label || 'serving',
+          userId: user.uid
+        };
+        try {
+          const customId = `${timestamp}_${food.id}`;
+          await setDoc(doc(db, 'foodLog', customId), newLog);
+          setLogs(logs => [{ id: customId, ...newLog }, ...logs]);
+          console.log("Successfully logged cart item:", newLog);
+        } catch (error) {
+          console.error("Error adding food log from cart:", error, newLog);
+        }
+      }
+    }
+    setFoodCart([]);
+  };
+
+  // Handler for clicking outside the add food/search area
+  const handleOverlayClick = (e) => {
+    if (foodCart.length === 0) {
+      setShowCustomForm(false);
+    } else {
+      setShowCustomForm(false); // Hide search, but keep cart
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
       {loading ? (
@@ -260,7 +385,20 @@ export default function FoodTracker() {
             <h1 className="text-3xl font-bold absolute left-1/2 transform -translate-x-1/2 w-full text-center">
               <span role="img" aria-label="Chef">👨🏻‍🍳</span> GORDON <span role="img" aria-label="Chef">👨🏻‍🍳</span>
             </h1>
-            <div className="ml-auto z-10">
+            <div className="ml-auto z-10 flex items-center gap-4">
+              <button
+                className="relative"
+                onClick={() => setCartModalOpen(true)}
+                title="Open Cart"
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: '2em' }} role="img" aria-label="Cart">🛒</span>
+                {foodCart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1.5 py-0.5">
+                    {foodCart.length}
+                  </span>
+                )}
+              </button>
               <img
                 src={user.photoURL}
                 alt={user.displayName}
@@ -287,24 +425,24 @@ export default function FoodTracker() {
             <div className="flex justify-end mb-2">
               <button
                 className="text-blue-600 text-sm flex items-center gap-1 hover:underline"
-                onClick={showAllFoods}
-                title="Show all foods"
+                onClick={() => setShowAllFoodsToggle(v => !v)}
+                title={showAllFoodsToggle ? "Show Less" : "Show All"}
               >
-                <span style={{fontSize: '1.2em'}}>⤢</span> Show All
+                <span style={{fontSize: '1.2em'}}>⤢</span> {showAllFoodsToggle ? "Show Less" : "Show All"}
               </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {foodList && foodList.length > 0 ? (
                 <>
-                  {getSortedFoodList().filter(item => !hiddenFoods.includes(item.id || item.label)).map(item => (
+                  {(showAllFoodsToggle ? getSortedFoodList() : getSortedFoodList().slice(0, 20)).filter(item => !hiddenFoods.includes(item.id || item.label)).map(item => (
                     <div key={item.id || item.label} className="relative">
                       <button
-                        onClick={() => logFood(item)}
+                        onClick={() => addToCart(item)}
                         className="bg-gray-100 border hover:bg-blue-100 rounded p-2 text-sm flex flex-col w-full"
                       >
                         <span>{item.label}</span>
                         <span className="text-xs text-gray-500">
-                          {item.serving}{item.units} • {item.calories}c {item.fat}f {item.carbs}c {item.protein}p
+                          {item.serving}{item.units} • {item.nutrition?.calories ?? 0}c {item.nutrition?.fat ?? 0}f {item.nutrition?.carbs ?? 0}c {item.nutrition?.protein ?? 0}p
                         </span>
                       </button>
                       <button
@@ -337,40 +475,142 @@ export default function FoodTracker() {
                 </div>
               )}
             </div>
-            {showCustomForm && (
-              <div className="bg-white border rounded-lg p-4 mt-4 flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <input className="border rounded px-2 py-1" placeholder="Food name" value={customFood.label} onChange={e => setCustomFood({ ...customFood, label: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Calories" type="number" value={customFood.calories} onChange={e => setCustomFood({ ...customFood, calories: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Fat" type="number" value={customFood.fat} onChange={e => setCustomFood({ ...customFood, fat: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Carbs" type="number" value={customFood.carbs} onChange={e => setCustomFood({ ...customFood, carbs: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Protein" type="number" value={customFood.protein} onChange={e => setCustomFood({ ...customFood, protein: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Fiber" type="number" value={customFood.fiber} onChange={e => setCustomFood({ ...customFood, fiber: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Serving Size" type="number" value={customFood.serving} onChange={e => setCustomFood({ ...customFood, serving: e.target.value })} />
-                  <input className="border rounded px-2 py-1" placeholder="Units (e.g. g, bowl)" value={customFood.units} onChange={e => setCustomFood({ ...customFood, units: e.target.value })} />
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    className="bg-green-500 hover:bg-green-600 text-white rounded p-2 flex items-center justify-center text-xl"
-                    title="Save"
-                    onClick={() => {
-                      logFood(customFood);
-                      setShowCustomForm(false);
-                      setCustomFood({ label: "", calories: "", fat: "", carbs: "", protein: "", fiber: "", serving: "", units: "" });
-                    }}
-                  >
-                    <span role="img" aria-label="Save">💾</span>
-                  </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-600 text-white rounded p-2 flex items-center justify-center text-xl"
-                    title="Cancel"
-                    onClick={() => {
-                      setShowCustomForm(false);
-                      setCustomFood({ label: "", calories: "", fat: "", carbs: "", protein: "", fiber: "", serving: "", units: "" });
-                    }}
-                  >
-                    <span role="img" aria-label="Cancel">✖️</span>
-                  </button>
+            {(showCustomForm || foodCart.length > 0) && (
+              <div className="relative max-w-lg mx-auto mt-6">
+                <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
+                  {showCustomForm && (
+                    <>
+                      <div className="mb-2">
+                        <label className="block text-sm font-medium mb-1">Search Nutritionix</label>
+                        <div className="flex gap-2">
+                          <input
+                            className="border rounded px-2 py-1 flex-1"
+                            placeholder="e.g. 3 beef tacos"
+                            value={foodList.nutritionixQuery || ''}
+                            onChange={e => foodList.setNutritionixQuery(e.target.value)}
+                            disabled={foodList.nutritionixLoading}
+                          />
+                          <button
+                            className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
+                            disabled={foodList.nutritionixLoading || !foodList.nutritionixQuery}
+                            onClick={() => foodList.fetchNutritionix(foodList.nutritionixQuery, addToCart)}
+                            type="button"
+                          >
+                            {foodList.nutritionixLoading ? 'Searching...' : 'Search'}
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
+                      </div>
+                      {foodList.nutritionixPreview && (
+                        <div className="mt-2 p-2 border rounded bg-gray-50">
+                          <h4 className="font-semibold">{foodList.nutritionixPreview.label}</h4>
+                          <div className="text-sm">
+                            <div>Calories: {foodList.nutritionixPreview.nutrition?.calories}</div>
+                            <div>Protein: {foodList.nutritionixPreview.nutrition?.protein}g</div>
+                            <div>Carbs: {foodList.nutritionixPreview.nutrition?.carbs}g</div>
+                            <div>Fat: {foodList.nutritionixPreview.nutrition?.fat}g</div>
+                            <div>Fiber: {foodList.nutritionixPreview.nutrition?.fiber}g</div>
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={() => foodList.confirmNutritionixAdd()}
+                              className="bg-green-500 hover:bg-green-600 text-white rounded px-3 py-1 text-sm"
+                            >
+                              Add to Cart
+                            </button>
+                            <button
+                              onClick={foodList.cancelNutritionixAdd}
+                              className="bg-gray-300 hover:bg-gray-400 text-gray-800 rounded px-3 py-1 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 mb-2 w-fit"
+                        onClick={() => {/* open custom food modal here */}}
+                        type="button"
+                      >
+                        + Custom Food
+                      </button>
+                    </>
+                  )}
+                  {foodCart.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex flex-col sm:flex-row gap-2 mb-2 items-center justify-between">
+                        <div>
+                          <label className="text-sm mr-2">Date:</label>
+                          <input
+                            type="date"
+                            className="border rounded px-2 py-1"
+                            value={cartDate}
+                            onChange={e => setCartDate(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm mr-2">Time of Day:</label>
+                          <select
+                            className="border rounded px-2 py-1"
+                            value={cartSegment}
+                            onChange={e => setCartSegment(e.target.value)}
+                          >
+                            <option value="Morning">Morning</option>
+                            <option value="Midday">Midday</option>
+                            <option value="Evening">Evening</option>
+                          </select>
+                        </div>
+                      </div>
+                      <h3 className="font-semibold mb-2">Food Cart</h3>
+                      <table className="min-w-full text-sm mb-2">
+                        <thead>
+                          <tr>
+                            <th>Food</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th>🍽️</th>
+                            <th>🥑</th>
+                            <th>🍞</th>
+                            <th>🍗</th>
+                            <th>🌱</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {foodCart.map(item => (
+                            <tr key={item.label + item.units}>
+                              <td>{item.label}</td>
+                              <td>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  className="w-12 border rounded text-center"
+                                  value={item.quantity}
+                                  onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
+                                />
+                              </td>
+                              <td>{item.units}</td>
+                              <td>{item.nutrition?.calories ?? 0}</td>
+                              <td>{item.nutrition?.fat ?? 0}</td>
+                              <td>{item.nutrition?.carbs ?? 0}</td>
+                              <td>{item.nutrition?.protein ?? 0}</td>
+                              <td>{item.nutrition?.fiber ?? 0}</td>
+                              <td>
+                                <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <button
+                        className="bg-green-500 hover:bg-green-600 text-white rounded px-4 py-2 mt-2"
+                        disabled={foodCart.length === 0}
+                        onClick={logCart}
+                      >
+                        Log All ({cartSegment})
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -457,7 +697,7 @@ export default function FoodTracker() {
                                   <td className="px-2 py-1">{e.serving}</td>
                                   <td className="px-2 py-1">{e.units}</td>
                                   {Object.keys(defaultGoals).map(k => (
-                                    <td key={k} className="px-2 py-1">{food ? Math.round((food[k] || 0) * multiplier) : ''}</td>
+                                    <td key={k} className="px-2 py-1">{food ? Math.round((food.nutrition[k] || 0) * multiplier) : ''}</td>
                                   ))}
                                   <td className="px-2 py-1">
                                     <button 
