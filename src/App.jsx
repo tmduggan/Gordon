@@ -20,6 +20,17 @@ const getTimeSegment = (date) => {
   return "Evening";
 };
 
+// Helper to get current time segment in Eastern US time
+function getDefaultTimeSegment() {
+  const now = new Date();
+  // Convert to Eastern Time (America/New_York)
+  const options = { timeZone: 'America/New_York', hour: 'numeric', hour12: false };
+  const hour = parseInt(now.toLocaleString('en-US', options));
+  if (hour >= 0 && hour < 9) return 'Morning';
+  if (hour >= 9 && hour < 16) return 'Midday';
+  return 'Evening';
+}
+
 export default function FoodTracker() {
   const [foodCart, setFoodCart] = useState([]);
   const [logs, setLogs] = useState([]); // foodLog entries
@@ -52,7 +63,7 @@ export default function FoodTracker() {
   const [userGoals, setUserGoals] = useState(null);
   const [showAllFoodsToggle, setShowAllFoodsToggle] = useState(false);
   const [cartDate, setCartDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [cartSegment, setCartSegment] = useState('Morning');
+  const [cartSegment, setCartSegment] = useState(getDefaultTimeSegment());
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -386,19 +397,6 @@ export default function FoodTracker() {
               <span role="img" aria-label="Chef">👨🏻‍🍳</span> GORDON <span role="img" aria-label="Chef">👨🏻‍🍳</span>
             </h1>
             <div className="ml-auto z-10 flex items-center gap-4">
-              <button
-                className="relative"
-                onClick={() => setCartModalOpen(true)}
-                title="Open Cart"
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: '2em' }} role="img" aria-label="Cart">🛒</span>
-                {foodCart.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1.5 py-0.5">
-                    {foodCart.length}
-                  </span>
-                )}
-              </button>
               <img
                 src={user.photoURL}
                 alt={user.displayName}
@@ -476,7 +474,7 @@ export default function FoodTracker() {
               )}
             </div>
             {(showCustomForm || foodCart.length > 0) && (
-              <div className="relative max-w-lg mx-auto mt-6">
+              <div className="relative max-w-2xl mx-auto mt-6">
                 <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
                   {showCustomForm && (
                     <>
@@ -562,25 +560,25 @@ export default function FoodTracker() {
                         </div>
                       </div>
                       <h3 className="font-semibold mb-2">Food Cart</h3>
-                      <table className="min-w-full text-sm mb-2">
+                      <table className="min-w-full text-sm mb-2 border border-gray-200">
                         <thead>
                           <tr>
-                            <th>Food</th>
-                            <th>Qty</th>
-                            <th>Unit</th>
-                            <th>🍽️</th>
-                            <th>🥑</th>
-                            <th>🍞</th>
-                            <th>🍗</th>
-                            <th>🌱</th>
-                            <th></th>
+                            <th className="border-b border-gray-200 px-2 py-1 min-w-[180px]">Food</th>
+                            <th className="border-b border-gray-200 px-2 py-1">Qty</th>
+                            <th className="border-b border-gray-200 px-2 py-1">Unit</th>
+                            <th className="border-b border-gray-200 px-2 py-1">🍽️</th>
+                            <th className="border-b border-gray-200 px-2 py-1">🥑</th>
+                            <th className="border-b border-gray-200 px-2 py-1">🍞</th>
+                            <th className="border-b border-gray-200 px-2 py-1">🍗</th>
+                            <th className="border-b border-gray-200 px-2 py-1">🌱</th>
+                            <th className="border-b border-gray-200 px-2 py-1"></th>
                           </tr>
                         </thead>
                         <tbody>
-                          {foodCart.map(item => (
-                            <tr key={item.label + item.units}>
-                              <td>{item.label}</td>
-                              <td>
+                          {foodCart.map((item, idx) => (
+                            <tr key={item.label + item.units} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                              <td className="border-r border-gray-100 px-2 py-1 min-w-[180px] font-medium">{item.label}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">
                                 <input
                                   type="number"
                                   min={1}
@@ -589,26 +587,39 @@ export default function FoodTracker() {
                                   onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
                                 />
                               </td>
-                              <td>{item.units}</td>
-                              <td>{item.nutrition?.calories ?? 0}</td>
-                              <td>{item.nutrition?.fat ?? 0}</td>
-                              <td>{item.nutrition?.carbs ?? 0}</td>
-                              <td>{item.nutrition?.protein ?? 0}</td>
-                              <td>{item.nutrition?.fiber ?? 0}</td>
-                              <td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.units}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.calories ?? 0}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fat ?? 0}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.carbs ?? 0}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.protein ?? 0}</td>
+                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fiber ?? 0}</td>
+                              <td className="px-2 py-1">
                                 <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                      <button
-                        className="bg-green-500 hover:bg-green-600 text-white rounded px-4 py-2 mt-2"
-                        disabled={foodCart.length === 0}
-                        onClick={logCart}
-                      >
-                        Log All ({cartSegment})
-                      </button>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
+                          disabled={foodCart.length === 0}
+                          onClick={logCart}
+                          title="Log All"
+                          aria-label="Log All"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        </button>
+                        <button
+                          className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
+                          disabled={foodCart.length === 0}
+                          onClick={() => setFoodCart([])}
+                          title="Clear Cart"
+                          aria-label="Clear Cart"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
