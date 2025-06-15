@@ -508,7 +508,10 @@ export default function FoodTracker() {
                                 <li
                                   key={food.id || food.label + idx}
                                   className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
-                                  onClick={() => foodList.handleSelectDbFood && foodList.handleSelectDbFood(food)}
+                                  onClick={() => {
+                                    if (foodList.handleSelectDbFood) foodList.handleSelectDbFood(food);
+                                    if (foodList.onNutritionixAdd) foodList.onNutritionixAdd(food);
+                                  }}
                                 >
                                   <span>
                                     {food.label}
@@ -533,12 +536,13 @@ export default function FoodTracker() {
                                   <span
                                     className="flex-1"
                                     onClick={async () => {
-                                      // Save to library and add to cart
+                                      const nutrition = await foodList.fetchNutritionixItem(apiFood);
+                                      const foodWithNutrition = { ...apiFood, nutrition };
                                       if (foodList.saveNutritionixToLibrary) {
-                                        await foodList.saveNutritionixToLibrary(apiFood);
+                                        await foodList.saveNutritionixToLibrary(foodWithNutrition);
                                       }
                                       if (foodList.onNutritionixAdd) {
-                                        foodList.onNutritionixAdd(apiFood);
+                                        foodList.onNutritionixAdd(foodWithNutrition);
                                       }
                                     }}
                                   >
@@ -558,8 +562,10 @@ export default function FoodTracker() {
                                     title="Add to Library"
                                     onClick={async (e) => {
                                       e.stopPropagation();
+                                      const nutrition = await foodList.fetchNutritionixItem(apiFood);
+                                      const foodWithNutrition = { ...apiFood, nutrition };
                                       if (foodList.saveNutritionixToLibrary) {
-                                        await foodList.saveNutritionixToLibrary(apiFood);
+                                        await foodList.saveNutritionixToLibrary(foodWithNutrition);
                                       }
                                       // Optionally, visually update the row to white (handled by re-render)
                                     }}
@@ -576,32 +582,6 @@ export default function FoodTracker() {
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
                       </div>
-                      {foodList.nutritionixPreview && (
-                        <div className="mt-2 p-2 border rounded bg-gray-50">
-                          <h4 className="font-semibold">{foodList.nutritionixPreview.label}</h4>
-                          <div className="text-sm">
-                            <div>Calories: {foodList.nutritionixPreview.nutrition?.calories}</div>
-                            <div>Protein: {foodList.nutritionixPreview.nutrition?.protein}g</div>
-                            <div>Carbs: {foodList.nutritionixPreview.nutrition?.carbs}g</div>
-                            <div>Fat: {foodList.nutritionixPreview.nutrition?.fat}g</div>
-                            <div>Fiber: {foodList.nutritionixPreview.nutrition?.fiber}g</div>
-                          </div>
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => foodList.confirmNutritionixAdd()}
-                              className="bg-green-500 hover:bg-green-600 text-white rounded px-3 py-1 text-sm"
-                            >
-                              Add to Cart
-                            </button>
-                            <button
-                              onClick={foodList.cancelNutritionixAdd}
-                              className="bg-gray-300 hover:bg-gray-400 text-gray-800 rounded px-3 py-1 text-sm"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                       <button
                         className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 mb-2 w-fit"
                         onClick={() => {/* open custom food modal here */}}

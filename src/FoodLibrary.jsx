@@ -179,5 +179,8 @@ export default function FoodLibrary({ onNutritionixAdd }) {
   arr.setDbResults = setDbResults;
   arr.saveNutritionixToLibrary = saveNutritionixToLibrary;
   arr.fetchNutritionixItem = fetchNutritionixItem;
+  arr.handleSelectDbFood = (food) => {
+    if (onNutritionixAdd) onNutritionixAdd(food);
+  };
   return arr;
 } 
