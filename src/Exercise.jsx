@@ -329,7 +329,7 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
         {/* Exercise Search Form */}
         {showCustomForm && (
           <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
-            <h3 className="font-semibold mb-2">Search ExerciseDB</h3>
+            <h3 className="font-semibold mb-2">Search Exercise Library</h3>
             <div className="flex flex-col gap-1 relative">
               <div className="flex gap-2">
                 <input
@@ -340,16 +340,16 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
                     exerciseLibrary.setExerciseQuery(e.target.value);
                     exerciseLibrary.handleSearch(e.target.value);
                   }}
-                  disabled={exerciseLibrary.apiLoading}
+                  disabled={exerciseLibrary.loading}
                   autoComplete="off"
                 />
                 <button
                   className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
-                  disabled={exerciseLibrary.apiLoading || !exerciseLibrary.exerciseQuery}
-                  onClick={() => exerciseLibrary.searchExerciseDB(exerciseLibrary.exerciseQuery)}
+                  disabled={exerciseLibrary.loading || !exerciseLibrary.exerciseQuery}
+                  onClick={() => exerciseLibrary.handleSearch(exerciseLibrary.exerciseQuery)}
                   type="button"
                 >
-                  {exerciseLibrary.apiLoading ? 'Searching...' : 'Search'}
+                  {exerciseLibrary.loading ? 'Loading...' : 'Search'}
                 </button>
               </div>
               
@@ -387,13 +387,13 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
                     ))
                   ) : (
                     <li className="px-3 py-2 text-gray-400 cursor-default text-sm">
-                      {exerciseLibrary.apiLoading ? 'Searching...' : 'No exercises found'}
+                      {exerciseLibrary.loading ? 'Loading...' : 'No exercises found'}
                     </li>
                   )}
                 </ul>
               )}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Powered by ExerciseDB</div>
+            <div className="text-xs text-gray-500 mt-1">Searching local exercise library</div>
           </div>
         )}
 

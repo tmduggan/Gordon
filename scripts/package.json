@@ -1,0 +1,14 @@
+{
+  "name": "exercise-library-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Scripts to populate exercise library from ExerciseDB API",
+  "main": "populate-exercise-library.js",
+  "scripts": {
+    "populate": "node populate-exercise-library.js",
+    "test": "node populate-exercise-library.js"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0"
+  }
+} 
