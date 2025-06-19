@@ -47,6 +47,21 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
 
   const [cartSegment, setCartSegment] = useState(getDefaultTimeSegment());
 
+  // Add to exercise cart helper
+  const addToExerciseCart = (exercise, duration = 30) => {
+    setExerciseCart(cart => {
+      const idx = cart.findIndex(item => item.id === exercise.id);
+      if (idx !== -1) {
+        // If already in cart, increment duration
+        const updated = [...cart];
+        updated[idx].duration += duration;
+        return updated;
+      } else {
+        return [...cart, { ...exercise, duration }];
+      }
+    });
+  };
+
   // Initialize ExerciseLibrary
   const exerciseLibrary = ExerciseLibrary({ onExerciseAdd: addToExerciseCart });
 
@@ -74,21 +89,6 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
     };
     fetchExerciseLogs();
   }, [user]);
-
-  // Add to exercise cart helper
-  const addToExerciseCart = (exercise, duration = 30) => {
-    setExerciseCart(cart => {
-      const idx = cart.findIndex(item => item.id === exercise.id);
-      if (idx !== -1) {
-        // If already in cart, increment duration
-        const updated = [...cart];
-        updated[idx].duration += duration;
-        return updated;
-      } else {
-        return [...cart, { ...exercise, duration }];
-      }
-    });
-  };
 
   // Remove from exercise cart
   const removeFromExerciseCart = (exerciseId) => {
