@@ -2,18 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, where, setDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from './firebase';
-
-// Sample exercise data - we'll replace this with API integration later
-const sampleExercises = [
-  { id: 'pushups', label: 'Push-ups', category: 'Strength', muscleGroup: 'Chest', caloriesPerMinute: 8 },
-  { id: 'squats', label: 'Squats', category: 'Strength', muscleGroup: 'Legs', caloriesPerMinute: 6 },
-  { id: 'planks', label: 'Planks', category: 'Core', muscleGroup: 'Abs', caloriesPerMinute: 4 },
-  { id: 'burpees', label: 'Burpees', category: 'Cardio', muscleGroup: 'Full Body', caloriesPerMinute: 12 },
-  { id: 'jumping_jacks', label: 'Jumping Jacks', category: 'Cardio', muscleGroup: 'Full Body', caloriesPerMinute: 10 },
-  { id: 'lunges', label: 'Lunges', category: 'Strength', muscleGroup: 'Legs', caloriesPerMinute: 7 },
-  { id: 'pullups', label: 'Pull-ups', category: 'Strength', muscleGroup: 'Back', caloriesPerMinute: 9 },
-  { id: 'mountain_climbers', label: 'Mountain Climbers', category: 'Cardio', muscleGroup: 'Full Body', caloriesPerMinute: 11 },
-];
+import ExerciseLibrary from './ExerciseLibrary';
 
 export default function Exercise({ user, userProfile, saveUserProfile }) {
   const [exerciseCart, setExerciseCart] = useState([]);
@@ -57,6 +46,9 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
   }
 
   const [cartSegment, setCartSegment] = useState(getDefaultTimeSegment());
+
+  // Initialize ExerciseLibrary
+  const exerciseLibrary = ExerciseLibrary({ onExerciseAdd: addToExerciseCart });
 
   // Load exercise logs from Firestore
   useEffect(() => {
@@ -147,10 +139,18 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
           exerciseName: exercise.label,
           category: exercise.category,
           muscleGroup: exercise.muscleGroup,
+          bodyPart: exercise.bodyPart,
+          equipment: exercise.equipment,
+          difficulty: exercise.difficulty,
           duration: exercise.duration,
           calories: calories,
           timestamp: timestamp,
-          timeSegment: cartSegment
+          timeSegment: cartSegment,
+          // Store all the additional fields from the API
+          instructions: exercise.instructions,
+          description: exercise.description,
+          gifUrl: exercise.gifUrl,
+          secondaryMuscles: exercise.secondaryMuscles
         });
       }
 
@@ -264,20 +264,37 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {userProfile?.pinnedExercises && userProfile.pinnedExercises.length > 0 ? (
             userProfile.pinnedExercises.map(exerciseId => {
-              const exercise = sampleExercises.find(e => e.id === exerciseId);
+              // Find exercise in local library
+              const exercise = exerciseLibrary.localExercises.find(e => e.id === exerciseId);
               if (!exercise) return null;
+              
+              const exerciseForCart = {
+                id: exercise.id,
+                label: exercise.name,
+                category: exercise.category || 'strength',
+                muscleGroup: exercise.target,
+                bodyPart: exercise.bodyPart,
+                equipment: exercise.equipment,
+                difficulty: exercise.difficulty,
+                instructions: exercise.instructions,
+                description: exercise.description,
+                gifUrl: exercise.gifUrl,
+                secondaryMuscles: exercise.secondaryMuscles,
+                caloriesPerMinute: exercise.caloriesPerMinute || 6
+              };
+              
               return (
                 <div key={exercise.id} className="relative">
                   <button
-                    onClick={() => addToExerciseCart(exercise)}
+                    onClick={() => addToExerciseCart(exerciseForCart)}
                     className="bg-gray-100 border hover:bg-blue-100 rounded p-2 text-sm flex flex-col w-full"
                   >
-                    <span className="font-medium">{exercise.label}</span>
+                    <span className="font-medium">{exercise.name}</span>
                     <span className="text-xs text-gray-500">
-                      {exercise.category} • {exercise.muscleGroup}
+                      {exercise.category} • {exercise.target}
                     </span>
                     <span className="text-xs text-blue-600">
-                      {exercise.caloriesPerMinute} cal/min
+                      {exercise.equipment} • {exercise.difficulty}
                     </span>
                   </button>
                   <button
@@ -309,68 +326,74 @@ export default function Exercise({ user, userProfile, saveUserProfile }) {
           </div>
         </div>
 
-        {/* Custom Exercise Form */}
+        {/* Exercise Search Form */}
         {showCustomForm && (
           <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
-            <h3 className="font-semibold mb-2">Add Custom Exercise</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Exercise name"
-                className="border rounded px-2 py-1"
-                value={customExercise.label}
-                onChange={e => setCustomExercise({...customExercise, label: e.target.value})}
-              />
-              <select
-                className="border rounded px-2 py-1"
-                value={customExercise.category}
-                onChange={e => setCustomExercise({...customExercise, category: e.target.value})}
-              >
-                <option value="Strength">Strength</option>
-                <option value="Cardio">Cardio</option>
-                <option value="Core">Core</option>
-                <option value="Flexibility">Flexibility</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Muscle group"
-                className="border rounded px-2 py-1"
-                value={customExercise.muscleGroup}
-                onChange={e => setCustomExercise({...customExercise, muscleGroup: e.target.value})}
-              />
-              <input
-                type="number"
-                placeholder="Calories per minute"
-                className="border rounded px-2 py-1"
-                value={customExercise.caloriesPerMinute}
-                onChange={e => setCustomExercise({...customExercise, caloriesPerMinute: e.target.value})}
-              />
+            <h3 className="font-semibold mb-2">Search ExerciseDB</h3>
+            <div className="flex flex-col gap-1 relative">
+              <div className="flex gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="e.g. bench press, squats, push-ups"
+                  value={exerciseLibrary.exerciseQuery}
+                  onChange={e => {
+                    exerciseLibrary.setExerciseQuery(e.target.value);
+                    exerciseLibrary.handleSearch(e.target.value);
+                  }}
+                  disabled={exerciseLibrary.apiLoading}
+                  autoComplete="off"
+                />
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
+                  disabled={exerciseLibrary.apiLoading || !exerciseLibrary.exerciseQuery}
+                  onClick={() => exerciseLibrary.searchExerciseDB(exerciseLibrary.exerciseQuery)}
+                  type="button"
+                >
+                  {exerciseLibrary.apiLoading ? 'Searching...' : 'Search'}
+                </button>
+              </div>
+              
+              {/* Exercise Search Results */}
+              {exerciseLibrary.exerciseQuery && exerciseLibrary.showDropdown && (
+                <ul className="z-20 bg-white border border-gray-200 rounded w-full mt-1 max-h-56 overflow-auto shadow-lg">
+                  {exerciseLibrary.exerciseResults && exerciseLibrary.exerciseResults.length > 0 ? (
+                    exerciseLibrary.exerciseResults.map((exercise, idx) => (
+                      <li
+                        key={exercise.id || exercise.name + idx}
+                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
+                        onClick={() => exerciseLibrary.handleSelectExercise(exercise)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{exercise.name}</div>
+                          <div className="text-xs text-gray-600">
+                            {exercise.target} • {exercise.equipment} • {exercise.difficulty}
+                          </div>
+                          <div className="text-xs text-blue-600">
+                            {exercise.bodyPart} • {exercise.secondaryMuscles?.join(', ')}
+                          </div>
+                        </div>
+                        <button
+                          className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
+                          onClick={e => {
+                            e.stopPropagation();
+                            togglePinExercise(exercise.id);
+                          }}
+                          title={userProfile?.pinnedExercises?.includes(exercise.id) ? "Unpin exercise" : "Pin exercise"}
+                          style={{lineHeight: 1}}
+                        >
+                          {userProfile?.pinnedExercises?.includes(exercise.id) ? '📌' : '📍'}
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-3 py-2 text-gray-400 cursor-default text-sm">
+                      {exerciseLibrary.apiLoading ? 'Searching...' : 'No exercises found'}
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
-            <div className="flex gap-2 mt-2">
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
-                onClick={() => {
-                  if (customExercise.label) {
-                    const newExercise = {
-                      id: customExercise.label.toLowerCase().replace(/\s+/g, '_'),
-                      ...customExercise,
-                      caloriesPerMinute: parseFloat(customExercise.caloriesPerMinute) || 0
-                    };
-                    addToExerciseCart(newExercise);
-                    setCustomExercise({ label: "", category: "Strength", muscleGroup: "", caloriesPerMinute: "" });
-                    setShowCustomForm(false);
-                  }
-                }}
-              >
-                Add to Cart
-              </button>
-              <button
-                className="bg-gray-500 hover:bg-gray-600 text-white rounded px-3 py-1"
-                onClick={() => setShowCustomForm(false)}
-              >
-                Cancel
-              </button>
-            </div>
+            <div className="text-xs text-gray-500 mt-1">Powered by ExerciseDB</div>
           </div>
         )}
 

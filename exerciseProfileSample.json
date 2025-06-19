@@ -1,0 +1,24 @@
+{
+  userId: "abc123",
+  bests: {
+    "bench-press": {
+      allTime: 245,
+      trailing6Months: 225,
+      trailing3Months: 215
+    },
+    "plank": {
+      allTime: "3:00",
+      trailing3Months: "2:20"
+    }
+  },
+  lastWorked: {
+    categories: {
+      push: "2025-06-18",
+      legs: "2025-06-17"
+    },
+    muscleGroups: {
+      pectorals: "2025-06-18",
+      glutes: "2025-06-17"
+    }
+  }
+}
