@@ -9,6 +9,7 @@ import FoodLibrary from './FoodLibrary';
 import Auth from './Auth';
 import ProfileMenu from './ProfileMenu';
 import DailyGoalsModal from './DailyGoalsModal';
+import Exercise from './Exercise';
 
 const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
 
@@ -73,6 +74,7 @@ export default function FoodTracker() {
   const loadedRef = useRef(false);
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [activePage, setActivePage] = useState('nutrition'); // 'nutrition' or 'exercise'
 
   // Add state for cartHour12, cartMinute, and cartAmPm, defaulting to current time
   const now = new Date();
@@ -474,6 +476,436 @@ export default function FoodTracker() {
               )}
             </div>
           </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-gray-100 rounded-lg p-1 flex">
+              <button
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  activePage === 'nutrition'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                onClick={() => setActivePage('nutrition')}
+              >
+                🍽️ Nutrition
+              </button>
+              <button
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  activePage === 'exercise'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                onClick={() => setActivePage('exercise')}
+              >
+                💪 Exercise
+              </button>
+            </div>
+          </div>
+
+          {/* Page Content */}
+          {activePage === 'nutrition' ? (
+            <>
+              <div className="bg-white rounded-lg shadow p-4 space-y-4">
+                <div className="flex justify-end mb-2">
+                  <button
+                    className="text-blue-600 text-sm flex items-center gap-1 hover:underline"
+                    onClick={() => setShowAllFoodsToggle(v => !v)}
+                    title={showAllFoodsToggle ? "Show Less" : "Show All"}
+                  >
+                    <span style={{fontSize: '1.2em'}}>⤢</span> {showAllFoodsToggle ? "Show Less" : "Show All"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {userProfile?.pinnedFoods && userProfile.pinnedFoods.length > 0 ? (
+                    userProfile.pinnedFoods.map(foodId => {
+                      const item = foodList.find(f => f.id === foodId);
+                      if (!item) return null;
+                      return (
+                        <div key={item.id || item.label} className="relative">
+                          <button
+                            onClick={() => addToCart(item)}
+                            className="bg-gray-100 border hover:bg-blue-100 rounded p-2 text-sm flex flex-col w-full"
+                          >
+                            <span>{item.label}</span>
+                            <span className="text-xs text-gray-500">
+                              {item.serving}{item.units} • {item.nutrition?.calories ?? 0}c {item.nutrition?.fat ?? 0}f {item.nutrition?.carbs ?? 0}c {item.nutrition?.protein ?? 0}p
+                            </span>
+                          </button>
+                          <button
+                            className="absolute top-1 right-1 text-yellow-500 hover:text-yellow-700 text-lg font-bold bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePinFood(item.id);
+                            }}
+                            title="Unpin food"
+                            style={{lineHeight: 1}}
+                          >
+                            📌
+                          </button>
+                        </div>
+                      );
+                    })
+                  ) : null}
+                  <div className="relative">
+                    <button
+                      className="bg-green-500 hover:bg-green-600 text-white rounded p-2 flex flex-col items-center justify-center w-full h-full min-h-[60px] border-2 border-green-700 text-3xl"
+                      style={{ minHeight: '60px' }}
+                      onClick={() => setShowCustomForm(true)}
+                      title="Add New Food"
+                    >
+                      <span>+</span>
+                    </button>
+                  </div>
+                </div>
+                {(showCustomForm || foodCart.length > 0) && (
+                  <div className="relative max-w-2xl mx-auto mt-6">
+                    <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
+                      {showCustomForm && (
+                        <>
+                          <div className="mb-2">
+                            <label className="block text-sm font-medium mb-1">Search Nutritionix</label>
+                            <div className="flex flex-col gap-1 relative">
+                              <div className="flex gap-2">
+                                <input
+                                  className="border rounded px-2 py-1 flex-1"
+                                  placeholder="e.g. 3 beef tacos"
+                                  value={foodList.nutritionixQuery || ''}
+                                  onChange={e => {
+                                    foodList.setNutritionixQuery(e.target.value);
+                                    foodList.setShowDbDropdown && foodList.setShowDbDropdown(true);
+                                  }}
+                                  disabled={foodList.nutritionixLoading}
+                                  autoComplete="off"
+                                />
+                                <button
+                                  className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
+                                  disabled={foodList.nutritionixLoading || !foodList.nutritionixQuery}
+                                  onClick={() => foodList.fetchNutritionix(foodList.nutritionixQuery, addToCart)}
+                                  type="button"
+                                >
+                                  {foodList.nutritionixLoading ? 'Searching...' : 'Search'}
+                                </button>
+                              </div>
+                              {foodList.nutritionixQuery && (
+                                <ul className="z-20 bg-white border border-gray-200 rounded w-full mt-1 max-h-56 overflow-auto shadow-lg">
+                                  {foodList.dbResults && foodList.dbResults.length > 0 && foodList.dbResults.map((food, idx) => (
+                                    <li
+                                      key={food.id || food.label + idx}
+                                      className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
+                                      onClick={() => {
+                                        if (foodList.handleSelectDbFood) foodList.handleSelectDbFood(food);
+                                        if (foodList.onNutritionixAdd) foodList.onNutritionixAdd(food);
+                                      }}
+                                    >
+                                      <span>
+                                        {food.label}
+                                        {food.nutrition && (
+                                          <>
+                                            {' '}<span>🍽️{food.nutrition.calories ?? 0}</span>
+                                            <span> 🥑{food.nutrition.fat ?? 0}g</span>
+                                            <span> 🍞{food.nutrition.carbs ?? 0}g</span>
+                                            <span> 🍗{food.nutrition.protein ?? 0}g</span>
+                                            <span> 🌱{food.nutrition.fiber ?? 0}g</span>
+                                          </>
+                                        )}
+                                      </span>
+                                      <button
+                                        className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          togglePinFood(food.id);
+                                        }}
+                                        title={userProfile?.pinnedFoods?.includes(food.id) ? "Unpin food" : "Pin food"}
+                                        style={{lineHeight: 1}}
+                                      >
+                                        {userProfile?.pinnedFoods?.includes(food.id) ? '📌' : '📍'}
+                                      </button>
+                                    </li>
+                                  ))}
+                                  {Array.isArray(foodList.nutritionixPreview) && foodList.nutritionixPreview.filter(apiFood => !foodList.dbResults.some(f => f.label.toLowerCase() === apiFood.label.toLowerCase())).map((apiFood, idx) => (
+                                    <li
+                                      key={apiFood.label + idx}
+                                      className="px-3 py-2 cursor-pointer text-sm flex items-center justify-between bg-blue-50 border border-blue-200"
+                                      style={{ transition: 'background 0.2s' }}
+                                    >
+                                      <span
+                                        className="flex-1"
+                                        onClick={async () => {
+                                          const nutrition = await foodList.fetchNutritionixItem(apiFood);
+                                          const foodWithNutrition = { ...apiFood, nutrition };
+                                          if (foodList.saveNutritionixToLibrary) {
+                                            await foodList.saveNutritionixToLibrary(foodWithNutrition);
+                                          }
+                                          if (foodList.onNutritionixAdd) {
+                                            foodList.onNutritionixAdd(foodWithNutrition);
+                                          }
+                                        }}
+                                      >
+                                        {apiFood.label}
+                                        {apiFood.nutrition && (
+                                          <>
+                                            {' '}<span>🍽️{apiFood.nutrition.calories ?? 0}</span>
+                                            <span> 🥑{apiFood.nutrition.fat ?? 0}g</span>
+                                            <span> 🍞{apiFood.nutrition.carbs ?? 0}g</span>
+                                            <span> 🍗{apiFood.nutrition.protein ?? 0}g</span>
+                                            <span> 🌱{apiFood.nutrition.fiber ?? 0}g</span>
+                                          </>
+                                        )}
+                                      </span>
+                                      <button
+                                        className="ml-2 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 rounded-full p-1 flex items-center justify-center border border-blue-300"
+                                        title="Add to Library"
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          const nutrition = await foodList.fetchNutritionixItem(apiFood);
+                                          const foodWithNutrition = { ...apiFood, nutrition };
+                                          if (foodList.saveNutritionixToLibrary) {
+                                            await foodList.saveNutritionixToLibrary(foodWithNutrition);
+                                          }
+                                          // Optionally, visually update the row to white (handled by re-render)
+                                        }}
+                                      >
+                                        <span className="text-lg font-bold">+</span>
+                                      </button>
+                                    </li>
+                                  ))}
+                                  {(!foodList.dbResults || foodList.dbResults.length === 0) && (!Array.isArray(foodList.nutritionixPreview) || foodList.nutritionixPreview.length === 0) && (
+                                    <li className="px-3 py-2 text-gray-400 cursor-default text-sm">No results found</li>
+                                  )}
+                                </ul>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
+                          </div>
+                        </>
+                      )}
+                      {foodCart.length > 0 && (
+                        <div className="mt-2">
+                          <div className="flex flex-col sm:flex-row gap-2 mb-2 items-center justify-between">
+                            <div>
+                              <label className="text-sm mr-2">Date:</label>
+                              <input
+                                type="date"
+                                className="border rounded px-2 py-1"
+                                value={cartDate}
+                                onChange={e => setCartDate(e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm mr-2">Time:</label>
+                              <div className="inline-flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={12}
+                                  className="w-12 border rounded px-2 py-1 text-center"
+                                  value={cartHour12}
+                                  onChange={e => setCartHour12(Math.max(1, Math.min(12, Number(e.target.value))))}
+                                />
+                                :
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={59}
+                                  className="w-12 border rounded px-2 py-1 text-center"
+                                  value={cartMinute.toString().padStart(2, '0')}
+                                  onChange={e => setCartMinute(Math.max(0, Math.min(59, Number(e.target.value))))}
+                                />
+                                <select
+                                  className="border rounded px-2 py-1"
+                                  value={cartAmPm}
+                                  onChange={e => setCartAmPm(e.target.value)}
+                                >
+                                  <option value="AM">AM</option>
+                                  <option value="PM">PM</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <h3 className="font-semibold mb-2">Food Cart</h3>
+                          <table className="min-w-full text-sm mb-2 border border-gray-200">
+                            <thead>
+                              <tr>
+                                <th className="border-b border-gray-200 px-2 py-1 min-w-[180px]">Food</th>
+                                <th className="border-b border-gray-200 px-2 py-1">Qty</th>
+                                <th className="border-b border-gray-200 px-2 py-1">Unit</th>
+                                <th className="border-b border-gray-200 px-2 py-1">🍽️</th>
+                                <th className="border-b border-gray-200 px-2 py-1">🥑</th>
+                                <th className="border-b border-gray-200 px-2 py-1">🍞</th>
+                                <th className="border-b border-gray-200 px-2 py-1">🍗</th>
+                                <th className="border-b border-gray-200 px-2 py-1">🌱</th>
+                                <th className="border-b border-gray-200 px-2 py-1"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {foodCart.map((item, idx) => (
+                                <tr key={item.label + item.units} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                                  <td className="border-r border-gray-100 px-2 py-1 min-w-[180px] font-medium">{item.label}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      className="w-12 border rounded text-center"
+                                      value={item.quantity}
+                                      onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
+                                    />
+                                  </td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.units}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.calories ?? 0}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fat ?? 0}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.carbs ?? 0}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.protein ?? 0}</td>
+                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fiber ?? 0}</td>
+                                  <td className="px-2 py-1">
+                                    <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
+                              disabled={foodCart.length === 0}
+                              onClick={logCart}
+                              title="Log All"
+                              aria-label="Log All"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            </button>
+                            <button
+                              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
+                              disabled={foodCart.length === 0}
+                              onClick={() => setFoodCart([])}
+                              title="Clear Cart"
+                              aria-label="Clear Cart"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-4">
+                <h2 className="text-lg font-semibold mb-2">Daily Summary</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {Object.keys(defaultGoals).map(k => renderProgressBar(k, dailyTotals(todayLogs)[k], goals[k]))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-4 overflow-auto">
+                <table className="min-w-full text-sm text-left">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-2 py-1">Food</th>
+                      <th className="px-2 py-1">Amount</th>
+                      <th className="px-2 py-1">Unit</th>
+                      <th className="px-2 py-1">
+                        <span role="img" aria-label="Calories">🍽️</span> Calories
+                      </th>
+                      <th className="px-2 py-1">
+                        <span role="img" aria-label="Fat">🥑</span> Fat
+                      </th>
+                      <th className="px-2 py-1">
+                        <span role="img" aria-label="Carbs">🍞</span> Carbs
+                      </th>
+                      <th className="px-2 py-1">
+                        <span role="img" aria-label="Protein">🍗</span> Protein
+                      </th>
+                      <th className="px-2 py-1">
+                        <span role="img" aria-label="Fiber">🌱</span> Fiber
+                      </th>
+                      <th className="px-2 py-1">❌</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(groupByDate).map(([date, dayLogs]) => {
+                      const dailyTotal = dailyTotals(dayLogs);
+                      const segments = groupByTimeSegment(dayLogs);
+                      return (
+                        <React.Fragment key={date}>
+                          <tr className="bg-gray-100 font-semibold">
+                            <td colSpan={3} className="px-2 py-2">
+                              <span role="img" aria-label="Calendar">🗓️</span> {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                            </td>
+                            <td className="px-2 py-2">{Math.round(dailyTotal.calories)}</td>
+                            <td className="px-2 py-2">{Math.round(dailyTotal.fat)}g</td>
+                            <td className="px-2 py-2">{Math.round(dailyTotal.carbs)}g</td>
+                            <td className="px-2 py-2">{Math.round(dailyTotal.protein)}g</td>
+                            <td className="px-2 py-2">{Math.round(dailyTotal.fiber)}g</td>
+                            <td></td>
+                          </tr>
+                          {Object.entries(segments).map(([segment, segmentLogs]) => (
+                            segmentLogs.length > 0 && (
+                              <React.Fragment key={segment}>
+                                <tr className="bg-gray-50">
+                                  <td colSpan={3} className="px-2 py-1 font-medium">{segment}</td>
+                                  {(() => {
+                                    const segmentTotal = dailyTotals(segmentLogs);
+                                    return (
+                                      <>
+                                        <td className="px-2 py-1">{Math.round(segmentTotal.calories)}</td>
+                                        <td className="px-2 py-1">{Math.round(segmentTotal.fat)}g</td>
+                                        <td className="px-2 py-1">{Math.round(segmentTotal.carbs)}g</td>
+                                        <td className="px-2 py-1">{Math.round(segmentTotal.protein)}g</td>
+                                        <td className="px-2 py-1">{Math.round(segmentTotal.fiber)}g</td>
+                                        <td></td>
+                                      </>
+                                    );
+                                  })()}
+                                </tr>
+                                {segmentLogs.map(e => {
+                                  const food = getFoodById(e.foodId);
+                                  const multiplier = food ? (e.serving / (food.serving || 1)) : 1;
+                                  return (
+                                    <tr 
+                                      key={e.id} 
+                                      className="border-t hover:bg-gray-50 cursor-pointer"
+                                      onClick={() => setEditingLog(e)}
+                                    >
+                                      <td className="px-2 py-1">{food ? food.label : e.foodId}</td>
+                                      <td className="px-2 py-1">{e.serving}</td>
+                                      <td className="px-2 py-1">{e.units}</td>
+                                      {Object.keys(defaultGoals).map(k => (
+                                        <td key={k} className="px-2 py-1">{food ? Math.round((food.nutrition[k] || 0) * multiplier) : ''}</td>
+                                      ))}
+                                      <td className="px-2 py-1">
+                                        <button 
+                                          onClick={(ev) => {
+                                            ev.stopPropagation();
+                                            deleteLog(e.id);
+                                          }} 
+                                          className="text-red-600"
+                                        >
+                                          ❌
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </React.Fragment>
+                            )
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <Exercise 
+              user={user} 
+              userProfile={userProfile} 
+              saveUserProfile={saveUserProfile}
+            />
+          )}
+
           {goalsModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
@@ -541,397 +973,6 @@ export default function FoodTracker() {
               </div>
             </div>
           )}
-          <div className="bg-white rounded-lg shadow p-4 space-y-4">
-            <div className="flex justify-end mb-2">
-              <button
-                className="text-blue-600 text-sm flex items-center gap-1 hover:underline"
-                onClick={() => setShowAllFoodsToggle(v => !v)}
-                title={showAllFoodsToggle ? "Show Less" : "Show All"}
-              >
-                <span style={{fontSize: '1.2em'}}>⤢</span> {showAllFoodsToggle ? "Show Less" : "Show All"}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {userProfile?.pinnedFoods && userProfile.pinnedFoods.length > 0 ? (
-                userProfile.pinnedFoods.map(foodId => {
-                  const item = foodList.find(f => f.id === foodId);
-                  if (!item) return null;
-                  return (
-                    <div key={item.id || item.label} className="relative">
-                      <button
-                        onClick={() => addToCart(item)}
-                        className="bg-gray-100 border hover:bg-blue-100 rounded p-2 text-sm flex flex-col w-full"
-                      >
-                        <span>{item.label}</span>
-                        <span className="text-xs text-gray-500">
-                          {item.serving}{item.units} • {item.nutrition?.calories ?? 0}c {item.nutrition?.fat ?? 0}f {item.nutrition?.carbs ?? 0}c {item.nutrition?.protein ?? 0}p
-                        </span>
-                      </button>
-                      <button
-                        className="absolute top-1 right-1 text-yellow-500 hover:text-yellow-700 text-lg font-bold bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePinFood(item.id);
-                        }}
-                        title="Unpin food"
-                        style={{lineHeight: 1}}
-                      >
-                        📌
-                      </button>
-                    </div>
-                  );
-                })
-              ) : null}
-              <div className="relative">
-                <button
-                  className="bg-green-500 hover:bg-green-600 text-white rounded p-2 flex flex-col items-center justify-center w-full h-full min-h-[60px] border-2 border-green-700 text-3xl"
-                  style={{ minHeight: '60px' }}
-                  onClick={() => setShowCustomForm(true)}
-                  title="Add New Food"
-                >
-                  <span>+</span>
-                </button>
-              </div>
-            </div>
-            {(showCustomForm || foodCart.length > 0) && (
-              <div className="relative max-w-2xl mx-auto mt-6">
-                <div className="bg-white border rounded-lg p-4 flex flex-col gap-2 shadow-lg">
-                  {showCustomForm && (
-                    <>
-                      <div className="mb-2">
-                        <label className="block text-sm font-medium mb-1">Search Nutritionix</label>
-                        <div className="flex flex-col gap-1 relative">
-                          <div className="flex gap-2">
-                            <input
-                              className="border rounded px-2 py-1 flex-1"
-                              placeholder="e.g. 3 beef tacos"
-                              value={foodList.nutritionixQuery || ''}
-                              onChange={e => {
-                                foodList.setNutritionixQuery(e.target.value);
-                                foodList.setShowDbDropdown && foodList.setShowDbDropdown(true);
-                              }}
-                              disabled={foodList.nutritionixLoading}
-                              autoComplete="off"
-                            />
-                            <button
-                              className="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1"
-                              disabled={foodList.nutritionixLoading || !foodList.nutritionixQuery}
-                              onClick={() => foodList.fetchNutritionix(foodList.nutritionixQuery, addToCart)}
-                              type="button"
-                            >
-                              {foodList.nutritionixLoading ? 'Searching...' : 'Search'}
-                            </button>
-                          </div>
-                          {foodList.nutritionixQuery && (
-                            <ul className="z-20 bg-white border border-gray-200 rounded w-full mt-1 max-h-56 overflow-auto shadow-lg">
-                              {foodList.dbResults && foodList.dbResults.length > 0 && foodList.dbResults.map((food, idx) => (
-                                <li
-                                  key={food.id || food.label + idx}
-                                  className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
-                                  onClick={() => {
-                                    if (foodList.handleSelectDbFood) foodList.handleSelectDbFood(food);
-                                    if (foodList.onNutritionixAdd) foodList.onNutritionixAdd(food);
-                                  }}
-                                >
-                                  <span>
-                                    {food.label}
-                                    {food.nutrition && (
-                                      <>
-                                        {' '}<span>🍽️{food.nutrition.calories ?? 0}</span>
-                                        <span> 🥑{food.nutrition.fat ?? 0}g</span>
-                                        <span> 🍞{food.nutrition.carbs ?? 0}g</span>
-                                        <span> 🍗{food.nutrition.protein ?? 0}g</span>
-                                        <span> 🌱{food.nutrition.fiber ?? 0}g</span>
-                                      </>
-                                    )}
-                                  </span>
-                                  <button
-                                    className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      togglePinFood(food.id);
-                                    }}
-                                    title={userProfile?.pinnedFoods?.includes(food.id) ? "Unpin food" : "Pin food"}
-                                    style={{lineHeight: 1}}
-                                  >
-                                    {userProfile?.pinnedFoods?.includes(food.id) ? '📌' : '📍'}
-                                  </button>
-                                </li>
-                              ))}
-                              {Array.isArray(foodList.nutritionixPreview) && foodList.nutritionixPreview.filter(apiFood => !foodList.dbResults.some(f => f.label.toLowerCase() === apiFood.label.toLowerCase())).map((apiFood, idx) => (
-                                <li
-                                  key={apiFood.label + idx}
-                                  className="px-3 py-2 cursor-pointer text-sm flex items-center justify-between bg-blue-50 border border-blue-200"
-                                  style={{ transition: 'background 0.2s' }}
-                                >
-                                  <span
-                                    className="flex-1"
-                                    onClick={async () => {
-                                      const nutrition = await foodList.fetchNutritionixItem(apiFood);
-                                      const foodWithNutrition = { ...apiFood, nutrition };
-                                      if (foodList.saveNutritionixToLibrary) {
-                                        await foodList.saveNutritionixToLibrary(foodWithNutrition);
-                                      }
-                                      if (foodList.onNutritionixAdd) {
-                                        foodList.onNutritionixAdd(foodWithNutrition);
-                                      }
-                                    }}
-                                  >
-                                    {apiFood.label}
-                                    {apiFood.nutrition && (
-                                      <>
-                                        {' '}<span>🍽️{apiFood.nutrition.calories ?? 0}</span>
-                                        <span> 🥑{apiFood.nutrition.fat ?? 0}g</span>
-                                        <span> 🍞{apiFood.nutrition.carbs ?? 0}g</span>
-                                        <span> 🍗{apiFood.nutrition.protein ?? 0}g</span>
-                                        <span> 🌱{apiFood.nutrition.fiber ?? 0}g</span>
-                                      </>
-                                    )}
-                                  </span>
-                                  <button
-                                    className="ml-2 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 rounded-full p-1 flex items-center justify-center border border-blue-300"
-                                    title="Add to Library"
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const nutrition = await foodList.fetchNutritionixItem(apiFood);
-                                      const foodWithNutrition = { ...apiFood, nutrition };
-                                      if (foodList.saveNutritionixToLibrary) {
-                                        await foodList.saveNutritionixToLibrary(foodWithNutrition);
-                                      }
-                                      // Optionally, visually update the row to white (handled by re-render)
-                                    }}
-                                  >
-                                    <span className="text-lg font-bold">+</span>
-                                  </button>
-                                </li>
-                              ))}
-                              {(!foodList.dbResults || foodList.dbResults.length === 0) && (!Array.isArray(foodList.nutritionixPreview) || foodList.nutritionixPreview.length === 0) && (
-                                <li className="px-3 py-2 text-gray-400 cursor-default text-sm">No results found</li>
-                              )}
-                            </ul>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
-                      </div>
-                    </>
-                  )}
-                  {foodCart.length > 0 && (
-                    <div className="mt-2">
-                      <div className="flex flex-col sm:flex-row gap-2 mb-2 items-center justify-between">
-                        <div>
-                          <label className="text-sm mr-2">Date:</label>
-                          <input
-                            type="date"
-                            className="border rounded px-2 py-1"
-                            value={cartDate}
-                            onChange={e => setCartDate(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm mr-2">Time:</label>
-                          <div className="inline-flex items-center gap-1">
-                            <input
-                              type="number"
-                              min={1}
-                              max={12}
-                              className="w-12 border rounded px-2 py-1 text-center"
-                              value={cartHour12}
-                              onChange={e => setCartHour12(Math.max(1, Math.min(12, Number(e.target.value))))}
-                            />
-                            :
-                            <input
-                              type="number"
-                              min={0}
-                              max={59}
-                              className="w-12 border rounded px-2 py-1 text-center"
-                              value={cartMinute.toString().padStart(2, '0')}
-                              onChange={e => setCartMinute(Math.max(0, Math.min(59, Number(e.target.value))))}
-                            />
-                            <select
-                              className="border rounded px-2 py-1"
-                              value={cartAmPm}
-                              onChange={e => setCartAmPm(e.target.value)}
-                            >
-                              <option value="AM">AM</option>
-                              <option value="PM">PM</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                      <h3 className="font-semibold mb-2">Food Cart</h3>
-                      <table className="min-w-full text-sm mb-2 border border-gray-200">
-                        <thead>
-                          <tr>
-                            <th className="border-b border-gray-200 px-2 py-1 min-w-[180px]">Food</th>
-                            <th className="border-b border-gray-200 px-2 py-1">Qty</th>
-                            <th className="border-b border-gray-200 px-2 py-1">Unit</th>
-                            <th className="border-b border-gray-200 px-2 py-1">🍽️</th>
-                            <th className="border-b border-gray-200 px-2 py-1">🥑</th>
-                            <th className="border-b border-gray-200 px-2 py-1">🍞</th>
-                            <th className="border-b border-gray-200 px-2 py-1">🍗</th>
-                            <th className="border-b border-gray-200 px-2 py-1">🌱</th>
-                            <th className="border-b border-gray-200 px-2 py-1"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {foodCart.map((item, idx) => (
-                            <tr key={item.label + item.units} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
-                              <td className="border-r border-gray-100 px-2 py-1 min-w-[180px] font-medium">{item.label}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  className="w-12 border rounded text-center"
-                                  value={item.quantity}
-                                  onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
-                                />
-                              </td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.units}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.calories ?? 0}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fat ?? 0}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.carbs ?? 0}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.protein ?? 0}</td>
-                              <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fiber ?? 0}</td>
-                              <td className="px-2 py-1">
-                                <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
-                          disabled={foodCart.length === 0}
-                          onClick={logCart}
-                          title="Log All"
-                          aria-label="Log All"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        </button>
-                        <button
-                          className="bg-red-500 hover:bg-red-600 text-white rounded-full p-3 flex items-center justify-center text-xl shadow"
-                          disabled={foodCart.length === 0}
-                          onClick={() => setFoodCart([])}
-                          title="Clear Cart"
-                          aria-label="Clear Cart"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-semibold mb-2">Daily Summary</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {Object.keys(defaultGoals).map(k => renderProgressBar(k, dailyTotals(todayLogs)[k], goals[k]))}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4 overflow-auto">
-            <table className="min-w-full text-sm text-left">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-2 py-1">Food</th>
-                  <th className="px-2 py-1">Amount</th>
-                  <th className="px-2 py-1">Unit</th>
-                  <th className="px-2 py-1">
-                    <span role="img" aria-label="Calories">🍽️</span> Calories
-                  </th>
-                  <th className="px-2 py-1">
-                    <span role="img" aria-label="Fat">🥑</span> Fat
-                  </th>
-                  <th className="px-2 py-1">
-                    <span role="img" aria-label="Carbs">🍞</span> Carbs
-                  </th>
-                  <th className="px-2 py-1">
-                    <span role="img" aria-label="Protein">🍗</span> Protein
-                  </th>
-                  <th className="px-2 py-1">
-                    <span role="img" aria-label="Fiber">🌱</span> Fiber
-                  </th>
-                  <th className="px-2 py-1">❌</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(groupByDate).map(([date, dayLogs]) => {
-                  const dailyTotal = dailyTotals(dayLogs);
-                  const segments = groupByTimeSegment(dayLogs);
-                  return (
-                    <React.Fragment key={date}>
-                      <tr className="bg-gray-100 font-semibold">
-                        <td colSpan={3} className="px-2 py-2">
-                          <span role="img" aria-label="Calendar">🗓️</span> {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                        </td>
-                        <td className="px-2 py-2">{Math.round(dailyTotal.calories)}</td>
-                        <td className="px-2 py-2">{Math.round(dailyTotal.fat)}g</td>
-                        <td className="px-2 py-2">{Math.round(dailyTotal.carbs)}g</td>
-                        <td className="px-2 py-2">{Math.round(dailyTotal.protein)}g</td>
-                        <td className="px-2 py-2">{Math.round(dailyTotal.fiber)}g</td>
-                        <td></td>
-                      </tr>
-                      {Object.entries(segments).map(([segment, segmentLogs]) => (
-                        segmentLogs.length > 0 && (
-                          <React.Fragment key={segment}>
-                            <tr className="bg-gray-50">
-                              <td colSpan={3} className="px-2 py-1 font-medium">{segment}</td>
-                              {(() => {
-                                const segmentTotal = dailyTotals(segmentLogs);
-                                return (
-                                  <>
-                                    <td className="px-2 py-1">{Math.round(segmentTotal.calories)}</td>
-                                    <td className="px-2 py-1">{Math.round(segmentTotal.fat)}g</td>
-                                    <td className="px-2 py-1">{Math.round(segmentTotal.carbs)}g</td>
-                                    <td className="px-2 py-1">{Math.round(segmentTotal.protein)}g</td>
-                                    <td className="px-2 py-1">{Math.round(segmentTotal.fiber)}g</td>
-                                    <td></td>
-                                  </>
-                                );
-                              })()}
-                            </tr>
-                            {segmentLogs.map(e => {
-                              const food = getFoodById(e.foodId);
-                              const multiplier = food ? (e.serving / (food.serving || 1)) : 1;
-                              return (
-                                <tr 
-                                  key={e.id} 
-                                  className="border-t hover:bg-gray-50 cursor-pointer"
-                                  onClick={() => setEditingLog(e)}
-                                >
-                                  <td className="px-2 py-1">{food ? food.label : e.foodId}</td>
-                                  <td className="px-2 py-1">{e.serving}</td>
-                                  <td className="px-2 py-1">{e.units}</td>
-                                  {Object.keys(defaultGoals).map(k => (
-                                    <td key={k} className="px-2 py-1">{food ? Math.round((food.nutrition[k] || 0) * multiplier) : ''}</td>
-                                  ))}
-                                  <td className="px-2 py-1">
-                                    <button 
-                                      onClick={(ev) => {
-                                        ev.stopPropagation();
-                                        deleteLog(e.id);
-                                      }} 
-                                      className="text-red-600"
-                                    >
-                                      ❌
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </React.Fragment>
-                        )
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
 
           {/* Edit Log Modal */}
           {editingLog && (
