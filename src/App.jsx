@@ -31,6 +31,36 @@ function getDefaultTimeSegment() {
   return 'Evening';
 }
 
+// Define a list of standard time zones
+const timeZoneOptions = [
+  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+  { value: 'America/Phoenix', label: 'Arizona' },
+  { value: 'America/Anchorage', label: 'Alaska' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii' },
+  { value: 'UTC', label: 'UTC' },
+  // Add more as needed
+];
+
+// Add helper functions for time format conversion
+const formatTimeForDisplay = (hours, minutes) => {
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  const displayMinutes = minutes.toString().padStart(2, '0');
+  return `${displayHours}:${displayMinutes} ${period}`;
+};
+
+const parseTimeFromDisplay = (displayTime) => {
+  const [time, period] = displayTime.split(' ');
+  const [hours, minutes] = time.split(':').map(Number);
+  let parsedHours = hours;
+  if (period === 'PM' && hours !== 12) parsedHours += 12;
+  if (period === 'AM' && hours === 12) parsedHours = 0;
+  return { hours: parsedHours, minutes };
+};
+
 export default function FoodTracker() {
   const [foodCart, setFoodCart] = useState([]);
   const [logs, setLogs] = useState([]); // foodLog entries
@@ -41,6 +71,15 @@ export default function FoodTracker() {
   const [editingLog, setEditingLog] = useState(null);
   const [user, setUser] = useState(null);
   const loadedRef = useRef(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Add state for cartHour12, cartMinute, and cartAmPm, defaulting to current time
+  const now = new Date();
+  let defaultHour = now.getHours();
+  const [cartHour12, setCartHour12] = useState(((defaultHour % 12) || 12));
+  const [cartMinute, setCartMinute] = useState(now.getMinutes());
+  const [cartAmPm, setCartAmPm] = useState(defaultHour >= 12 ? 'PM' : 'AM');
 
   // Add to cart helper (now inside the component)
   const addToCart = (food, quantity = 1) => {
@@ -60,7 +99,6 @@ export default function FoodTracker() {
   const foodList = FoodLibrary({ onNutritionixAdd: addToCart });
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
-  const [userGoals, setUserGoals] = useState(null);
   const [showAllFoodsToggle, setShowAllFoodsToggle] = useState(false);
   const [cartDate, setCartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [cartSegment, setCartSegment] = useState(getDefaultTimeSegment());
@@ -100,21 +138,44 @@ export default function FoodTracker() {
     fetchLogs();
   }, [user]);
 
-  // Load user goals from Firestore
+  // Load userProfile from Firestore
   useEffect(() => {
-    const fetchGoals = async () => {
-      if (user) {
-        const goalsRef = doc(db, 'userGoals', user.uid);
-        const goalsSnap = await getDoc(goalsRef);
-        if (goalsSnap.exists()) {
-          setUserGoals(goalsSnap.data());
-        } else {
-          setUserGoals(null);
-        }
+    if (!user) return;
+    setProfileLoading(true);
+    const fetchProfile = async () => {
+      const ref = doc(db, 'userProfile', user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setUserProfile(snap.data());
+      } else {
+        // Create default profile
+        const defaultProfile = {
+          goals: defaultGoals,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          pinnedFoods: []
+        };
+        await setDoc(ref, defaultProfile);
+        setUserProfile(defaultProfile);
       }
+      setProfileLoading(false);
     };
-    fetchGoals();
+    fetchProfile();
   }, [user]);
+
+  // Save userProfile to Firestore
+  const saveUserProfile = async (profile) => {
+    if (!user) return;
+    const ref = doc(db, 'userProfile', user.uid);
+    await setDoc(ref, profile);
+    setUserProfile(profile);
+  };
+
+  // Helper to get user's timezone from userProfile
+  const getUserTimezone = () => userProfile?.timezone || 'UTC';
+
+  // Use userProfile.goals for nutrition goals
+  let goals = userProfile?.goals || defaultGoals;
+  let modalInitialGoals = goals;
 
   // Helper to get food by ID
   const getFoodById = (id) => foodList.find(f => f.id === id);
@@ -138,13 +199,27 @@ export default function FoodTracker() {
     }
   };
 
+  // Helper to get 24-hour time from 12-hour + AM/PM
+  const get24Hour = (hour12, ampm) => {
+    let h = parseInt(hour12, 10);
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return h;
+  };
+
+  // Helper to format timestamp in local time zone
+  const formatTimestampLocal = (dateStr, hour12, minute, ampm) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const hour24 = get24Hour(hour12, ampm);
+    const d = new Date(year, month - 1, day, hour24, minute, 0, 0);
+    // Return ISO string to seconds (no Z, so it's local time)
+    return d.toISOString().slice(0, 19);
+  };
+
   // Log a new food to foodLog
   const logFood = async (foodItem) => {
-    console.log("logFood called", foodItem);
-    const timestamp = new Date().toISOString();
     let food = foodList.find(f => f.label === foodItem.label);
     if (!food) {
-      // Try to save the food first
       const newFoodId = await saveFoodIfNeeded(foodItem);
       if (newFoodId) {
         food = { ...foodItem, id: newFoodId };
@@ -157,12 +232,15 @@ export default function FoodTracker() {
       console.warn("No user logged in");
       return;
     }
+    const timestamp = formatTimestampLocal(cartDate, cartHour12, cartMinute, cartAmPm);
+    const recordedTime = new Date().toISOString().slice(0, 19);
     const newLog = {
       foodId: food.id,
       timestamp,
       serving: food.serving || 1,
       units: food.units || food.default_serving?.label || 'serving',
-      userId: user.uid
+      userId: user.uid,
+      recordedTime
     };
     try {
       const customId = `${timestamp}_${food.id}`;
@@ -291,24 +369,6 @@ export default function FoodTracker() {
     });
   };
 
-  // Save user goals to Firestore
-  const handleSaveGoals = async (goals) => {
-    if (!user) return;
-    const goalsRef = doc(db, 'userGoals', user.uid);
-    await setDoc(goalsRef, goals);
-    setUserGoals(goals);
-  };
-
-  // Use userGoals or fallback to defaultGoals
-  let goals = userGoals || defaultGoals;
-  let modalInitialGoals = goals;
-  if (userGoals && userGoals.macroPercents) {
-    modalInitialGoals = {
-      calories: userGoals.calories,
-      ...userGoals.macroPercents,
-    };
-  }
-
   // Remove from cart
   const removeFromCart = (label, units) => {
     setFoodCart(cart => cart.filter(item => !(item.label === label && item.units === units)));
@@ -323,23 +383,10 @@ export default function FoodTracker() {
 
   // Log all foods in cart
   const logCart = async () => {
-    console.log("logCart called", foodCart);
-    if (!user) {
-      console.warn("No user logged in");
-      return;
-    }
-    if (foodCart.length === 0) {
-      console.warn("Cart is empty");
-      return;
-    }
-    const logDate = new Date(cartDate);
-    // Set time for segment
-    const [hours, minutes] = cartSegment === 'Morning' ? [4, 0] : cartSegment === 'Midday' ? [12, 0] : [20, 0];
-    logDate.setHours(hours, minutes, 0, 0);
+    const tz = getUserTimezone();
     for (const item of foodCart) {
       let food = foodList.find(f => f.label === item.label && (f.units === item.units || f.default_serving?.label === item.units));
       if (!food) {
-        // Try to save the food first
         const newFoodId = await saveFoodIfNeeded(item);
         if (newFoodId) {
           food = { ...item, id: newFoodId };
@@ -349,13 +396,15 @@ export default function FoodTracker() {
         }
       }
       for (let i = 0; i < item.quantity; i++) {
-        const timestamp = logDate.toISOString();
+        const timestamp = formatTimestampLocal(cartDate, cartHour12, cartMinute, cartAmPm);
+        const recordedTime = new Date().toISOString().slice(0, 19);
         const newLog = {
           foodId: food.id,
           timestamp,
           serving: item.serving || 1,
           units: item.units || food.default_serving?.label || 'serving',
-          userId: user.uid
+          userId: user.uid,
+          recordedTime
         };
         try {
           const customId = `${timestamp}_${food.id}`;
@@ -377,6 +426,19 @@ export default function FoodTracker() {
     } else {
       setShowCustomForm(false); // Hide search, but keep cart
     }
+  };
+
+  // Helper to pin/unpin a food
+  const togglePinFood = async (foodId) => {
+    if (!userProfile) return;
+    let newPinned;
+    if (userProfile.pinnedFoods?.includes(foodId)) {
+      newPinned = userProfile.pinnedFoods.filter(id => id !== foodId);
+    } else {
+      newPinned = [...(userProfile.pinnedFoods || []), foodId];
+    }
+    const updatedProfile = { ...userProfile, pinnedFoods: newPinned };
+    await saveUserProfile(updatedProfile);
   };
 
   return (
@@ -413,11 +475,71 @@ export default function FoodTracker() {
             </div>
           </div>
           {goalsModalOpen && (
-            <DailyGoalsModal
-              onClose={() => setGoalsModalOpen(false)}
-              initialGoals={modalInitialGoals}
-              onSave={handleSaveGoals}
-            />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+                <h2 className="text-xl font-bold mb-4 text-center">Profile Settings</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Time Zone</label>
+                    <select
+                      className="w-full border rounded px-2 py-1"
+                      value={userProfile?.timezone || 'America/New_York'}
+                      onChange={e => setUserProfile({ ...userProfile, timezone: e.target.value })}
+                    >
+                      {timeZoneOptions.map(tz => (
+                        <option key={tz.value} value={tz.value}>{tz.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Daily Calories</label>
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1"
+                      value={userProfile?.goals?.calories || ''}
+                      onChange={e => setUserProfile({ ...userProfile, goals: { ...userProfile.goals, calories: Number(e.target.value) } })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['carbs', 'fat', 'protein'].map(macro => (
+                      <div key={macro} className="flex flex-col items-center">
+                        <label className="block text-sm font-medium mb-1">{macro.charAt(0).toUpperCase() + macro.slice(1)}</label>
+                        <input
+                          type="number"
+                          className="w-16 border rounded text-center"
+                          value={userProfile?.goals?.[macro] || ''}
+                          onChange={e => setUserProfile({ ...userProfile, goals: { ...userProfile.goals, [macro]: Number(e.target.value) } })}
+                        />
+                        <span className="text-xs text-gray-500">g</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fiber</label>
+                    <input
+                      type="number"
+                      className="w-full border rounded px-2 py-1"
+                      value={userProfile?.goals?.fiber || ''}
+                      onChange={e => setUserProfile({ ...userProfile, goals: { ...userProfile.goals, fiber: Number(e.target.value) } })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    onClick={() => setGoalsModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    onClick={async () => { await saveUserProfile(userProfile); setGoalsModalOpen(false); }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
           <div className="bg-white rounded-lg shadow p-4 space-y-4">
             <div className="flex justify-end mb-2">
@@ -430,9 +552,11 @@ export default function FoodTracker() {
               </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {foodList && foodList.length > 0 ? (
-                <>
-                  {(showAllFoodsToggle ? getSortedFoodList() : getSortedFoodList().slice(0, 20)).filter(item => !hiddenFoods.includes(item.id || item.label)).map(item => (
+              {userProfile?.pinnedFoods && userProfile.pinnedFoods.length > 0 ? (
+                userProfile.pinnedFoods.map(foodId => {
+                  const item = foodList.find(f => f.id === foodId);
+                  if (!item) return null;
+                  return (
                     <div key={item.id || item.label} className="relative">
                       <button
                         onClick={() => addToCart(item)}
@@ -444,34 +568,30 @@ export default function FoodTracker() {
                         </span>
                       </button>
                       <button
-                        className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-lg font-bold bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300"
+                        className="absolute top-1 right-1 text-yellow-500 hover:text-yellow-700 text-lg font-bold bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300"
                         onClick={(e) => {
                           e.stopPropagation();
-                          hideFood(item.id || item.label);
+                          togglePinFood(item.id);
                         }}
-                        title="Hide food"
+                        title="Unpin food"
                         style={{lineHeight: 1}}
                       >
-                        &minus;
+                        📌
                       </button>
                     </div>
-                  ))}
-                  <div className="relative">
-                    <button
-                      className="bg-green-500 hover:bg-green-600 text-white rounded p-2 flex flex-col items-center justify-center w-full h-full min-h-[60px] border-2 border-green-700 text-3xl"
-                      style={{ minHeight: '60px' }}
-                      onClick={() => setShowCustomForm(true)}
-                      title="Add New Food"
-                    >
-                      <span>+</span>
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="col-span-full text-center py-4">
-                  No food items available. Add some using the form below.
-                </div>
-              )}
+                  );
+                })
+              ) : null}
+              <div className="relative">
+                <button
+                  className="bg-green-500 hover:bg-green-600 text-white rounded p-2 flex flex-col items-center justify-center w-full h-full min-h-[60px] border-2 border-green-700 text-3xl"
+                  style={{ minHeight: '60px' }}
+                  onClick={() => setShowCustomForm(true)}
+                  title="Add New Food"
+                >
+                  <span>+</span>
+                </button>
+              </div>
             </div>
             {(showCustomForm || foodCart.length > 0) && (
               <div className="relative max-w-2xl mx-auto mt-6">
@@ -525,6 +645,17 @@ export default function FoodTracker() {
                                       </>
                                     )}
                                   </span>
+                                  <button
+                                    className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      togglePinFood(food.id);
+                                    }}
+                                    title={userProfile?.pinnedFoods?.includes(food.id) ? "Unpin food" : "Pin food"}
+                                    style={{lineHeight: 1}}
+                                  >
+                                    {userProfile?.pinnedFoods?.includes(food.id) ? '📌' : '📍'}
+                                  </button>
                                 </li>
                               ))}
                               {Array.isArray(foodList.nutritionixPreview) && foodList.nutritionixPreview.filter(apiFood => !foodList.dbResults.some(f => f.label.toLowerCase() === apiFood.label.toLowerCase())).map((apiFood, idx) => (
@@ -582,13 +713,6 @@ export default function FoodTracker() {
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Powered by Nutritionix</div>
                       </div>
-                      <button
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 mb-2 w-fit"
-                        onClick={() => {/* open custom food modal here */}}
-                        type="button"
-                      >
-                        + Custom Food
-                      </button>
                     </>
                   )}
                   {foodCart.length > 0 && (
@@ -604,16 +728,34 @@ export default function FoodTracker() {
                           />
                         </div>
                         <div>
-                          <label className="text-sm mr-2">Time of Day:</label>
-                          <select
-                            className="border rounded px-2 py-1"
-                            value={cartSegment}
-                            onChange={e => setCartSegment(e.target.value)}
-                          >
-                            <option value="Morning">Morning</option>
-                            <option value="Midday">Midday</option>
-                            <option value="Evening">Evening</option>
-                          </select>
+                          <label className="text-sm mr-2">Time:</label>
+                          <div className="inline-flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={1}
+                              max={12}
+                              className="w-12 border rounded px-2 py-1 text-center"
+                              value={cartHour12}
+                              onChange={e => setCartHour12(Math.max(1, Math.min(12, Number(e.target.value))))}
+                            />
+                            :
+                            <input
+                              type="number"
+                              min={0}
+                              max={59}
+                              className="w-12 border rounded px-2 py-1 text-center"
+                              value={cartMinute.toString().padStart(2, '0')}
+                              onChange={e => setCartMinute(Math.max(0, Math.min(59, Number(e.target.value))))}
+                            />
+                            <select
+                              className="border rounded px-2 py-1"
+                              value={cartAmPm}
+                              onChange={e => setCartAmPm(e.target.value)}
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                       <h3 className="font-semibold mb-2">Food Cart</h3>
@@ -812,23 +954,65 @@ export default function FoodTracker() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Time of Day</label>
-                    <select
-                      className="w-full border rounded px-2 py-1"
-                      value={getTimeSegment(new Date(editingLog.timestamp))}
-                      onChange={ev => {
-                        const newDate = new Date(editingLog.timestamp);
-                        const [hours, minutes] = ev.target.value === "Morning" ? [4, 0] :
-                                               ev.target.value === "Midday" ? [12, 0] :
-                                               [20, 0];
-                        newDate.setHours(hours, minutes);
-                        setEditingLog({ ...editingLog, timestamp: newDate.toISOString() });
-                      }}
-                    >
-                      <option value="Morning">Morning</option>
-                      <option value="Midday">Midday</option>
-                      <option value="Evening">Evening</option>
-                    </select>
+                    <label className="block text-sm font-medium mb-1">Time</label>
+                    <div className="inline-flex items-center gap-1">
+                      {(() => {
+                        const d = new Date(editingLog.timestamp);
+                        let hour = d.getHours();
+                        const minute = d.getMinutes();
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        const hour12 = (hour % 12) || 12;
+                        return <>
+                          <input
+                            type="number"
+                            min={1}
+                            max={12}
+                            className="w-12 border rounded px-2 py-1 text-center"
+                            value={hour12}
+                            onChange={e => {
+                              let newHour = parseInt(e.target.value, 10);
+                              if (isNaN(newHour) || newHour < 1) newHour = 1;
+                              if (newHour > 12) newHour = 12;
+                              let h24 = ampm === 'PM' ? (newHour === 12 ? 12 : newHour + 12) : (newHour === 12 ? 0 : newHour);
+                              const d2 = new Date(editingLog.timestamp);
+                              d2.setHours(h24);
+                              setEditingLog({ ...editingLog, timestamp: d2.toISOString() });
+                            }}
+                          />
+                          :
+                          <input
+                            type="number"
+                            min={0}
+                            max={59}
+                            className="w-12 border rounded px-2 py-1 text-center"
+                            value={minute.toString().padStart(2, '0')}
+                            onChange={e => {
+                              let newMinute = parseInt(e.target.value, 10);
+                              if (isNaN(newMinute) || newMinute < 0) newMinute = 0;
+                              if (newMinute > 59) newMinute = 59;
+                              const d2 = new Date(editingLog.timestamp);
+                              d2.setMinutes(newMinute);
+                              setEditingLog({ ...editingLog, timestamp: d2.toISOString() });
+                            }}
+                          />
+                          <select
+                            className="border rounded px-2 py-1"
+                            value={ampm}
+                            onChange={e => {
+                              let newAmpm = e.target.value;
+                              let h = hour12;
+                              let h24 = newAmpm === 'PM' ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h);
+                              const d2 = new Date(editingLog.timestamp);
+                              d2.setHours(h24);
+                              setEditingLog({ ...editingLog, timestamp: d2.toISOString() });
+                            }}
+                          >
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </>;
+                      })()}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Amount</label>

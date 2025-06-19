@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, setDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
 
 const NUTRITIONIX_APP_ID = '131fa0b3';
@@ -91,18 +91,18 @@ export default function FoodLibrary({ onNutritionixAdd }) {
     let nutrition = null;
     try {
       let data;
-      if (item.is_branded && item.nix_item_id) {
+      if (item.nix_item_id) {
         // Branded item: use /v2/search/item
-        const response = await fetch('https://trackapi.nutritionix.com/v2/search/item', {
-          method: 'POST',
-          headers: {
-            'x-app-id': NUTRITIONIX_APP_ID,
-            'x-app-key': NUTRITIONIX_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ nix_item_id: item.nix_item_id })
-        });
-        data = await response.json();
+        const url = 'https://trackapi.nutritionix.com/v2/search/item';
+        const headers = {
+          'x-app-id': NUTRITIONIX_APP_ID,
+          'x-app-key': NUTRITIONIX_API_KEY,
+          'Content-Type': 'application/json'
+        };
+        const body = JSON.stringify({ nix_item_id: item.nix_item_id });
+        console.log('Nutritionix API Request:', { url, method: 'POST', headers, body });
+        const response = await fetch(url, { method: 'POST', headers, body });
+        data = await response.json(); // No response log
         if (data.foods && data.foods.length > 0) {
           const food = data.foods[0];
           nutrition = {
@@ -119,17 +119,17 @@ export default function FoodLibrary({ onNutritionixAdd }) {
           };
         }
       } else {
-        // Common food: use /v2/natural/nutrients for a single food
-        const response = await fetch('https://trackapi.nutritionix.com/v2/natural/nutrients', {
-          method: 'POST',
-          headers: {
-            'x-app-id': NUTRITIONIX_APP_ID,
-            'x-app-key': NUTRITIONIX_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query: item.label })
-        });
-        data = await response.json();
+        // Common food: use /v2/natural/nutrients
+        const url = 'https://trackapi.nutritionix.com/v2/natural/nutrients';
+        const headers = {
+          'x-app-id': NUTRITIONIX_APP_ID,
+          'x-app-key': NUTRITIONIX_API_KEY,
+          'Content-Type': 'application/json'
+        };
+        const body = JSON.stringify({ query: item.food_name || item.label });
+        console.log('Nutritionix API Request:', { url, method: 'POST', headers, body });
+        const response = await fetch(url, { method: 'POST', headers, body });
+        data = await response.json(); // No response log
         if (data.foods && data.foods.length > 0) {
           const food = data.foods[0];
           nutrition = {
@@ -148,22 +148,29 @@ export default function FoodLibrary({ onNutritionixAdd }) {
       }
     } catch (e) {
       // Optionally handle error
+      alert(e.message || 'Failed to fetch nutrition info from Nutritionix.');
     }
     return nutrition;
   };
 
   // Helper to save Nutritionix result to library
   const saveNutritionixToLibrary = async (food) => {
-    if (!food || !food.label) return;
-    const foodId = (food.id || food.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32));
-    // Check if already in foodList
+    console.log('saveNutritionixToLibrary called', food);
+    const name = food.food_name || food.label;
+    if (!name || typeof name !== 'string') {
+      console.error('No valid food_name or label:', food);
+      return;
+    }
+    const foodId = (food.id || name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32));
     if (foodList.some(f => f.id === foodId)) return;
     try {
-      await addDoc(collection(db, 'foods'), { ...food, id: foodId });
-      setFoodList([...foodList, { ...food, id: foodId }]);
+      const foodToSave = { ...food, id: foodId, label: name };
+      console.log('Saving food to Firestore:', { collection: 'foods', doc: foodId, data: foodToSave });
+      await setDoc(doc(db, 'foods', foodId), foodToSave);
+      setFoodList([...foodList, foodToSave]);
+      console.log('Successfully saved food to Firestore:', foodToSave);
     } catch (err) {
-      // fallback: try setDoc if addDoc fails (e.g. duplicate)
-      // Optionally handle error
+      console.error('Error saving food to Firestore:', err);
     }
   };
 
