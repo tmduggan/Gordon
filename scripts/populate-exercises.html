@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Library Populator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Exercise Library Populator</h1>
+        
+        <div class="input-group">
+            <label for="query">Exercise Query:</label>
+            <input type="text" id="query" placeholder="e.g., bench, squat, push" value="bench">
+        </div>
+        
+        <div>
+            <button onclick="populateExercises()">🚀 Populate Library</button>
+            <button onclick="testAPI()">🧪 Test API</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+        
+        <div class="log" id="log">Ready to populate exercise library...</div>
+    </div>
+
+    <script type="module">
+        // Firebase config (same as your app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuxTa1BC-QdKY4DtMWKzNNorjHfkbEXik",
+            authDomain: "food-tracker-19c9d.firebaseapp.com",
+            projectId: "food-tracker-19c9d",
+            storageBucket: "food-tracker-19c9d.appspot.com",
+            messagingSenderId: "961928172022",
+            appId: "1:961928172022:web:9a85ac5ae45a10de35b7d7"
+        };
+
+        // Initialize Firebase
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+        const { getFirestore, doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+        const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const EXERCISE_DB_BASE_URL = 'https://exercisedb.p.rapidapi.com';
+        const API_KEY = '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8';
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `[${timestamp}] <span class="${className}">${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log cleared...\n';
+        }
+
+        async function testExerciseDBAPI(query = 'bench') {
+            log(`🔍 Testing ExerciseDB API with query: "${query}"`);
+            
+            try {
+                const response = await fetch(`${EXERCISE_DB_BASE_URL}/exercises/name/${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-RapidAPI-Key': API_KEY,
+                        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`✅ API Response received: ${data.length} exercises found`, 'success');
+                
+                if (data.length === 0) {
+                    log('⚠️ No exercises found for this query', 'warning');
+                    return [];
+                }
+                
+                // Show first exercise details
+                const sampleExercise = data[0];
+                log(`📋 Sample Exercise: ${sampleExercise.name} (${sampleExercise.target})`, 'info');
+                log(`   Equipment: ${sampleExercise.equipment}, Difficulty: ${sampleExercise.difficulty}`, 'info');
+                
+                return data;
+                
+            } catch (error) {
+                log(`❌ API Error: ${error.message}`, 'error');
+                return [];
+            }
+        }
+
+        async function saveExerciseToLibrary(exercise) {
+            try {
+                // Check if exercise already exists
+                const exerciseRef = doc(db, 'exerciseLibrary', exercise.id);
+                const exerciseDoc = await getDoc(exerciseRef);
+                
+                if (exerciseDoc.exists()) {
+                    log(`⚠️ Exercise already exists: ${exercise.name}`, 'warning');
+                    return false;
+                }
+                
+                // Save the complete exercise object with all fields
+                await setDoc(exerciseRef, {
+                    ...exercise,
+                    savedAt: new Date().toISOString(),
+                    source: 'exercisedb'
+                });
+                
+                log(`✅ Exercise saved to library: ${exercise.name}`, 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Error saving exercise ${exercise.name}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function populateExerciseLibrary(query = 'bench') {
+            log('🚀 Starting exercise library population...');
+            
+            try {
+                // Test API call
+                const exercises = await testExerciseDBAPI(query);
+                
+                if (exercises.length === 0) {
+                    log('❌ No exercises to save', 'error');
+                    return;
+                }
+                
+                // Save exercises to Firestore
+                log('\n💾 Saving exercises to Firestore...');
+                let savedCount = 0;
+                let skippedCount = 0;
+                
+                for (const exercise of exercises) {
+                    const saved = await saveExerciseToLibrary(exercise);
+                    if (saved) {
+                        savedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                }
+                
+                log(`\n📊 Population Summary:`, 'info');
+                log(`✅ Saved: ${savedCount} exercises`, 'success');
+                log(`⚠️ Skipped: ${skippedCount} exercises (already existed)`, 'warning');
+                log(`📈 Total processed: ${exercises.length} exercises`, 'info');
+                
+                if (savedCount > 0) {
+                    log('\n🎉 Success! You can now test the exercise search in your app.', 'success');
+                    log('💡 Go to the Exercise tab and search for exercises!', 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Population failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Make functions available globally
+        window.populateExercises = async () => {
+            const query = document.getElementById('query').value.trim();
+            if (!query) {
+                log('❌ Please enter a query', 'error');
+                return;
+            }
+            await populateExerciseLibrary(query);
+        };
+
+        window.testAPI = async () => {
+            const query = document.getElementById('query').value.trim() || 'bench';
+            await testExerciseDBAPI(query);
+        };
+
+        window.clearLog = clearLog;
+
+        log('✅ Exercise Library Populator loaded successfully!', 'success');
+        log('💡 Enter a query and click "Populate Library" to add exercises to your Firestore database.', 'info');
+    </script>
+</body>
+</html> 
