@@ -62,6 +62,27 @@ const parseTimeFromDisplay = (displayTime) => {
   return { hours: parsedHours, minutes };
 };
 
+// Helper to extract standardized macronutrient info from a food object.
+// This is the single source of truth for interpreting nutrition data.
+const getFoodMacros = (food) => {
+  if (!food) {
+    return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
+  }
+
+  // This function is now robust enough to handle any food data structure
+  // in the database, whether it's the newest format, an older nested
+  // format, or the original default food format.
+  const data = food.nutritionix_data || food.nutrition || food;
+
+  return {
+    calories: Math.round(data.nf_calories || data.calories || 0),
+    fat: Math.round(data.nf_total_fat || data.fat || 0),
+    carbs: Math.round(data.nf_total_carbohydrate || data.carbs || 0),
+    protein: Math.round(data.nf_protein || data.protein || 0),
+    fiber: Math.round(data.nf_dietary_fiber || data.fiber || 0),
+  };
+};
+
 export default function FoodTracker() {
   const [foodCart, setFoodCart] = useState([]);
   const [logs, setLogs] = useState([]); // foodLog entries
@@ -182,18 +203,40 @@ export default function FoodTracker() {
   // Helper to get food by ID
   const getFoodById = (id) => foodList.find(f => f.id === id);
 
-  // Helper to save a food to Firestore if it doesn't exist
+  // Helper to slugify a string for generating consistent document IDs.
+  function slugify(str) {
+    return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+  }
+
+  // Helper to save a food to Firestore if it doesn't exist.
+  // This uses the same robust logic as the FoodLibrary component.
   const saveFoodIfNeeded = async (food) => {
-    if (!food || !food.label) return null;
-    // Normalize ID
-    const foodId = (food.id || food.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32));
-    // Check if food already exists in foodList
-    if (foodList.some(f => f.id === foodId)) return foodId;
-    // Save to Firestore
+    const foodName = food.food_name || food.label;
+    if (!foodName) return null;
+
+    let foodId;
+    if (food.nix_item_id) {
+      foodId = `branded_${food.nix_item_id}`;
+    } else if (food.ndb_no) {
+      foodId = `usda_${food.ndb_no}`;
+    } else {
+      foodId = `common_${slugify(foodName)}`;
+    }
+
+    if (foodList.some(f => f.id === foodId)) {
+      return foodId; // Already in library
+    }
+
     try {
-      await setDoc(doc(db, 'foods', foodId), { ...food, id: foodId });
-      // Optionally update local foodList
-      foodList.push({ ...food, id: foodId });
+      const foodToSave = {
+        ...food,
+        id: foodId,
+        label: foodName,
+        created_at: new Date().toISOString(),
+        source: food.source || 'nutritionix'
+      };
+      await setDoc(doc(db, 'foods', foodId), foodToSave);
+      foodList.push(foodToSave); // Update local list
       return foodId;
     } catch (err) {
       console.error('Error saving new food to Firestore:', err, food);
@@ -314,10 +357,11 @@ export default function FoodTracker() {
   const dailyTotals = (logsArr) => {
     return logsArr.reduce((acc, log) => {
       const food = getFoodById(log.foodId);
-      if (food && food.nutrition) {
-        const multiplier = log.serving / (food.default_serving?.grams || 1);
-        Object.keys(defaultGoals).forEach(k => {
-          acc[k] += (food.nutrition[k] || 0) * multiplier;
+      if (food) {
+        const macros = getFoodMacros(food);
+        const multiplier = log.serving / (food.serving_qty || 1);
+        Object.keys(macros).forEach(key => {
+          acc[key] += (macros[key] || 0) * multiplier;
         });
       }
       return acc;
@@ -521,6 +565,7 @@ export default function FoodTracker() {
                     userProfile.pinnedFoods.map(foodId => {
                       const item = foodList.find(f => f.id === foodId);
                       if (!item) return null;
+                      const macros = getFoodMacros(item);
                       return (
                         <div key={item.id || item.label} className="relative">
                           <button
@@ -529,7 +574,7 @@ export default function FoodTracker() {
                           >
                             <span>{item.label}</span>
                             <span className="text-xs text-gray-500">
-                              {item.serving}{item.units} • {item.nutrition?.calories ?? 0}c {item.nutrition?.fat ?? 0}f {item.nutrition?.carbs ?? 0}c {item.nutrition?.protein ?? 0}p
+                              {item.serving_qty}{item.serving_unit} • {macros.calories}c {macros.fat}f {macros.carbs}c {macros.protein}p
                             </span>
                           </button>
                           <button
@@ -589,40 +634,43 @@ export default function FoodTracker() {
                               </div>
                               {foodList.nutritionixQuery && (
                                 <ul className="z-20 bg-white border border-gray-200 rounded w-full mt-1 max-h-56 overflow-auto shadow-lg">
-                                  {foodList.dbResults && foodList.dbResults.length > 0 && foodList.dbResults.map((food, idx) => (
-                                    <li
-                                      key={food.id || food.label + idx}
-                                      className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
-                                      onClick={() => {
-                                        if (foodList.handleSelectDbFood) foodList.handleSelectDbFood(food);
-                                        if (foodList.onNutritionixAdd) foodList.onNutritionixAdd(food);
-                                      }}
-                                    >
-                                      <span>
-                                        {food.label}
-                                        {food.nutrition && (
-                                          <>
-                                            {' '}<span>🍽️{food.nutrition.calories ?? 0}</span>
-                                            <span> 🥑{food.nutrition.fat ?? 0}g</span>
-                                            <span> 🍞{food.nutrition.carbs ?? 0}g</span>
-                                            <span> 🍗{food.nutrition.protein ?? 0}g</span>
-                                            <span> 🌱{food.nutrition.fiber ?? 0}g</span>
-                                          </>
-                                        )}
-                                      </span>
-                                      <button
-                                        className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
-                                        onClick={e => {
-                                          e.stopPropagation();
-                                          togglePinFood(food.id);
+                                  {foodList.dbResults && foodList.dbResults.length > 0 && foodList.dbResults.map((food, idx) => {
+                                    const macros = getFoodMacros(food);
+                                    return (
+                                      <li
+                                        key={food.id || food.label + idx}
+                                        className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-sm flex items-center justify-between"
+                                        onClick={() => {
+                                          if (foodList.handleSelectDbFood) foodList.handleSelectDbFood(food);
+                                          if (foodList.onNutritionixAdd) foodList.onNutritionixAdd(food);
                                         }}
-                                        title={userProfile?.pinnedFoods?.includes(food.id) ? "Unpin food" : "Pin food"}
-                                        style={{lineHeight: 1}}
                                       >
-                                        {userProfile?.pinnedFoods?.includes(food.id) ? '📌' : '📍'}
-                                      </button>
-                                    </li>
-                                  ))}
+                                        <span>
+                                          {food.label}
+                                          {(macros.calories > 0 || macros.fat > 0 || macros.carbs > 0 || macros.protein > 0) && (
+                                            <>
+                                              {' '}<span>🍽️{macros.calories}</span>
+                                              <span> 🥑{macros.fat}g</span>
+                                              <span> 🍞{macros.carbs}g</span>
+                                              <span> 🍗{macros.protein}g</span>
+                                              <span> 🌱{macros.fiber}g</span>
+                                            </>
+                                          )}
+                                        </span>
+                                        <button
+                                          className={`ml-2 text-yellow-500 hover:text-yellow-700 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-300`}
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            togglePinFood(food.id);
+                                          }}
+                                          title={userProfile?.pinnedFoods?.includes(food.id) ? "Unpin food" : "Pin food"}
+                                          style={{lineHeight: 1}}
+                                        >
+                                          {userProfile?.pinnedFoods?.includes(food.id) ? '📌' : '📍'}
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
                                   {Array.isArray(foodList.nutritionixPreview) && foodList.nutritionixPreview.filter(apiFood => !foodList.dbResults.some(f => f.label.toLowerCase() === apiFood.label.toLowerCase())).map((apiFood, idx) => (
                                     <li
                                       key={apiFood.label + idx}
@@ -632,36 +680,33 @@ export default function FoodTracker() {
                                       <span
                                         className="flex-1"
                                         onClick={async () => {
-                                          const nutrition = await foodList.fetchNutritionixItem(apiFood);
-                                          const foodWithNutrition = { ...apiFood, nutrition };
-                                          if (foodList.saveNutritionixToLibrary) {
-                                            await foodList.saveNutritionixToLibrary(foodWithNutrition);
-                                          }
-                                          if (foodList.onNutritionixAdd) {
-                                            foodList.onNutritionixAdd(foodWithNutrition);
+                                          const foodWithNutrition = await foodList.fetchNutritionixItem(apiFood);
+                                          if (foodWithNutrition) {
+                                            if (foodList.saveNutritionixToLibrary) {
+                                              await foodList.saveNutritionixToLibrary(foodWithNutrition);
+                                            }
+                                            if (foodList.onNutritionixAdd) {
+                                              foodList.onNutritionixAdd(foodWithNutrition);
+                                            }
                                           }
                                         }}
                                       >
                                         {apiFood.label}
-                                        {apiFood.nutrition && (
-                                          <>
-                                            {' '}<span>🍽️{apiFood.nutrition.calories ?? 0}</span>
-                                            <span> 🥑{apiFood.nutrition.fat ?? 0}g</span>
-                                            <span> 🍞{apiFood.nutrition.carbs ?? 0}g</span>
-                                            <span> 🍗{apiFood.nutrition.protein ?? 0}g</span>
-                                            <span> 🌱{apiFood.nutrition.fiber ?? 0}g</span>
-                                          </>
-                                        )}
+                                        {/* 
+                                          The macro preview for live API results is removed, as they
+                                          don't contain nutrition data until they are saved.
+                                        */}
                                       </span>
                                       <button
                                         className="ml-2 text-blue-600 hover:text-blue-800 bg-blue-100 hover:bg-blue-200 rounded-full p-1 flex items-center justify-center border border-blue-300"
                                         title="Add to Library"
                                         onClick={async (e) => {
                                           e.stopPropagation();
-                                          const nutrition = await foodList.fetchNutritionixItem(apiFood);
-                                          const foodWithNutrition = { ...apiFood, nutrition };
-                                          if (foodList.saveNutritionixToLibrary) {
-                                            await foodList.saveNutritionixToLibrary(foodWithNutrition);
+                                          const foodWithNutrition = await foodList.fetchNutritionixItem(apiFood);
+                                          if (foodWithNutrition) {
+                                            if (foodList.saveNutritionixToLibrary) {
+                                              await foodList.saveNutritionixToLibrary(foodWithNutrition);
+                                            }
                                           }
                                           // Optionally, visually update the row to white (handled by re-render)
                                         }}
@@ -724,44 +769,47 @@ export default function FoodTracker() {
                             </div>
                           </div>
                           <h3 className="font-semibold mb-2">Food Cart</h3>
-                          <table className="min-w-full text-sm mb-2 border border-gray-200">
-                            <thead>
+                          <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 border-b">
                               <tr>
-                                <th className="border-b border-gray-200 px-2 py-1 min-w-[180px]">Food</th>
-                                <th className="border-b border-gray-200 px-2 py-1">Qty</th>
-                                <th className="border-b border-gray-200 px-2 py-1">Unit</th>
-                                <th className="border-b border-gray-200 px-2 py-1">🍽️</th>
-                                <th className="border-b border-gray-200 px-2 py-1">🥑</th>
-                                <th className="border-b border-gray-200 px-2 py-1">🍞</th>
-                                <th className="border-b border-gray-200 px-2 py-1">🍗</th>
-                                <th className="border-b border-gray-200 px-2 py-1">🌱</th>
-                                <th className="border-b border-gray-200 px-2 py-1"></th>
+                                <th className="px-2 py-1">Food</th>
+                                <th className="px-2 py-1">Qty</th>
+                                <th className="px-2 py-1">Unit</th>
+                                <th className="px-2 py-1">🍽️</th>
+                                <th className="px-2 py-1">🥑</th>
+                                <th className="px-2 py-1">🍞</th>
+                                <th className="px-2 py-1">🍗</th>
+                                <th className="px-2 py-1">🌱</th>
+                                <th className="px-2 py-1"></th>
                               </tr>
                             </thead>
                             <tbody>
-                              {foodCart.map((item, idx) => (
-                                <tr key={item.label + item.units} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
-                                  <td className="border-r border-gray-100 px-2 py-1 min-w-[180px] font-medium">{item.label}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      className="w-12 border rounded text-center"
-                                      value={item.quantity}
-                                      onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
-                                    />
-                                  </td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.units}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.calories ?? 0}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fat ?? 0}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.carbs ?? 0}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.protein ?? 0}</td>
-                                  <td className="border-r border-gray-100 px-2 py-1">{item.nutrition?.fiber ?? 0}</td>
-                                  <td className="px-2 py-1">
-                                    <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
-                                  </td>
-                                </tr>
-                              ))}
+                              {foodCart.map((item, idx) => {
+                                const macros = getFoodMacros(item);
+                                return (
+                                  <tr key={item.label + item.units} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                                    <td className="border-r border-gray-100 px-2 py-1 min-w-[180px] font-medium">{item.label}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        className="w-12 border rounded text-center"
+                                        value={item.quantity}
+                                        onChange={e => updateCartQuantity(item.label, item.units, Math.max(1, parseInt(e.target.value) || 1))}
+                                      />
+                                    </td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{item.units}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{macros.calories}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{macros.fat}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{macros.carbs}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{macros.protein}</td>
+                                    <td className="border-r border-gray-100 px-2 py-1">{macros.fiber}</td>
+                                    <td className="px-2 py-1">
+                                      <button className="text-red-500" onClick={() => removeFromCart(item.label, item.units)}>✖️</button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                           <div className="flex gap-2 mt-2">
@@ -859,26 +907,40 @@ export default function FoodTracker() {
                                     );
                                   })()}
                                 </tr>
-                                {segmentLogs.map(e => {
-                                  const food = getFoodById(e.foodId);
-                                  const multiplier = food ? (e.serving / (food.serving || 1)) : 1;
+                                {segmentLogs.map((log, i) => {
+                                  const food = getFoodById(log.foodId);
+                                  const multiplier = food ? (log.serving / (food.serving_qty || 1)) : 1;
+                                  const macros = getFoodMacros(food);
+
+                                  if (!food) {
+                                    return (
+                                      <tr key={log.id} className={`border-b border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                                        <td colSpan="9" className="px-2 py-1 text-red-500 italic">
+                                          Warning: Logged food with ID "{log.foodId}" has been deleted.
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
                                   return (
                                     <tr 
-                                      key={e.id} 
+                                      key={log.id} 
                                       className="border-t hover:bg-gray-50 cursor-pointer"
-                                      onClick={() => setEditingLog(e)}
+                                      onClick={() => setEditingLog(log)}
                                     >
-                                      <td className="px-2 py-1">{food ? food.label : e.foodId}</td>
-                                      <td className="px-2 py-1">{e.serving}</td>
-                                      <td className="px-2 py-1">{e.units}</td>
-                                      {Object.keys(defaultGoals).map(k => (
-                                        <td key={k} className="px-2 py-1">{food ? Math.round((food.nutrition[k] || 0) * multiplier) : ''}</td>
-                                      ))}
+                                      <td className="px-2 py-1">{food.label}</td>
+                                      <td className="px-2 py-1">{log.serving}</td>
+                                      <td className="px-2 py-1">{food.serving_unit || 'serving'}</td>
+                                      <td className="px-2 py-1">{Math.round(macros.calories * multiplier)}</td>
+                                      <td className="px-2 py-1">{Math.round(macros.fat * multiplier)}</td>
+                                      <td className="px-2 py-1">{Math.round(macros.carbs * multiplier)}</td>
+                                      <td className="px-2 py-1">{Math.round(macros.protein * multiplier)}</td>
+                                      <td className="px-2 py-1">{Math.round(macros.fiber * multiplier)}</td>
                                       <td className="px-2 py-1">
                                         <button 
                                           onClick={(ev) => {
                                             ev.stopPropagation();
-                                            deleteLog(e.id);
+                                            deleteLog(log.id);
                                           }} 
                                           className="text-red-600"
                                         >

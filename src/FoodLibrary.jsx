@@ -78,6 +78,11 @@ export default function FoodLibrary({ onNutritionixAdd }) {
         // nutrition: null for now; will fetch on demand
       }));
       setNutritionixPreview(apiResults);
+      
+      // Automatically save all search results to library
+      console.log('Automatically saving all search results to library...');
+      await saveAllSearchResults(apiResults);
+      
     } catch (e) {
       alert(e.message || 'Failed to fetch from Nutritionix. Please try again.');
     } finally {
@@ -88,36 +93,20 @@ export default function FoodLibrary({ onNutritionixAdd }) {
   // Helper to fetch nutrition info for a selected instant search result
   const fetchNutritionixItem = async (item) => {
     if (!item) return null;
-    let nutrition = null;
     try {
       let data;
-      if (item.nix_item_id) {
-        // Branded item: use /v2/search/item
+      // Branded items have a nix_item_id, common items do not.
+      const isBranded = !!item.nix_item_id;
+
+      if (isBranded) {
+        // Branded item: use /v2/search/item to get full details
         const url = 'https://trackapi.nutritionix.com/v2/search/item';
         const headers = {
           'x-app-id': NUTRITIONIX_APP_ID,
           'x-app-key': NUTRITIONIX_API_KEY,
-          'Content-Type': 'application/json'
         };
-        const body = JSON.stringify({ nix_item_id: item.nix_item_id });
-        console.log('Nutritionix API Request:', { url, method: 'POST', headers, body });
-        const response = await fetch(url, { method: 'POST', headers, body });
-        data = await response.json(); // No response log
-        if (data.foods && data.foods.length > 0) {
-          const food = data.foods[0];
-          nutrition = {
-            calories: Math.round(food.nf_calories) || 0,
-            fat: Math.round(food.nf_total_fat * 10) / 10 || 0,
-            carbs: Math.round(food.nf_total_carbohydrate * 10) / 10 || 0,
-            protein: Math.round(food.nf_protein * 10) / 10 || 0,
-            fiber: Math.round(food.nf_dietary_fiber * 10) / 10 || 0,
-            sodium: Math.round((food.nf_sodium || 0) * 10) / 10,
-            potassium: Math.round((food.nf_potassium || 0) * 10) / 10,
-            vitamin_c: food.nf_vitamin_c || 0,
-            vitamin_b6: food.nf_vitamin_b6 || 0,
-            iron: food.nf_iron || 0
-          };
-        }
+        const response = await fetch(url + '?nix_item_id=' + item.nix_item_id, { headers });
+        data = await response.json();
       } else {
         // Common food: use /v2/natural/nutrients
         const url = 'https://trackapi.nutritionix.com/v2/natural/nutrients';
@@ -127,50 +116,76 @@ export default function FoodLibrary({ onNutritionixAdd }) {
           'Content-Type': 'application/json'
         };
         const body = JSON.stringify({ query: item.food_name || item.label });
-        console.log('Nutritionix API Request:', { url, method: 'POST', headers, body });
         const response = await fetch(url, { method: 'POST', headers, body });
-        data = await response.json(); // No response log
-        if (data.foods && data.foods.length > 0) {
-          const food = data.foods[0];
-          nutrition = {
-            calories: Math.round(food.nf_calories) || 0,
-            fat: Math.round(food.nf_total_fat * 10) / 10 || 0,
-            carbs: Math.round(food.nf_total_carbohydrate * 10) / 10 || 0,
-            protein: Math.round(food.nf_protein * 10) / 10 || 0,
-            fiber: Math.round(food.nf_dietary_fiber * 10) / 10 || 0,
-            sodium: Math.round((food.nf_sodium || 0) * 10) / 10,
-            potassium: Math.round((food.nf_potassium || 0) * 10) / 10,
-            vitamin_c: food.nf_vitamin_c || 0,
-            vitamin_b6: food.nf_vitamin_b6 || 0,
-            iron: food.nf_iron || 0
-          };
-        }
+        data = await response.json();
+      }
+      
+      if (data.foods && data.foods.length > 0) {
+        // Return the first food object which contains the full nutrition data
+        return data.foods[0];
       }
     } catch (e) {
-      // Optionally handle error
       alert(e.message || 'Failed to fetch nutrition info from Nutritionix.');
     }
-    return nutrition;
+    return null;
   };
+
+  // Helper to slugify a string
+  function slugify(str) {
+    return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+  }
 
   // Helper to save Nutritionix result to library
   const saveNutritionixToLibrary = async (food) => {
-    console.log('saveNutritionixToLibrary called', food);
-    const name = food.food_name || food.label;
-    if (!name || typeof name !== 'string') {
-      console.error('No valid food_name or label:', food);
+    let foodId;
+    const foodName = food.food_name || food.label; // Use label as a fallback
+
+    if (food.nix_item_id) {
+      foodId = `branded_${food.nix_item_id}`;
+    } else if (food.ndb_no) {
+      foodId = `usda_${food.ndb_no}`;
+    } else if (foodName) {
+      foodId = `common_${slugify(foodName)}`;
+    } else {
+      console.error('Cannot save food without a valid identifier:', food);
       return;
     }
-    const foodId = (food.id || name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32));
-    if (foodList.some(f => f.id === foodId)) return;
+
+    if (foodList.some(f => f.id === foodId)) {
+      return; // Already in library
+    }
+
     try {
-      const foodToSave = { ...food, id: foodId, label: name };
-      console.log('Saving food to Firestore:', { collection: 'foods', doc: foodId, data: foodToSave });
+      const foodToSave = {
+        ...food,
+        id: foodId,
+        label: foodName,
+        created_at: new Date().toISOString(),
+        source: 'nutritionix'
+      };
       await setDoc(doc(db, 'foods', foodId), foodToSave);
-      setFoodList([...foodList, foodToSave]);
-      console.log('Successfully saved food to Firestore:', foodToSave);
+      setFoodList(currentFoodList => [...currentFoodList, foodToSave]);
     } catch (err) {
       console.error('Error saving food to Firestore:', err);
+    }
+  };
+
+  // Helper to automatically save all search results to library
+  const saveAllSearchResults = async (searchResults) => {
+    console.log('Saving all search results to library:', searchResults);
+    
+    for (const item of searchResults) {
+      try {
+        // Fetch complete nutrition data for each item.
+        const fullFoodObject = await fetchNutritionixItem(item);
+        
+        // Directly save the full object returned from the API.
+        if (fullFoodObject) {
+          await saveNutritionixToLibrary(fullFoodObject);
+        }
+      } catch (error) {
+        console.error('Error saving search result:', item, error);
+      }
     }
   };
 
@@ -185,6 +200,7 @@ export default function FoodLibrary({ onNutritionixAdd }) {
   arr.dbResults = dbResults;
   arr.setDbResults = setDbResults;
   arr.saveNutritionixToLibrary = saveNutritionixToLibrary;
+  arr.saveAllSearchResults = saveAllSearchResults;
   arr.fetchNutritionixItem = fetchNutritionixItem;
   arr.handleSelectDbFood = (food) => {
     if (onNutritionixAdd) onNutritionixAdd(food);

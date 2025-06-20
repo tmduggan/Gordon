@@ -28,7 +28,22 @@ yarn-error.log*
 *.swo
 
 # Firebase
+/serviceAccountKey.json
+/firebase-service-account.json
+/*-firebase-adminsdk-*.json
+/.firebase/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Firebase
 *-firebase-adminsdk-*.json
 
 # Firebase
-serviceAccountKey.json 
+serviceAccountKey.json
+
+# Firebase
+firebase-service-account.json 
