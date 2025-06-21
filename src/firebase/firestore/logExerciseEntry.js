@@ -1,31 +1,28 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { formatIdTimestamp } from '../../utils/timeUtils';
+import { formatTimestampLocal } from '../../utils/timeUtils';
 
 /**
- * Saves a prepared workout log object to Firestore with a custom ID.
- *
- * @param {object} logObject - The complete workout log object to be saved.
- * @returns {Promise<string|null>} The document ID if successful, otherwise null.
+ * Saves a new workout log entry to the user's 'workoutLog' subcollection.
+ * @param {object} logObject - The workout data to save.
+ * @returns {string} The ID of the newly created document.
  */
 export const saveWorkoutLog = async (logObject) => {
-  if (!logObject || !logObject.userId || !logObject.exerciseId || !logObject.timestamp) {
-    console.error("Invalid log object provided for saving:", logObject);
-    return null;
-  }
+    if (!logObject.userId) {
+        throw new Error("User ID is required to save a workout log.");
+    }
+    
+    // Reference the user's specific 'workoutLog' subcollection
+    const subcollectionRef = collection(db, 'users', logObject.userId, 'workoutLog');
 
-  // Construct the custom document ID
-  const formattedTimestamp = formatIdTimestamp(logObject.timestamp);
-  const docId = `${logObject.exerciseId} - ${formattedTimestamp}`;
-  
-  try {
-    const docRef = doc(db, 'workoutLog', docId);
-    await setDoc(docRef, logObject);
+    // Add server-generated timestamp for recording
+    const logData = {
+        ...logObject,
+        recordedTime: serverTimestamp()
+    };
 
-    console.log('Workout entry saved to workoutLog with ID: ', docId);
-    return docId;
-  } catch (error) {
-    console.error("Error saving workout log:", error);
-    return null;
-  }
+    const docRef = await addDoc(subcollectionRef, logData);
+
+    console.log('Workout entry saved with new ID: ', docRef.id);
+    return docRef.id;
 }; 

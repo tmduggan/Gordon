@@ -31,28 +31,30 @@ const ServingSizeEditor = ({ food, onChange }) => {
                 }
             });
         }
+        
+        // Always add 'grams' as an option if we have a gram weight, and it's not already there.
+        if (food.serving_weight_grams && !options.some(opt => opt.measure === 'g')) {
+            options.push({
+                measure: 'g',
+                weight: 1, // 1g is the base unit for weight
+            });
+        }
+        
         return options;
     }, [food]);
 
     const [quantity, setQuantity] = useState(food.serving_qty || 1);
     const [selectedUnit, setSelectedUnit] = useState(food.serving_unit || (servingOptions.length > 0 ? servingOptions[0].measure : ''));
-    const isInitialMount = useRef(true);
 
     useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
-            return;
-        }
-
         const selectedOption = servingOptions.find(opt => opt.measure === selectedUnit);
         
         if (!selectedOption || !food.serving_weight_grams) {
             return;
         }
 
-        const baseServingWeight = food.serving_weight_grams / food.serving_qty;
         const totalGramWeight = selectedOption.weight * quantity;
-        const scale = totalGramWeight / baseServingWeight;
+        const scale = totalGramWeight / food.serving_weight_grams;
 
         const scaledNutrition = {
             calories: parseFloat(((food.nf_calories || 0) * scale).toFixed(1)),
@@ -68,7 +70,7 @@ const ServingSizeEditor = ({ food, onChange }) => {
             scaledNutrition,
         });
 
-    }, [quantity, selectedUnit, onChange]);
+    }, [quantity, selectedUnit, onChange, food, servingOptions]);
     
     const handleQuantityChange = (e) => {
         setQuantity(parseFloat(e.target.value) || 0);

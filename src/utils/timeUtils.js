@@ -74,4 +74,68 @@ export const formatIdTimestamp = (date) => {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const seconds = date.getSeconds().toString().padStart(2, '0');
   return `${year}-${month}-${day}-${hours}:${minutes}:${seconds}`;
+};
+
+/**
+ * Parses an ISO 8601 string into its constituent date and time parts for display.
+ * @param {string} isoString - The timestamp string from Firestore.
+ * @returns {object} An object with date and time strings, e.g., { date: '2025-06-21', time: '19:00' }.
+ */
+export const parseTimestamp = (isoString) => {
+  if (!isoString) return { date: '', time: '' };
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hours}:${minutes}`,
+  };
+};
+
+/**
+ * Formats a date string (YYYY-MM-DD) for display in MM/DD/YYYY format.
+ * @param {string} dateString - The date string in YYYY-MM-DD format.
+ * @returns {string} The date formatted as MM/DD/YYYY.
+ */
+export const formatDateForDisplay = (dateString) => {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('-');
+  return `${month}/${day}/${year}`;
+};
+
+export const groupAndEnrichLogs = (logs, exercises) => {
+    if (!logs || !exercises || !logs.length || !exercises.length) return {};
+
+    const enriched = logs.map(log => {
+        const exerciseDetails = exercises.find(ex => ex.id === log.exerciseId);
+        return {
+            ...log,
+            exerciseName: exerciseDetails?.name || 'Unknown Exercise',
+            category: exerciseDetails?.category || 'Unknown',
+            score: log.score || 0,
+        };
+    });
+
+    return enriched.reduce((acc, log) => {
+        const logDate = new Date(log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp);
+        const dateKey = logDate.toDateString();
+
+        if (!acc[dateKey]) {
+            acc[dateKey] = { logs: [], totalDuration: 0, segments: {} };
+        }
+        acc[dateKey].logs.push(log);
+        acc[dateKey].totalDuration += log.duration || 0;
+        
+        const segment = getTimeSegment(logDate);
+        if (!acc[dateKey].segments[segment]) {
+            acc[dateKey].segments[segment] = { logs: [], totalDuration: 0 };
+        }
+        acc[dateKey].segments[segment].logs.push(log);
+        acc[dateKey].segments[segment].totalDuration += log.duration || 0;
+        
+        return acc;
+    }, {});
 }; 

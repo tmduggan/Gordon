@@ -1,43 +1,85 @@
-import React from 'react';
+import React, { useState } from 'react';
+import useAuthStore from '@/store/useAuthStore';
+import DailyGoalsModal from './DailyGoalsModal';
+import { auth } from '@/firebase';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-export default function ProfileMenu({ onSignOut, onOpenGoals, onSwitchView, currentView }) {
+export default function ProfileMenu() {
+  const { user, userProfile, saveUserProfile } = useAuthStore();
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  if (!user || !userProfile) return null;
+
   return (
-    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-      <div className="py-1">
-        <button
-          onClick={() => onSwitchView('nutrition')}
-          className={`block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${currentView === 'nutrition' ? 'font-bold' : ''}`}
-          disabled={currentView === 'nutrition'}
-        >
-          Nutrition
-        </button>
-        <button
-          onClick={() => onSwitchView('exercise')}
-          className={`block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${currentView === 'exercise' ? 'font-bold' : ''}`}
-          disabled={currentView === 'exercise'}
-        >
-          Exercise
-        </button>
-        <button
-          onClick={() => onSwitchView('exerciseLibrary')}
-          className={`block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${currentView === 'exerciseLibrary' ? 'font-bold' : ''}`}
-        >
-          Exercise Library
-        </button>
-        <div className="border-t border-gray-200 my-1"></div>
-      <button
-          onClick={onOpenGoals}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      >
-        Daily Goals
-      </button>
-      <button
-        onClick={onSignOut}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      >
-        Sign Out
-      </button>
+    <>
+      <div className="relative">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">{user.displayName || user.email}</span>
+          
+          <div className="relative">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <img
+                    src={user.photoURL || '/default-avatar.png'}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full cursor-pointer"
+                    onClick={() => setShowDropdown(!showDropdown)}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Open Profile Menu</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 p-1">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowGoalsModal(true);
+                    setShowDropdown(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  Daily Goals
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => auth.signOut()}
+                  className="w-full justify-start"
+                >
+                  Sign Out
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+      
+      {/* Close dropdown when clicking outside */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDropdown(false)}
+        />
+      )}
+      
+      {showGoalsModal && (
+        <DailyGoalsModal
+          initialGoals={userProfile.goals}
+          onSave={saveUserProfile}
+          onClose={() => setShowGoalsModal(false)}
+        />
+      )}
+    </>
   );
 } 

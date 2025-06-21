@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useExerciseLibrary } from '../hooks/useExerciseLibrary';
+import useLibrary from '../hooks/fetchLibrary';
 
 export default function ExerciseLibraryPage() {
-  const { localExercises, loading } = useExerciseLibrary({ onExerciseAdd: () => {} });
+  const { localExercises, loading } = useLibrary('exercise', { onExerciseAdd: () => {} });
 
   const [filters, setFilters] = useState({
     difficulty: '',
