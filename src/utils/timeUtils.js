@@ -20,11 +20,10 @@ export const getTimeSegment = (date) => {
 };
 
 // Helper to get current time segment in Eastern US time
-export function getDefaultTimeSegment() {
+export function getDefaultTimeSegment(timezone = 'America/New_York') {
     const now = new Date();
-    // Convert to Eastern Time (America/New_York)
-    const options = { timeZone: 'America/New_York', hour: 'numeric', hour12: false };
-    const hour = parseInt(now.toLocaleString('en-US', options));
+    const options = { timeZone: timezone, hour: 'numeric', hour12: false };
+    const hour = parseInt(now.toLocaleString('en-US', options), 10);
     if (hour >= 0 && hour < 9) return 'Morning';
     if (hour >= 9 && hour < 16) return 'Midday';
     return 'Evening';
@@ -65,4 +64,14 @@ export const formatTimestampLocal = (dateStr, hour12, minute, ampm) => {
     // .toISOString() converts the date to a string in UTC (Z-time).
     // This ensures all timestamps are stored in a consistent, absolute format.
     return localDate.toISOString();
+};
+
+export const formatIdTimestamp = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+  return `${year}-${month}-${day}-${hours}:${minutes}:${seconds}`;
 }; 
