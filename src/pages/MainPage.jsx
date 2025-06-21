@@ -6,6 +6,7 @@ import Search from '../components/Search/Search';
 import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
+import MuscleGroupProgress from '../components/exercise/MuscleGroupProgress';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -189,10 +190,14 @@ export default function MainPage({ type }) {
                     />
                 )}
             </div>
-            <HistoryView
-                type={type}
-                {...historyProps}
-            />
+            {type === 'food' ? (
+                <HistoryView
+                    type={type}
+                    {...historyProps}
+                />
+            ) : (
+                <MuscleGroupProgress />
+            )}
         </>
     );
 } 
