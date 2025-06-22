@@ -8,6 +8,7 @@ import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
 import MuscleGroupProgress from '../components/exercise/MuscleGroupProgress';
+import DailySummary from '../components/nutrition/DailySummary';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -199,6 +200,13 @@ export default function MainPage({ type }) {
                     />
                 )}
             </div>
+            {type === 'food' && (
+                <DailySummary 
+                    foodLibrary={library.items} 
+                    cart={cart.cart}
+                    cartTimePeriod={dateTimePicker.timePeriod}
+                />
+            )}
             {type === 'food' ? (
                 <>
                     <HistoryView

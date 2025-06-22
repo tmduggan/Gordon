@@ -9,11 +9,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatSmartDate, exerciseTimePeriods, foodTimePeriods } from '../utils/timeUtils';
 
+// Helper to get the meal period from the current time
+const getCurrentMealPeriod = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return "Early Morning";
+    if (hour < 10) return "Breakfast";
+    if (hour < 12) return "Brunch";
+    if (hour < 16) return "Lunch";
+    if (hour < 19) return "Supper";
+    return "Dinner";
+};
+
 // Hook to manage state for the new time period picker
 export function useDateTimePicker(type: 'food' | 'exercise') {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
     const timePeriods = type === 'food' ? foodTimePeriods : exerciseTimePeriods;
-    const [timePeriod, setTimePeriod] = React.useState(Object.keys(timePeriods)[0]);
+    
+    // Set the initial time period based on the current time for 'food' type
+    const initialTimePeriod = type === 'food' ? getCurrentMealPeriod() : Object.keys(timePeriods)[0];
+    const [timePeriod, setTimePeriod] = React.useState(initialTimePeriod);
 
     // Generates a full Date object for logging
     const getLogTimestamp = () => {
