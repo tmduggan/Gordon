@@ -57,7 +57,7 @@ export default function DateTimePicker({ date, setDate, timePeriod, setTimePerio
                 <PopoverTrigger asChild>
                     <Button
                         variant={"outline"}
-                        className={cn("w-[180px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+                        className={cn("w-[130px] sm:w-[180px] justify-start text-left font-normal", !date && "text-muted-foreground")}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? formatSmartDate(date) : <span>Pick a date</span>}
@@ -73,7 +73,7 @@ export default function DateTimePicker({ date, setDate, timePeriod, setTimePerio
                 </PopoverContent>
             </Popover>
             <Select value={timePeriod} onValueChange={setTimePeriod}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[130px] sm:w-[180px]">
                     <SelectValue placeholder="Time of day" />
                 </SelectTrigger>
                 <SelectContent>

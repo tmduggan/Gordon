@@ -1,17 +1,17 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import MacroDisplay from './nutrition/MacroDisplay';
 import { getFoodMacros } from '../utils/dataUtils';
 import React from 'react';
-import { TooltipProvider } from './ui/tooltip';
 import ScoreDisplay from './ScoreDisplay';
 import NutritionLabel from "./nutrition/NutritionLabel";
+import ExerciseInfoCard from "./exercise/ExerciseInfoCard";
 
 export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
   const label = item.label || item.food_name || item.name;
   
-  const renderSubtext = () => {
+  const renderContent = () => {
     if (itemType === 'food') {
       const macros = getFoodMacros(item);
       return <MacroDisplay macros={macros} format="stacked">{label}</MacroDisplay>;
@@ -29,22 +29,23 @@ export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
     return <strong className="block">{label}</strong>;
   };
   
+  const TooltipContentComponent = itemType === 'food' 
+    ? <NutritionLabel food={item} /> 
+    : <ExerciseInfoCard exercise={item} />;
+
   return (
-    <Tooltip>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <Card
+          className="p-2 flex justify-between items-start cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => onSelect(item)}
-          className="cursor-pointer flex justify-between items-center p-2 hover:bg-muted h-full"
         >
-          <div className="truncate text-sm pr-2 text-left">{renderSubtext()}</div>
+          <div className="flex-grow">{renderContent()}</div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 flex-shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPinToggle(item.id);
-            }}
+            className="h-6 w-6 shrink-0"
+            onClick={(e) => { e.stopPropagation(); onPinToggle(item.id); }}
             title="Unpin item"
           >
             📌
@@ -52,14 +53,7 @@ export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
         </Card>
       </TooltipTrigger>
       <TooltipContent>
-        {itemType === 'food' ? (
-          <NutritionLabel food={item} />
-        ) : (
-          <>
-            <p>Click to add to cart</p>
-            <p className="text-xs text-muted-foreground">{itemType}</p>
-          </>
-        )}
+        {TooltipContentComponent}
       </TooltipContent>
     </Tooltip>
   );
@@ -75,18 +69,15 @@ export function PinnedItemsGrid({
   const title = itemType === 'food' ? 'Foods' : 'Exercises';
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-semibold text-gray-500">Pinned {title}</h3>
-        {itemType === 'exercise' && <ScoreDisplay type="exercise" />}
-      </div>
+    <div className="pb-4">
+      <h3 className="text-sm font-semibold mb-2 text-foreground/80">Pinned {title}</h3>
       <TooltipProvider>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-          {items.map(item => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          {items.map((item) => (
             <PinnedItem
               key={item.id}
               item={item}
-              onSelect={() => onSelectItem(item)}
+              onSelect={onSelectItem}
               onPinToggle={onPinToggleItem}
               itemType={itemType}
             />

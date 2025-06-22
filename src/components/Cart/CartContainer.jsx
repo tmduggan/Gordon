@@ -54,11 +54,11 @@ export default function CartContainer({
           </tbody>
         </table>
       </CardContent>
-      <CardFooter className="flex justify-between items-center">
+      <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>{footerControls}</div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={clearCart}>Clear</Button>
-          <Button onClick={logCart}>Log Items</Button>
+        <div className="flex w-full sm:w-auto gap-2">
+          <Button variant="outline" onClick={clearCart} className="w-1/2 sm:w-auto">Clear</Button>
+          <Button onClick={logCart} className="w-1/2 sm:w-auto">Log Items</Button>
         </div>
       </CardFooter>
     </Card>

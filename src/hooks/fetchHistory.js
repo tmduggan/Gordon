@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
 import useAuthStore from '../store/useAuthStore';
-import { getTimeSegment } from '../utils/timeUtils';
+import { getTimeSegment, isSameDayLocal } from '../utils/timeUtils';
 
 export default function useHistory(logType) {
     const { user } = useAuthStore();
@@ -86,8 +86,8 @@ export default function useHistory(logType) {
 
     const getLogsForToday = useCallback(() => {
         if (logType !== 'food') return [];
-        const todayString = new Date().toDateString();
-        return logs.filter(l => new Date(l.timestamp).toDateString() === todayString);
+        const today = new Date();
+        return logs.filter(l => isSameDayLocal(new Date(l.timestamp), today));
     }, [logs, logType]);
 
     const groupLogsByTimeSegment = useCallback((dayLogs) => {

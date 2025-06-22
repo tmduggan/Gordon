@@ -157,6 +157,22 @@ export function formatSmartDate(date) {
     return date.toLocaleDateString('en-US', options);
 }
 
+/**
+ * Checks if two date objects represent the same day in the user's local timezone.
+ * This is more reliable than toDateString() which can be inconsistent across environments.
+ * @param {Date} date1 The first date.
+ * @param {Date} date2 The second date.
+ * @returns {boolean} True if they are the same day.
+ */
+export function isSameDayLocal(date1, date2) {
+    if (!date1 || !date2) return false;
+    return (
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate()
+    );
+}
+
 export const exerciseTimePeriods = {
   "Morning": 8,   // 8:00 AM
   "Midday": 13,   // 1:00 PM
