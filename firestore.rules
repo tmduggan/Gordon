@@ -24,16 +24,16 @@ service cloud.firestore {
     // and nothing outside of it. This single rule covers the user's profile data
     // and all their subcollections (foodLog, workoutLog, etc.).
     match /users/{userId}/{documents=**} {
-      allow read, write: if isSignedIn() && isOwner(userId);
+      allow read, write: if isSignedIn() && isOwner(userId) && isDocumentSizeSafe();
     }
 
-    // Public libraries can be read by anyone, but not written to by clients.
+    // Public libraries can be read by any signed-in user.
     match /exerciseLibrary/{docId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if false;
     }
     match /foods/{docId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if false;
     }
     
