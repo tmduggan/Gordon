@@ -31,7 +31,7 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
         </td>
         <MacroDisplay macros={scaledMacros} format="table-row-cells" />
         <td className="p-2 text-center align-middle">
-          <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.label, item.units)} title="Remove item">
+          <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)} title="Remove item">
             <XCircle className="h-5 w-5 text-red-500" />
           </Button>
         </td>
