@@ -3,50 +3,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user owns the document
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Helper function to limit document size to prevent abuse (e.g., < 100KB)
-    function isDocumentSizeSafe() {
-        return request.resource.size < 100 * 1024;
+    // Users can read/write their own user document.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // --- Production Rules ---
-
-    // A user can read and write anything within their own document space (`/users/{userId}`),
-    // and nothing outside of it. This single rule covers the user's profile data
-    // and all their subcollections (foodLog, workoutLog, etc.).
-    match /users/{userId}/{documents=**} {
-      allow read, write: if isSignedIn() && isOwner(userId) && isDocumentSizeSafe();
-    }
-
-    // Public libraries can be read by any signed-in user.
-    match /exerciseLibrary/{docId} {
-      allow read: if isSignedIn();
-      allow write: if false;
-    }
-    match /foods/{docId} {
-      allow read: if isSignedIn();
-      allow write: if false;
+    // Users can manage their own log subcollections.
+    match /users/{userId}/{collection}/{logId} {
+      allow read, write, delete: if isOwner(userId);
     }
     
-    // --- Legacy collections are now all disabled ---
-
-    match /foodLog/{logId} {
-      allow read, write: if false;
+    // Public libraries are readable by any authenticated user.
+    match /exerciseLibrary/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false; 
     }
-    match /workoutLog/{logId} {
-      allow read, write: if false;
-    }
-    match /userProfile/{userId} {
-      allow read, write: if false;
+    match /foods/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
     }
   }
 }

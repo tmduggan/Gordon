@@ -100,17 +100,12 @@ export default function useHistory(logType) {
         }, { Morning: [], Midday: [], Evening: [] });
     }, [logType]);
 
-
-    const foodLogExports = {
-        getLogsForToday,
-        groupLogsByTimeSegment,
-    };
-
     return { 
         logs, 
         loading, 
         deleteLog, 
         updateLog, 
-        ...(logType === 'food' ? foodLogExports : {}) 
+        getLogsForToday,
+        groupLogsByTimeSegment
     };
 } 

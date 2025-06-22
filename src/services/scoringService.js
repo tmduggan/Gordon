@@ -31,6 +31,45 @@ const isSameWeek = (d1, d2) => {
     return start1.getTime() === start2.getTime();
 };
 
+// Based on gameifyReadme.md
+// This service will contain all logic related to calculating scores for workouts.
+
+const multipliers = {
+  // A simple multiplier for strength exercises.
+  // We can later differentiate between compound, isolation, bodyweight, etc.
+  strength: 1, 
+  // Points per minute for cardio sessions.
+  cardio: 1.5   
+};
+
+/**
+ * Calculates a score for a single workout log.
+ * @param {object} logData - The data for this specific log.
+ * @param {number} [logData.weight] - Weight used for the set.
+ * @param {number} [logData.reps] - Reps performed for the set.
+ * @param {number} [logData.duration] - Duration of the cardio in minutes.
+ * @returns {number} The calculated score, rounded to the nearest integer.
+ */
+export const calculateEffortScore = (logData) => {
+  const { weight, reps, duration } = logData;
+
+  // A workout is considered "strength" if it has reps.
+  const isStrength = !!reps;
+
+  if (isStrength) {
+    // Basic score: weight * reps. Using 1 for bodyweight exercises (weight=0 or null).
+    const baseScore = (weight || 1) * reps;
+    return Math.round(baseScore * multipliers.strength);
+  }
+
+  if (duration) {
+    // Score for cardio is based on duration.
+    return Math.round(duration * multipliers.cardio);
+  }
+
+  // Return 0 if the log is invalid.
+  return 0;
+};
 
 /**
  * Calculates a numerical score for a given workout log.

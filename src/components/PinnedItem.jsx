@@ -5,6 +5,8 @@ import MacroDisplay from './nutrition/MacroDisplay';
 import { getFoodMacros } from '../utils/dataUtils';
 import React from 'react';
 import { TooltipProvider } from './ui/tooltip';
+import ScoreDisplay from './ScoreDisplay';
+import NutritionLabel from "./nutrition/NutritionLabel";
 
 export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
   const label = item.label || item.food_name || item.name;
@@ -50,8 +52,14 @@ export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
         </Card>
       </TooltipTrigger>
       <TooltipContent>
-          <p>Click to add to cart</p>
-          <p className="text-xs text-muted-foreground">{itemType}</p>
+        {itemType === 'food' ? (
+          <NutritionLabel food={item} />
+        ) : (
+          <>
+            <p>Click to add to cart</p>
+            <p className="text-xs text-muted-foreground">{itemType}</p>
+          </>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -68,7 +76,10 @@ export function PinnedItemsGrid({
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-500 mb-2">Pinned {title}</h3>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-semibold text-gray-500">Pinned {title}</h3>
+        {itemType === 'exercise' && <ScoreDisplay type="exercise" />}
+      </div>
       <TooltipProvider>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
           {items.map(item => (
@@ -80,13 +91,6 @@ export function PinnedItemsGrid({
               itemType={itemType}
             />
           ))}
-          <Button
-            onClick={onAddItem}
-            title={`Add New ${title}`}
-            className="bg-green-500 hover:bg-green-600 text-white flex items-center justify-center w-full h-full min-h-[60px] text-3xl"
-          >
-            +
-          </Button>
         </div>
       </TooltipProvider>
     </div>

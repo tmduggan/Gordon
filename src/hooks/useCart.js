@@ -1,61 +1,70 @@
-import { useState, useCallback } from 'react';
+import { create } from 'zustand';
 
-export default function useCart(type) {
-    const [cart, setCart] = useState([]);
+const useCartStore = create((set) => ({
+  carts: {
+    food: [],
+    exercise: [],
+  },
 
-    const addToCart = useCallback((item, quantity = 1) => {
-        setCart(currentCart => {
-            if (type === 'food') {
-                const idx = currentCart.findIndex(cartItem => cartItem.label === item.label && cartItem.units === item.units);
-                if (idx !== -1) {
-                    const updated = [...currentCart];
-                    updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + quantity };
-                    return updated;
-                } else {
-                    return [...currentCart, { ...item, quantity }];
-                }
-            } else { // exercise
-                const idx = currentCart.findIndex(cartItem => cartItem.id === item.id);
-                if (idx === -1) {
-                    return [...currentCart, item];
-                }
-                return currentCart; // Don't add duplicates
-            }
-        });
-    }, [type]);
+  addToCart: (type, item, quantity = 1) => set((state) => {
+    const newCarts = { ...state.carts };
+    const cart = [...newCarts[type]];
+    const existingItemIndex = cart.findIndex((i) => i.id === item.id);
 
-    const removeFromCart = useCallback((identifier, units) => {
-        setCart(currentCart => {
-            if (type === 'food') {
-                return currentCart.filter(item => !(item.label === identifier && item.units === units));
-            } else { // exercise
-                return currentCart.filter(item => item.id !== identifier);
-            }
-        });
-    }, [type]);
+    if (existingItemIndex > -1) {
+      cart[existingItemIndex].quantity += quantity;
+    } else {
+      cart.push({ ...item, quantity });
+    }
+    newCarts[type] = cart;
+    return { carts: newCarts };
+  }),
 
-    const updateCartItem = useCallback((identifier, currentUnits, newValues) => {
-        setCart(currentCart => currentCart.map(item => {
-            if (type === 'food') {
-                return item.label === identifier && item.units === currentUnits
-                    ? { ...item, ...newValues }
-                    : item;
-            }
-            // No update for exercise items in this simplified version
-            return item;
-        }));
-    }, [type]);
+  removeFromCart: (type, itemId) => set((state) => {
+    const newCarts = { ...state.carts };
+    newCarts[type] = newCarts[type].filter((item) => item.id !== itemId);
+    return { carts: newCarts };
+  }),
 
-    const clearCart = useCallback(() => {
-        setCart([]);
-    }, []);
+  updateCartItem: (type, itemId, newQuantity) => set((state) => {
+    const newCarts = { ...state.carts };
+    const cart = [...newCarts[type]];
+    const itemIndex = cart.findIndex((i) => i.id === itemId);
 
-    return {
-        cart,
-        setCart,
-        addToCart,
-        removeFromCart,
-        updateCartItem,
-        clearCart,
-    };
-} 
+    if (itemIndex > -1) {
+      if (newQuantity <= 0) {
+        cart.splice(itemIndex, 1); // Remove if quantity is 0 or less
+      } else {
+        cart[itemIndex].quantity = newQuantity;
+      }
+    }
+    newCarts[type] = cart;
+    return { carts: newCarts };
+  }),
+
+  clearCart: (type) => set((state) => {
+    const newCarts = { ...state.carts };
+    newCarts[type] = [];
+    return { carts: newCarts };
+  }),
+}));
+
+// Custom hook that provides a simplified interface for a specific cart type
+const useCart = (type) => {
+  const { carts, ...actions } = useCartStore();
+  
+  // Bind the actions to the specific cart type
+  const boundActions = {
+    addToCart: (item, quantity) => actions.addToCart(type, item, quantity),
+    removeFromCart: (itemId) => actions.removeFromCart(type, itemId),
+    updateCartItem: (itemId, newQuantity) => actions.updateCartItem(type, itemId, newQuantity),
+    clearCart: () => actions.clearCart(type),
+  };
+
+  return {
+    cart: carts[type] || [],
+    ...boundActions,
+  };
+};
+
+export default useCart; 

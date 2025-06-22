@@ -18,6 +18,7 @@ export default function CartContainer({
   footerControls,
   logCart,
   clearCart,
+  icon,
   ...rest
 }) {
   if (items.length === 0) {
@@ -27,8 +28,16 @@ export default function CartContainer({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>Review items before logging.</CardDescription>
+        {icon ? (
+          <div className="flex items-center justify-between">
+            <span className="text-4xl">{icon}</span>
+          </div>
+        ) : (
+          <>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>Review items before logging.</CardDescription>
+          </>
+        )}
       </CardHeader>
       <CardContent>
         <table className="w-full text-sm">

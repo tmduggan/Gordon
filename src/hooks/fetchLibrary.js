@@ -145,27 +145,22 @@ export default function useLibrary(libraryType, options = {}) {
     return exerciseForCart;
   }, [libraryType, options]);
 
-  // Return different exports based on library type
-  if (libraryType === 'exercise') {
-    return {
-      localExercises: items,
-      exerciseQuery: query,
-      setExerciseQuery: setQuery,
-      exerciseResults: results,
-      loading,
-      showDropdown,
-      setShowDropdown,
-      handleSelectExercise,
-    };
-  } else if (libraryType === 'food') {
-    return {
-      foods: items,
-      apiResults,
-      loading,
-      searchNutritionix,
-      fetchAndSave: fetchAndSaveFood,
-    };
-  }
-
-  return { loading: false };
+  // Return consistent structure
+  return {
+    items,
+    loading,
+    query,
+    setQuery,
+    results,
+    showDropdown,
+    setShowDropdown,
+    
+    // Food-specific
+    apiResults,
+    searchNutritionix,
+    fetchAndSave: fetchAndSaveFood,
+    
+    // Exercise-specific
+    handleSelectExercise,
+  };
 } 

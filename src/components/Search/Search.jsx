@@ -51,7 +51,7 @@ export default function Search({
     type,
     searchQuery,
     setSearchQuery,
-    searchResults,
+    searchResults = [],
     handleApiSearch,
     handleSelect,
     isLoading,

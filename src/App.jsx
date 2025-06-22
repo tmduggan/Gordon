@@ -13,6 +13,7 @@ import ProfileMenu from "./ProfileMenu";
 import MainPage from "./pages/MainPage";
 import ExerciseLibraryPage from "./pages/ExerciseLibraryPage";
 import { Button } from "./components/ui/button";
+import { Toaster } from "./components/ui/toaster";
 
 // Component Imports
 import DailyGoalsModal from './DailyGoalsModal';
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="/exercise-library" element={<ExerciseLibraryPage />} />
           </Routes>
         </main>
+        <Toaster />
       </div>
     </Router>
   );

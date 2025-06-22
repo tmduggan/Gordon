@@ -109,33 +109,65 @@ export const formatDateForDisplay = (dateString) => {
 export const groupAndEnrichLogs = (logs, exercises) => {
     if (!logs || !exercises || !logs.length || !exercises.length) return {};
 
-    const enriched = logs.map(log => {
+    return logs.reduce((acc, log) => {
+        const dateKey = new Date(log.timestamp).toDateString();
+        if (!acc[dateKey]) {
+            acc[dateKey] = [];
+        }
+        
         const exerciseDetails = exercises.find(ex => ex.id === log.exerciseId);
-        return {
+        const enrichedLog = {
             ...log,
             exerciseName: exerciseDetails?.name || 'Unknown Exercise',
             category: exerciseDetails?.category || 'Unknown',
-            score: log.score || 0,
         };
-    });
 
-    return enriched.reduce((acc, log) => {
-        const logDate = new Date(log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp);
-        const dateKey = logDate.toDateString();
-
-        if (!acc[dateKey]) {
-            acc[dateKey] = { logs: [], totalDuration: 0, segments: {} };
-        }
-        acc[dateKey].logs.push(log);
-        acc[dateKey].totalDuration += log.duration || 0;
-        
-        const segment = getTimeSegment(logDate);
-        if (!acc[dateKey].segments[segment]) {
-            acc[dateKey].segments[segment] = { logs: [], totalDuration: 0 };
-        }
-        acc[dateKey].segments[segment].logs.push(log);
-        acc[dateKey].segments[segment].totalDuration += log.duration || 0;
-        
+        acc[dateKey].push(enrichedLog);
         return acc;
     }, {});
+};
+
+/**
+ * Formats a date object into a readable string with relative terms like "Today" and "Yesterday".
+ * - If the date is today, returns "Today".
+ * - If the date is yesterday, returns "Yesterday".
+ * - If the date is in the current year, returns "Month Day" (e.g., "June 22").
+ * - Otherwise, returns "Month Day, Year" (e.g., "June 22, 2024").
+ * @param {Date} date - The date to format.
+ * @returns {string} The formatted date string.
+ */
+export function formatSmartDate(date) {
+    if (!(date instanceof Date) || isNaN(date)) {
+      return 'Invalid Date';
+    }
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+    const isCurrentYear = date.getFullYear() === today.getFullYear();
+    const options = { month: 'long', day: 'numeric' };
+    if (!isCurrentYear) {
+        options.year = 'numeric';
+    }
+
+    return date.toLocaleDateString('en-US', options);
+}
+
+export const exerciseTimePeriods = {
+  "Morning": 8,   // 8:00 AM
+  "Midday": 13,   // 1:00 PM
+  "Evening": 20,  // 8:00 PM
+};
+
+export const foodTimePeriods = {
+    "Early Morning": 5, // 5:00 AM
+    "Breakfast": 8,     // 8:00 AM
+    "Brunch": 10,       // 10:00 AM
+    "Lunch": 13,        // 1:00 PM
+    "Supper": 17,       // 5:00 PM
+    "Dinner": 20,       // 8:00 PM
 }; 

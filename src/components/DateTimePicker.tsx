@@ -1,107 +1,73 @@
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatSmartDate, exerciseTimePeriods, foodTimePeriods } from '../utils/timeUtils';
 
-// This hook is now co-located with the component that uses it.
-export function useDateTimePicker() {
-    const [cartDate, setCartDate] = useState(() => new Date().toISOString().slice(0, 10));
-    const [cartHour12, setCartHour12] = useState(() => {
-        const currentHour = new Date().getHours();
-        const hourIn12 = currentHour % 12 || 12; // convert 0 to 12
-        return hourIn12.toString();
-    });
-    const [cartMinute, setCartMinute] = useState(() => new Date().getMinutes().toString().padStart(2, '0'));
-    const [cartAmPm, setCartAmPm] = useState(() => new Date().getHours() >= 12 ? 'PM' : 'AM');
+// Hook to manage state for the new time period picker
+export function useDateTimePicker(type: 'food' | 'exercise') {
+    const [date, setDate] = React.useState<Date | undefined>(new Date());
+    const timePeriods = type === 'food' ? foodTimePeriods : exerciseTimePeriods;
+    const [timePeriod, setTimePeriod] = React.useState(Object.keys(timePeriods)[0]);
 
-    const getCartData = () => ({
-        cartDate,
-        cartHour12,
-        cartMinute,
-        cartAmPm,
-    });
-
-    return {
-        cartDate,
-        setCartDate,
-        cartHour12,
-        setCartHour12,
-        cartMinute,
-        setCartMinute,
-        cartAmPm,
-        setCartAmPm,
-        getCartData
+    // Generates a full Date object for logging
+    const getLogTimestamp = () => {
+        const logDate = date ? new Date(date) : new Date();
+        const hour = timePeriods[timePeriod as keyof typeof timePeriods];
+        logDate.setHours(hour, 0, 0, 0); // Set hour, reset minutes/seconds
+        return logDate;
     };
+
+    return { date, setDate, timePeriod, setTimePeriod, getLogTimestamp, timePeriods };
 }
 
+// Props interface for the new component
 interface DateTimePickerProps {
-    date: string;
-    setDate: (date: string) => void;
-    hour: string;
-    setHour: (hour: string) => void;
-    minute: string;
-    setMinute: (minute: string) => void;
-    ampm?: 'AM' | 'PM';
-    setAmpm?: (ampm: 'AM' | 'PM') => void;
+    date: Date | undefined;
+    setDate: (date: Date | undefined) => void;
+    timePeriod: string;
+    setTimePeriod: (period: string) => void;
+    timePeriods: Record<string, number>;
 }
 
-export default function DateTimePicker({
-    date,
-    setDate,
-    hour,
-    setHour,
-    minute,
-    setMinute,
-    ampm,
-    setAmpm,
-}: DateTimePickerProps) {
-    // For food page that uses 12-hour format with AM/PM
-    if (ampm !== undefined && setAmpm) {
-        return (
-            <div className="flex items-center gap-2">
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="p-2 border rounded-md" />
-                <div className="flex items-center gap-1">
-                    <Input type="number" value={hour} onChange={e => setHour(e.target.value)} className="w-14 p-2 border rounded-md" min="1" max="12" />
-                    <span>:</span>
-                    <Input type="number" value={minute} onChange={e => setMinute(e.target.value)} className="w-14 p-2 border rounded-md" min="0" max="59" />
-                    <Select value={ampm} onValueChange={setAmpm}>
-                        <SelectTrigger className="w-[80px]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="AM">AM</SelectItem>
-                            <SelectItem value="PM">PM</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-        );
-    }
-
-    // For exercise page that uses 24-hour format
+// The new DateTimePicker component
+export default function DateTimePicker({ date, setDate, timePeriod, setTimePeriod, timePeriods }: DateTimePickerProps) {
     return (
-        <div className="flex flex-col sm:flex-row gap-2 w-full justify-between">
-            <div>
-                <label className="text-sm mr-2">Date:</label>
-                <Input
-                    type="date"
-                    className="border rounded px-2 py-1"
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                />
-            </div>
-            <div>
-                <label className="text-sm mr-2">Time:</label>
-                <Input
-                    type="time"
-                    className="border rounded px-2 py-1"
-                    value={`${hour}:${minute}`}
-                    onChange={e => {
-                        const [h, m] = e.target.value.split(':');
-                        setHour(h);
-                        setMinute(m);
-                    }}
-                />
-            </div>
+        <div className="flex items-center gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn("w-[180px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? formatSmartDate(date) : <span>Pick a date</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
+            <Select value={timePeriod} onValueChange={setTimePeriod}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Time of day" />
+                </SelectTrigger>
+                <SelectContent>
+                    {Object.keys(timePeriods).map(period => (
+                        <SelectItem key={period} value={period}>{period}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
         </div>
     );
 } 

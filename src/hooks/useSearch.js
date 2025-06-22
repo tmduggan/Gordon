@@ -15,13 +15,13 @@ export default function useSearch(type, library) {
         }
 
         let localResults = [];
-        if (type === 'food' && library.foods) {
-            localResults = library.foods.filter(food =>
+        if (type === 'food' && library.items) {
+            localResults = library.items.filter(food =>
                 (food.label || food.food_name).toLowerCase().includes(searchQuery.toLowerCase())
             );
-        } else if (type === 'exercise' && library.localExercises) {
+        } else if (type === 'exercise' && library.items) {
             const searchTerm = searchQuery.toLowerCase();
-            localResults = library.localExercises.filter(exercise =>
+            localResults = library.items.filter(exercise =>
                 exercise.name.toLowerCase().includes(searchTerm) ||
                 exercise.target.toLowerCase().includes(searchTerm) ||
                 (exercise.secondaryMuscles && exercise.secondaryMuscles.some(m => m.toLowerCase().includes(searchTerm)))
@@ -31,7 +31,7 @@ export default function useSearch(type, library) {
         setSearchResults(localResults);
         setShowDropdown(localResults.length > 0);
 
-    }, [searchQuery, library.foods, library.localExercises, type]);
+    }, [searchQuery, library.items, type]);
 
     const handleApiSearch = useCallback(async () => {
         if (type !== 'food' || !searchQuery) return;
