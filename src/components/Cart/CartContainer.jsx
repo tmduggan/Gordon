@@ -10,6 +10,38 @@ import {
 import { Button } from "@/components/ui/button";
 import CartRow from './CartRow';
 import CartHead from './CartHead';
+import { getFoodMacros } from '../../utils/dataUtils';
+
+const CartMacroSummary = ({ items }) => {
+    const totals = items.reduce((acc, item) => {
+        const macros = getFoodMacros(item);
+        const quantity = item.quantity || 1;
+        acc.calories += (macros.calories || 0) * quantity;
+        acc.fat += (macros.fat || 0) * quantity;
+        acc.carbs += (macros.carbs || 0) * quantity;
+        acc.protein += (macros.protein || 0) * quantity;
+        return acc;
+    }, { calories: 0, fat: 0, carbs: 0, protein: 0 });
+
+    const MacroPill = ({ label, value, unit, className }) => (
+        <div className={`text-center rounded-full px-3 py-1 text-xs font-medium ${className}`}>
+            <div>{label}</div>
+            <div className="font-bold">{value}{unit}</div>
+        </div>
+    );
+
+    return (
+        <div className="p-4 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-semibold mb-2 text-center">Cart Totals</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <MacroPill label="Calories" value={Math.round(totals.calories)} unit="" className="bg-orange-100 text-orange-800" />
+                <MacroPill label="Protein" value={Math.round(totals.protein)} unit="g" className="bg-sky-100 text-sky-800" />
+                <MacroPill label="Carbs" value={Math.round(totals.carbs)} unit="g" className="bg-lime-100 text-lime-800" />
+                <MacroPill label="Fat" value={Math.round(totals.fat)} unit="g" className="bg-amber-100 text-amber-800" />
+            </div>
+        </div>
+    );
+};
 
 export default function CartContainer({
   title,
@@ -54,7 +86,8 @@ export default function CartContainer({
           </tbody>
         </table>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      {type === 'food' && <CartMacroSummary items={items} />}
+      <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4">
         <div>{footerControls}</div>
         <div className="flex w-full sm:w-auto gap-2">
           <Button variant="outline" onClick={clearCart} className="w-1/2 sm:w-auto">Clear</Button>

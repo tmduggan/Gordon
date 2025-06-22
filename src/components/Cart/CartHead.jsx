@@ -4,41 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const FoodCartHead = () => (
   <thead>
     <tr className="border-b">
-      <th className="text-left py-2 px-1 font-semibold">Food</th>
-      <th className="text-left py-2 px-1 font-semibold">Qty</th>
-      <th className="text-left py-2 px-1 font-semibold">Unit</th>
-      <TooltipProvider>
-        <th className="text-right py-2 px-1 font-semibold">
-          <Tooltip>
-            <TooltipTrigger asChild><span>🔥</span></TooltipTrigger>
-            <TooltipContent><p>Calories</p></TooltipContent>
-          </Tooltip>
-        </th>
-        <th className="text-right py-2 px-1 font-semibold">
-          <Tooltip>
-            <TooltipTrigger asChild><span>🥑</span></TooltipTrigger>
-            <TooltipContent><p>Fat</p></TooltipContent>
-          </Tooltip>
-        </th>
-        <th className="text-right py-2 px-1 font-semibold">
-          <Tooltip>
-            <TooltipTrigger asChild><span>🍞</span></TooltipTrigger>
-            <TooltipContent><p>Carbs</p></TooltipContent>
-          </Tooltip>
-        </th>
-        <th className="text-right py-2 px-1 font-semibold">
-          <Tooltip>
-            <TooltipTrigger asChild><span>🍗</span></TooltipTrigger>
-            <TooltipContent><p>Protein</p></TooltipContent>
-          </Tooltip>
-        </th>
-        <th className="text-right py-2 px-1 font-semibold">
-          <Tooltip>
-            <TooltipTrigger asChild><span>🌱</span></TooltipTrigger>
-            <TooltipContent><p>Fiber</p></TooltipContent>
-          </Tooltip>
-        </th>
-      </TooltipProvider>
+      <th className="text-left py-2 px-1 font-semibold" colSpan="3">Food</th>
       <th className="py-2 px-1"></th>
     </tr>
   </thead>
