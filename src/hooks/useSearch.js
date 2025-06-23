@@ -1,69 +1,79 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { fetchInstantResults as fetchNutritionixSearch } from '../api/nutritionixAPI';
 
 export default function useSearch(type, library) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
+    const [targetFilter, setTargetFilter] = useState('');
+    const [equipmentFilter, setEquipmentFilter] = useState('');
 
-    // Effect for live searching
     useEffect(() => {
-        if (searchQuery.trim() === '') {
+        // This effect handles local library searching whenever the query or filters change.
+        if (!searchQuery && type === 'food') {
             setSearchResults([]);
-            setShowDropdown(false);
             return;
         }
 
-        let localResults = [];
-        if (type === 'food' && library.items) {
-            localResults = library.items.filter(food =>
-                (food.label || food.food_name).toLowerCase().includes(searchQuery.toLowerCase())
+        if (type === 'exercise') {
+            let results = library.items;
+            if (targetFilter) {
+                results = results.filter(item => item.target === targetFilter);
+            }
+            if (equipmentFilter) {
+                results = results.filter(item => item.equipment === equipmentFilter);
+            }
+            if (searchQuery) {
+                results = results.filter(item =>
+                    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+            setSearchResults(results);
+        } else { // Food search
+            const results = library.items.filter(item =>
+                item.label.toLowerCase().includes(searchQuery.toLowerCase())
             );
-        } else if (type === 'exercise' && library.items) {
-            const searchTerm = searchQuery.toLowerCase();
-            localResults = library.items.filter(exercise =>
-                exercise.name.toLowerCase().includes(searchTerm) ||
-                exercise.target.toLowerCase().includes(searchTerm) ||
-                (exercise.secondaryMuscles && exercise.secondaryMuscles.some(m => m.toLowerCase().includes(searchTerm)))
-            );
+            setSearchResults(results);
         }
-        
-        setSearchResults(localResults);
-        setShowDropdown(localResults.length > 0);
+    }, [searchQuery, library.items, type, targetFilter, equipmentFilter]);
 
-    }, [searchQuery, library.items, type]);
-
-    const handleApiSearch = useCallback(async () => {
-        if (type !== 'food' || !searchQuery) return;
+    const handleApiSearch = async () => {
+        if (searchQuery.trim() === '' || type !== 'food') return;
         setSearchLoading(true);
-        const apiResults = await library.searchNutritionix(searchQuery) || [];
-        
-        setSearchResults(prevResults => {
-            const combined = [...prevResults];
-            apiResults.forEach(apiFood => {
-                if (!combined.some(localFood => localFood.label === apiFood.food_name)) {
-                    combined.push({ ...apiFood, isPreview: true });
-                }
-            });
-            return combined;
-        });
-        setShowDropdown(true);
-        setSearchLoading(false);
-    }, [searchQuery, library, type]);
+        try {
+            const nutritionixResults = await fetchNutritionixSearch(searchQuery);
+            setSearchResults(nutritionixResults);
+        } catch (error) {
+            console.error("Error fetching from Nutritionix:", error);
+            setSearchResults([]);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
-    const clearSearch = useCallback(() => {
+    const clearSearch = () => {
         setSearchQuery('');
         setSearchResults([]);
-        setShowDropdown(false);
-    }, []);
+        if (type === 'exercise') {
+            setTargetFilter('');
+            setEquipmentFilter('');
+        }
+    };
 
     return {
         searchQuery,
         setSearchQuery,
         searchResults,
         searchLoading,
-        showDropdown,
         handleApiSearch,
         clearSearch,
+        filters: {
+            target: targetFilter,
+            equipment: equipmentFilter
+        },
+        setFilters: {
+            target: setTargetFilter,
+            equipment: setEquipmentFilter
+        },
     };
 } 

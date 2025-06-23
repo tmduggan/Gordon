@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { calculateWorkoutScore } from '../services/scoringService';
 
-export default function useScoreProgress(logs, exercises, cartData = {}) {
+export default function useScoreProgress(logs, exercises, cartData = {}, userProfile = null) {
   const [expectedScores, setExpectedScores] = useState({});
 
   // Calculate daily score from logs
@@ -74,12 +74,12 @@ export default function useScoreProgress(logs, exercises, cartData = {}) {
         duration: isDurationBased ? validSet.duration : null,
       };
       
-      const score = calculateWorkoutScore(workoutToScore, logs, exerciseDetails);
+      const score = calculateWorkoutScore(workoutToScore, logs, exerciseDetails, userProfile);
       newScores[exerciseInCart.id] = score;
     }
 
     setExpectedScores(newScores);
-  }, [cartData.currentLogData, cartData.exerciseCart, exercises, logs, cartData.datePart, cartData.timePart]);
+  }, [cartData.currentLogData, cartData.exerciseCart, exercises, logs, cartData.datePart, cartData.timePart, userProfile]);
 
   return {
     dailyScore,

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import CartRow from './CartRow';
 import CartHead from './CartHead';
 import { getFoodMacros } from '../../utils/dataUtils';
+import { calculateWorkoutScore } from '../../services/scoringService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {
@@ -43,6 +44,28 @@ const CartMacroSummary = ({ items }) => {
     );
 };
 
+const CartExerciseSummary = ({ items, logData, history, library, userProfile }) => {
+    const totalScore = items.reduce((acc, item) => {
+        const workoutData = logData[item.id] || {};
+        const exerciseDetails = library.find(e => e.id === item.id) || {};
+        
+        const score = calculateWorkoutScore(
+            { ...workoutData, timestamp: new Date() }, // Pass a dummy timestamp
+            history,
+            exerciseDetails,
+            userProfile
+        );
+        return acc + score;
+    }, 0);
+
+    return (
+        <div className="flex items-center gap-2">
+            <span className="font-semibold">Total XP:</span>
+            <span className="text-lg font-bold text-primary">{totalScore}</span>
+        </div>
+    );
+};
+
 export default function CartContainer({
   title,
   type,
@@ -51,6 +74,10 @@ export default function CartContainer({
   logCart,
   clearCart,
   icon,
+  logData,
+  userWorkoutHistory,
+  exerciseLibrary,
+  userProfile,
   ...rest
 }) {
   if (items.length === 0) {
@@ -60,18 +87,24 @@ export default function CartContainer({
   return (
     <Card>
       <CardHeader>
-        {icon ? (
-          <div className="flex items-center justify-between">
-            <span className="text-4xl">{icon}</span>
-          </div>
-        ) : (
-          <>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>Review items before logging.</CardDescription>
-          </>
-        )}
+        <div className="flex items-center justify-between">
+            {icon ? (
+                <span className="text-4xl">{icon}</span>
+            ) : (
+                <CardTitle>{title}</CardTitle>
+            )}
+            {type === 'exercise' && (
+                <CartExerciseSummary
+                    items={items}
+                    logData={logData}
+                    history={userWorkoutHistory}
+                    library={exerciseLibrary}
+                    userProfile={userProfile}
+                />
+            )}
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <table className="w-full text-sm">
           <CartHead type={type} />
           <tbody className="divide-y">

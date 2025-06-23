@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import MacroDisplay from '../nutrition/MacroDisplay';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X } from 'lucide-react';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     const foodName = item.food_name || item.label;
@@ -47,6 +49,45 @@ const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
     );
 };
 
+const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterChange }) => (
+    <div className="flex flex-col sm:flex-row gap-2 my-2">
+        <FilterSelect
+            placeholder="Filter by Target"
+            value={filters.target}
+            options={options.targets}
+            onValueChange={(value) => onFilterChange('target', value)}
+            onClear={() => onFilterChange('target', '')}
+        />
+        <FilterSelect
+            placeholder="Filter by Equipment"
+            value={filters.equipment}
+            options={options.equipments}
+            onValueChange={(value) => onFilterChange('equipment', value)}
+            onClear={() => onFilterChange('equipment', '')}
+        />
+    </div>
+);
+
+const FilterSelect = ({ placeholder, value, options = [], onValueChange, onClear }) => (
+    <div className="flex items-center gap-1 w-full">
+        <Select value={value} onValueChange={onValueChange}>
+            <SelectTrigger>
+                <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+                {options.map(option => (
+                    <SelectItem key={option} value={option} className="capitalize">{option}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+        {value && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClear} title={`Clear ${placeholder}`}>
+                <X className="h-4 w-4" />
+            </Button>
+        )}
+    </div>
+);
+
 export default function Search({
     type,
     searchQuery,
@@ -59,6 +100,9 @@ export default function Search({
     togglePin,
     getFoodMacros,
     placeholder,
+    filters,
+    setFilters,
+    filterOptions
 }) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -66,32 +110,44 @@ export default function Search({
         setIsOpen(searchQuery.length > 0 && searchResults.length > 0);
     }, [searchResults, searchQuery]);
 
+    const handleFilterChange = (filterType, value) => {
+        setFilters[filterType](value);
+        if (value) {
+            setSearchQuery(''); // Clear text query when a filter is applied
+        }
+    };
+
     const ResultComponent = type === 'food' ? FoodResult : ExerciseResult;
 
     return (
         <div className="relative">
             <Popover open={isOpen} onOpenChange={setIsOpen}>
                 <PopoverAnchor asChild>
-                    <div className="flex gap-2">
+                    <div className="flex items-center space-x-2">
                         <Input
+                            type="text"
                             placeholder={placeholder}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="flex-1"
-                            autoComplete="off"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !isLoading && searchQuery && type === 'food') {
-                                    handleApiSearch();
-                                }
-                            }}
+                            onFocus={() => setIsOpen(true)}
+                            className="flex-grow"
                         />
                         {type === 'food' && (
-                            <Button disabled={isLoading || !searchQuery} onClick={handleApiSearch} type="button">
-                                {isLoading ? 'Searching...' : 'Search'}
+                            <Button onClick={handleApiSearch} disabled={isLoading}>
+                                {isLoading ? '...' : 'Search'}
                             </Button>
                         )}
                     </div>
                 </PopoverAnchor>
+                
+                {type === 'exercise' && (
+                    <ExerciseFilterControls
+                        options={filterOptions}
+                        filters={filters}
+                        setFilters={setFilters}
+                        onFilterChange={handleFilterChange}
+                    />
+                )}
 
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <div>

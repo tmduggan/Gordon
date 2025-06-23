@@ -6,11 +6,11 @@ import useCart from '../hooks/useCart';
 import useHistory from '../hooks/fetchHistory';
 
 export default function ScoreDisplay({ type, className = "" }) {
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
   const { logs } = useHistory(type);
   const library = useLibrary(type);
   const cart = useCart(type);
-  const { dailyScore } = useScoreProgress(logs, library.items, cart);
+  const { dailyScore } = useScoreProgress(logs, library.items, cart, userProfile);
   
   return (
     <div className={`text-right ${className}`}>

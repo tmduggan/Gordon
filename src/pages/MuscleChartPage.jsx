@@ -3,16 +3,14 @@ import { muscleMapping } from '../utils/muscleMapping'; // Import the new mappin
 import useLibrary from '../hooks/fetchLibrary'; // Custom hook to fetch exercise library
 import useHistory from '../hooks/fetchHistory'; // Custom hook to fetch workout history
 import MuscleMap from '../components/exercise/MuscleMap';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 // Generate a definitive list of all unique SVG IDs from our mapping
 const ALL_SVG_MUSCLE_IDS = [...new Set(Object.values(muscleMapping).flat())];
 
 export default function MuscleChartPage() {
-  const { data: exerciseLibrary, loading: libraryLoading } = useLibrary();
-  const { data: history, loading: historyLoading } = useHistory();
-  const [view, setView] = useState('front');
+  const { items: exerciseLibrary, loading: libraryLoading } = useLibrary('exercise');
+  const { logs: history, loading: historyLoading } = useHistory('exercise');
 
   const { normalizedScores, rawScores } = useMemo(() => {
     const raw = ALL_SVG_MUSCLE_IDS.reduce((acc, id) => {
@@ -30,15 +28,15 @@ export default function MuscleChartPage() {
         const details = exerciseDetailsMap[log.exerciseId];
         if (!details) return;
 
-        const volume = (log.weight || 0) * (log.reps || 0);
-        if (volume === 0) return;
+        const score = log.score || 0;
+        if (score === 0) return;
 
         const processMuscle = (muscleName) => {
           const cleanedName = muscleName.toLowerCase().trim();
           const svgIds = muscleMapping[cleanedName];
           if (svgIds) {
             svgIds.forEach(id => {
-              raw[id] = (raw[id] || 0) + volume;
+              raw[id] = (raw[id] || 0) + score;
             });
           }
         };
@@ -71,21 +69,11 @@ export default function MuscleChartPage() {
       
       <Card>
         <CardContent className="p-4">
-          <div className="flex justify-center gap-2 mb-4">
-            <Button onClick={() => setView('front')} variant={view === 'front' ? 'default' : 'outline'}>
-              Front
-            </Button>
-            <Button onClick={() => setView('back')} variant={view === 'back' ? 'default' : 'outline'}>
-              Back
-            </Button>
-          </div>
           <div className="relative w-full" style={{ paddingTop: '100%' }}>
             <div className="absolute top-0 left-0 w-full h-full">
               <MuscleMap 
-                view={view} 
                 muscleScores={normalizedScores}
                 rawMuscleScores={rawScores}
-                allMuscleIds={ALL_SVG_MUSCLE_IDS}
               />
             </div>
           </div>

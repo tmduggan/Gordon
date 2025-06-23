@@ -1,5 +1,5 @@
 export const muscleMapping = {
-  // Direct Mappings
+  // Direct Mappings - using the actual muscle names from SVG and exercise data
   abductors: ['abductors'],
   adductors: ['adductors'],
   biceps: ['biceps'],
@@ -14,12 +14,20 @@ export const muscleMapping = {
   triceps: ['triceps'],
   
   // Renamed Mappings
-  abs: ['upper_abs'],
-  'lower abs': ['lower_abs'],
+  abs: ['abdominals'],
+  abdominals: ['abdominals'],
   obliques: ['obliques'],
-  rhomboids: ['lower_traps'],
+  rhomboids: ['rhomboids'],
   'upper back': ['upper_traps'],
+  'lower back': ['lower_traps'],
+  upper_traps: ['upper_traps'],
+  lower_traps: ['lower_traps'],
+  rear_delts: ['rear_delts'],
+  neck: ['neck'],
 
   // Compound Mapping
-  delts: ['front_delts', 'side_delts', 'rear_delts'],
+  delts: ['deltoids'],
+  deltoids: ['deltoids'],
+  traps: ['trapezius'],
+  trapezius: ['trapezius'],
 }; 

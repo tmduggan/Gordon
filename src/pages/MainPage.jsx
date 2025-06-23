@@ -24,7 +24,7 @@ import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 import { get24Hour } from '../utils/timeUtils';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
 import { groupAndEnrichLogs } from '../utils/timeUtils';
-import { calculateEffortScore } from '../services/scoringService';
+import { calculateWorkoutScore, updatePersonalBests } from '../services/scoringService';
 
 
 export default function MainPage({ type }) {
@@ -37,6 +37,7 @@ export default function MainPage({ type }) {
     // Type-specific hooks and handlers
     let library, history, search, cart, handleSelect, logCart, pinnedItems, historyProps, searchPlaceholder, itemType, onPinToggle, cartProps = {};
     let todayLogs = [];
+    let exerciseFilterOptions = {};
     
     if (type === 'food') {
         library = useLibrary('food');
@@ -100,37 +101,73 @@ export default function MainPage({ type }) {
 
         handleSelect = (exercise) => {
             cart.addToCart(exercise);
-            setCurrentLogData(prev => ({ ...prev, [exercise.id]: { weight: '', reps: '', duration: '' } }));
+            setCurrentLogData(prev => ({ ...prev, [exercise.id]: { sets: [{ weight: '', reps: '' }] } }));
             search.clearSearch();
         };
 
         logCart = async () => {
             const timestamp = dateTimePicker.getLogTimestamp();
-            for (const item of cart.cart) {
-                const exerciseDetails = currentLogData[item.id] || {};
-                const weight = Number(exerciseDetails.weight) || null;
-                const reps = Number(exerciseDetails.reps) || null;
-                const duration = Number(exerciseDetails.duration) || null;
-                
-                const score = calculateEffortScore({ weight, reps, duration });
+            const userWorkoutHistory = history.logs; // All past logs
+            let updatedProfile = userProfile;
 
-                const isStrength = !!(weight || reps);
+            for (const item of cart.cart) {
+                const exerciseDetailsFromCart = currentLogData[item.id] || {};
+                const exerciseDetailsFromLib = library.items.find(e => e.id === item.id) || {};
+                
+                const workoutToScore = {
+                    sets: exerciseDetailsFromCart.sets || [],
+                    duration: exerciseDetailsFromCart.duration || null,
+                    timestamp,
+                };
+
+                const score = calculateWorkoutScore(
+                    workoutToScore, 
+                    userWorkoutHistory, 
+                    exerciseDetailsFromLib,
+                    userProfile
+                );
+
+                // Update personal bests if this workout has sets
+                if (workoutToScore.sets && workoutToScore.sets.length > 0) {
+                    const bestSet = workoutToScore.sets.reduce((best, set) => {
+                        const setValue = (set.weight || 0) * (1 + (set.reps || 0) / 30); // 1RM calculation
+                        const bestValue = (best.weight || 0) * (1 + (best.reps || 0) / 30);
+                        return setValue > bestValue ? set : best;
+                    });
+                    
+                    updatedProfile = updatePersonalBests(
+                        item.id,
+                        bestSet,
+                        exerciseDetailsFromLib,
+                        updatedProfile
+                    );
+                }
+
                 const logToSave = {
                     userId: user.uid,
                     exerciseId: item.id,
-                    timestamp: timestamp,
-                    duration: !isStrength ? duration : null,
-                    sets: isStrength ? [{ weight, reps }] : null,
+                    timestamp,
+                    sets: workoutToScore.sets,
+                    duration: workoutToScore.duration,
                     score,
                 };
+                
                 try {
                     await saveWorkoutLog(logToSave);
                     toast({
                         title: `+${score} XP!`,
                         description: `Logged ${item.name}.`
                     });
-                } catch (error) { console.error("Error logging exercise:", error, item); }
+                } catch (error) {
+                    console.error("Error saving workout log:", error);
+                }
             }
+            
+            // Save updated profile with new personal bests
+            if (updatedProfile !== userProfile) {
+                await saveUserProfile(updatedProfile);
+            }
+            
             cart.clearCart();
             setCurrentLogData({});
         };
@@ -148,6 +185,11 @@ export default function MainPage({ type }) {
         cartProps = {
             logData: currentLogData,
             onLogDataChange: (id, data) => setCurrentLogData(prev => ({ ...prev, [id]: data })),
+        };
+
+        exerciseFilterOptions = {
+            targets: [...new Set(library.items.map(item => item.target).filter(Boolean))].sort(),
+            equipments: [...new Set(library.items.map(item => item.equipment).filter(Boolean))].sort(),
         };
     }
 
@@ -176,6 +218,9 @@ export default function MainPage({ type }) {
                     togglePin={onPinToggle}
                     getFoodMacros={type === 'food' ? getFoodMacros : undefined} // Pass only if food
                     placeholder={searchPlaceholder}
+                    filters={search.filters}
+                    setFilters={search.setFilters}
+                    filterOptions={exerciseFilterOptions}
                 />
                 {cart.cart.length > 0 && (
                     <CartContainer
@@ -196,6 +241,9 @@ export default function MainPage({ type }) {
                         updateCartItem={cart.updateCartItem}
                         removeFromCart={cart.removeFromCart}
                         logCart={logCart}
+                        userWorkoutHistory={history.logs}
+                        exerciseLibrary={library.items}
+                        userProfile={userProfile}
                         {...cartProps}
                     />
                 )}

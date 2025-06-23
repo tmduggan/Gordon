@@ -174,10 +174,10 @@ const DailySummary = ({ foodLibrary, cart = [], cartTimePeriod }) => {
                                             <MacroBar macro="Protein" value={previewData.protein} goal={goals.protein} color="#ef4444" opacity={0.5} />
                                             <MacroBar macro="Carbs" value={previewData.carbs} goal={goals.carbs} color="#3b82f6" opacity={0.5} />
                                             <MacroBar macro="Fat" value={previewData.fat} goal={goals.fat} color="#facc15" opacity={0.5} />
-                                        </div>
+                        </div>
                                         <p className="text-xs mt-1 text-center font-semibold text-white mix-blend-difference">{meal}</p>
                                         <p className="text-xs text-white mix-blend-difference">{Math.round(mealData.calories)} cal</p>
-                                    </div>
+                    </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <MealNutritionLabel 
