@@ -1,6 +1,4 @@
 import React from 'react';
-import { frontMuscles } from './muscleData/frontMuscles';
-import { backMuscles } from './muscleData/backMuscles';
 import { combinedMuscles } from './muscleData/combinedMuscles';
 
 // Helper to compute color based on score
@@ -11,39 +9,53 @@ const getMuscleColor = (score) => {
 };
 
 // Combine all muscle data
-const muscleMap = {
-  ...frontMuscles,
-  ...backMuscles,
-  ...combinedMuscles
-};
+const muscleMap = combinedMuscles;
 
 const MuscleSvg = (props) => {
   const { muscleScores = {}, onHover, onLeave, onClick, ...rest } = props;
 
+  // Define which muscle groups should be interactive
+const interactiveMuscles = [
+  'forearms', 'adductors', 'abductors', 'lower_back', 'triceps', 
+  'lats', 'rear_delts', 'hands', 'glutes', 'hamstrings', 
+  'calves', 'rhomboids', 'upper_traps', 'lower_traps', 'neck', 
+  'quads', 'biceps', 'pectorals', 'abdominals', 'obliques', 
+  'deltoids', 'trapezius'
+];
+
+// Define which should be rendered as background/outline (non-interactive)
+const backgroundMuscles = ['body_outline'];
+
+
   return (
     <svg viewBox="0 0 3528.37 3203.47" {...rest}>
-      {Object.entries(muscleMap).map(([id, paths]) => (
-        <g
-          key={id}
-          id={id}
-          onMouseEnter={e => onHover && onHover(id, e)}
-          onMouseLeave={onLeave}
-          onClick={() => onClick && onClick(id)}
-          style={{ cursor: 'pointer' }}
-        >
-          {paths.map((d, i) => (
-            <path
-              key={i}
-              d={d}
-              fill={getMuscleColor(muscleScores[id])}
-              stroke="#333"
-              strokeWidth="2"
-            />
-          ))}
-        </g>
-      ))}
+      {Object.entries(muscleMap).map(([id, paths]) => {
+        const isInteractive = interactiveMuscles.includes(id);
+        const isBackground = backgroundMuscles.includes(id);
+        
+        return (
+          <g
+            key={id}
+            id={id}
+            onMouseEnter={isInteractive ? (e => onHover && onHover(id, e)) : undefined}
+            onMouseLeave={isInteractive ? onLeave : undefined}
+            onClick={isInteractive ? (() => onClick && onClick(id)) : undefined}
+            style={{ cursor: isInteractive ? 'pointer' : 'default' }}
+          >
+            {paths.map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                fill={isBackground ? '#f0f0f0' : getMuscleColor(muscleScores[id])}
+                stroke="#333"
+                strokeWidth="2"
+              />
+            ))}
+          </g>
+        );
+      })}
     </svg>
   );
 };
 
-export default MuscleSvg; 
+export default MuscleSvg;

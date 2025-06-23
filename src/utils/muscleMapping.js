@@ -22,6 +22,7 @@ export const muscleMapping = {
   biceps: ['biceps', 'bicep'],
   triceps: ['triceps', 'tricep'],
   forearms: ['forearms', 'forearm'],
+  hands: ['hands', 'hand'],
   
   // Shoulder muscles
   side_delts: ['shoulders', 'deltoids', 'deltoid', 'delt'],

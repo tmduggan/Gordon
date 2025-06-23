@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 
 // Component Imports
@@ -7,7 +7,6 @@ import Search from '../components/Search/Search';
 import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
-import MuscleGroupProgress from '../components/exercise/MuscleGroupProgress';
 import DailySummary from '../components/nutrition/DailySummary';
 
 // Hook Imports
@@ -331,13 +330,6 @@ export default function MainPage({ type }) {
                     )}
                 </>
             ) : (
-                <MuscleGroupProgress
-                    logs={history.logs}
-                    exerciseLibrary={library.items}
-                    muscleScores={userProfile?.muscleScores || {}}
-                />
-            )}
-            {type === 'exercise' && (
                 <div className="mb-2 flex justify-end">
                     <Button variant="outline" onClick={recalculateAllScores}>
                         Recalculate All Scores
