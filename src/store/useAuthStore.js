@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
@@ -18,14 +18,44 @@ const useAuthStore = create((set, get) => ({
     onAuthStateChanged(auth, (user) => {
       if (user) {
         set({ user });
-        get().fetchUserProfile(user.uid);
+        // The listener is now set up here and will manage its own lifecycle.
+        const unsubscribe = get().listenForUserProfile(user.uid);
+        // We can store the unsubscribe function if we need to call it on sign-out.
+        // For simplicity, we'll let it detach when the user is gone.
       } else {
         set({ user: null, userProfile: null, loading: false });
       }
     });
   },
 
-  // Fetch the user's profile from Firestore
+  // Set up a real-time listener for the user's profile
+  listenForUserProfile: (uid) => {
+    const userDocRef = doc(db, 'users', uid);
+    const unsubscribe = onSnapshot(userDocRef, async (snap) => {
+      if (snap.exists()) {
+        // --- DEBUGGING ---
+        console.log("Auth store received profile update:", snap.data());
+        // --- END DEBUGGING ---
+        set({ userProfile: snap.data(), loading: false });
+      } else {
+        console.log("No user profile found, creating a default one.");
+        const defaultProfile = {
+          goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
+          pinnedFoods: [],
+          pinnedExercises: [],
+          muscleScores: {}, // Initialize with empty scores
+        };
+        await setDoc(userDocRef, defaultProfile);
+        set({ userProfile: defaultProfile, loading: false });
+      }
+    }, (error) => {
+      console.error("Error listening to user profile:", error);
+      set({ loading: false });
+    });
+    return unsubscribe; // Return the unsubscribe function
+  },
+
+  // Fetch the user's profile from Firestore (no longer the primary method)
   fetchUserProfile: async (uid) => {
     set({ loading: true });
     const userDocRef = doc(db, 'users', uid);
@@ -56,8 +86,9 @@ const useAuthStore = create((set, get) => ({
     if (!user) return;
     const userDocRef = doc(db, 'users', user.uid);
     try {
+      // The listener will automatically pick up this change.
+      // We no longer need to manually set the state here.
       await setDoc(userDocRef, profile, { merge: true });
-      set({ userProfile: profile });
       console.log("User profile saved successfully.");
     } catch (error) {
       console.error("Error saving user profile:", error);

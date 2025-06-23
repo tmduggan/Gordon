@@ -1,5 +1,9 @@
 const SCORING_CONFIG = {
-    version: "v3",
+    version: "v4",
+    diminishingReturns: {
+        startSet: 4,
+        multiplier: 0.5
+    },
     effortMultipliers: {
       core: 1.0,
       isolation: 1.0,
@@ -226,10 +230,20 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
     
     // 1. Calculate Base Score from sets
     if (workoutToScore.sets && workoutToScore.sets.length > 0) {
-        const setTotal = workoutToScore.sets.reduce((total, set) => {
-            const weightScore = ((set.weight || 0) * SCORING_CONFIG.weightMultiplier);
-            const repScore = set.reps || 0;
-            return total + weightScore + repScore;
+        const setTotal = workoutToScore.sets.reduce((total, set, index) => {
+            const setNumber = index + 1;
+            const weight = parseFloat(set.weight) || 0;
+            const reps = parseInt(set.reps, 10) || 0;
+
+            const weightScore = (weight * SCORING_CONFIG.weightMultiplier);
+            const repScore = reps;
+            let setScore = weightScore + repScore;
+
+            if (setNumber >= SCORING_CONFIG.diminishingReturns.startSet) {
+                setScore *= SCORING_CONFIG.diminishingReturns.multiplier;
+            }
+
+            return total + setScore;
         }, 0);
         score += setTotal;
     }
@@ -246,12 +260,16 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
 
     // 3. Add Personal Best Bonuses
     if (userProfile && workoutToScore.sets && workoutToScore.sets.length > 0) {
+        // Filter out incomplete sets before finding the best one
+        const completeSets = workoutToScore.sets.filter(s => (s.weight || s.reps));
+        if (completeSets.length === 0) return Math.round(score);
+
         // Calculate bonus for the best set in this workout
-        const bestSet = workoutToScore.sets.reduce((best, set) => {
+        const bestSet = completeSets.reduce((best, set) => {
             const setValue = calculateExerciseValue(set, exerciseDetails);
             const bestValue = calculateExerciseValue(best, exerciseDetails);
             return setValue.value > bestValue.value ? set : best;
-        });
+        }, completeSets[0]);
         
         const personalBestBonus = calculatePersonalBestBonus(
             exerciseDetails.id, 
@@ -279,6 +297,36 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
     }
 
     return Math.round(score);
+}
+
+/**
+ * Recalculates the scores for a list of historical workout logs.
+ * This is useful when scoring logic changes and past scores need to be updated.
+ * @param {Array<object>} historicalLogs - The user's workout history.
+ * @param {object} exerciseLibrary - A map of exercise details, keyed by exercise ID.
+ * @returns {Array<object>} The logs with their `score` property updated.
+ */
+export function recalculateScoresForHistory(historicalLogs, exerciseLibrary) {
+    console.log("Recalculating scores for historical logs with new logic...", {scoringVersion: SCORING_CONFIG.version});
+
+    if (!historicalLogs || historicalLogs.length === 0) {
+        return [];
+    }
+
+    if (!exerciseLibrary || Object.keys(exerciseLibrary).length === 0) {
+        console.warn("Exercise library is not available. Scores will be based on log data only.");
+        // Return logs as-is if library is missing, or handle as needed
+        return historicalLogs;
+    }
+
+    return historicalLogs.map(log => {
+        const exerciseDetails = exerciseLibrary[log.exerciseId] || {};
+        const newScore = calculateWorkoutScore(log, [], exerciseDetails, null);
+        return {
+            ...log,
+            score: newScore
+        };
+    });
 }
 
 // Export helper functions for use in other components

@@ -24,16 +24,56 @@ import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 import { get24Hour } from '../utils/timeUtils';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
 import { groupAndEnrichLogs } from '../utils/timeUtils';
-import { calculateWorkoutScore, updatePersonalBests } from '../services/scoringService';
+import { calculateWorkoutScore, updatePersonalBests, recalculateScoresForHistory } from '../services/scoringService';
+import { muscleMapping } from '../utils/muscleMapping';
 
 
 export default function MainPage({ type }) {
-    const { user, userProfile, togglePinFood, togglePinExercise } = useAuthStore();
+    const { user, userProfile, saveUserProfile, togglePinFood, togglePinExercise } = useAuthStore();
     const dateTimePicker = useDateTimePicker(type);
     const [currentLogData, setCurrentLogData] = useState({}); // For exercise cart inputs
     const { toast } = useToast();
     const [showAllHistory, setShowAllHistory] = useState(false);
     
+    // --- Recalculate Utility ---
+    const recalculateAllScores = async () => {
+        if (type !== 'exercise') return;
+        if (!userProfile || !library?.items || !history?.logs) return;
+        const muscleScores = {};
+
+        // Helper to process a comma-separated muscle string
+        const processMuscleString = (muscleString, score) => {
+            if (!muscleString) return;
+            muscleString.split(',').forEach(muscle => {
+                const name = muscle.trim().toLowerCase();
+                if (!name) return;
+                muscleScores[name] = (muscleScores[name] || 0) + score;
+            });
+        };
+
+        // Recalculate scores for all logs
+        history.logs.forEach(log => {
+            const exercise = library.items.find(e => e.id === log.exerciseId) || {};
+            const score = calculateWorkoutScore(log, history.logs, exercise, userProfile);
+
+            // Process target muscle(s)
+            processMuscleString(exercise.target, score);
+
+            // Process secondary muscles (array or string)
+            if (Array.isArray(exercise.secondaryMuscles)) {
+                exercise.secondaryMuscles.forEach(sec => processMuscleString(sec, score));
+            } else if (typeof exercise.secondaryMuscles === 'string') {
+                processMuscleString(exercise.secondaryMuscles, score);
+            }
+        });
+
+        // Save to user profile
+        const updatedProfile = { ...userProfile, muscleScores };
+        await saveUserProfile(updatedProfile);
+        toast({ title: 'Muscle scores recalculated!', description: 'Profile updated with new scores.' });
+    };
+    // --- End Recalculate Utility ---
+
     // Type-specific hooks and handlers
     let library, history, search, cart, handleSelect, logCart, pinnedItems, historyProps, searchPlaceholder, itemType, onPinToggle, cartProps = {};
     let todayLogs = [];
@@ -92,7 +132,7 @@ export default function MainPage({ type }) {
 
     } else { // exercise
         library = useLibrary('exercise');
-        history = useHistory('exercise');
+        history = useHistory('exercise', library.items);
         search = useSearch('exercise', library);
         cart = useCart('exercise');
         itemType = 'exercise';
@@ -108,7 +148,18 @@ export default function MainPage({ type }) {
         logCart = async () => {
             const timestamp = dateTimePicker.getLogTimestamp();
             const userWorkoutHistory = history.logs; // All past logs
-            let updatedProfile = userProfile;
+            let updatedProfile = { ...userProfile };
+            let profileScores = updatedProfile.muscleScores || {};
+
+            // Helper to process a comma-separated muscle string
+            const processMuscleString = (muscleString, score) => {
+                if (!muscleString) return;
+                muscleString.split(',').forEach(muscle => {
+                    const name = muscle.trim().toLowerCase();
+                    if (!name) return;
+                    profileScores[name] = (profileScores[name] || 0) + score;
+                });
+            };
 
             for (const item of cart.cart) {
                 const exerciseDetailsFromCart = currentLogData[item.id] || {};
@@ -127,13 +178,24 @@ export default function MainPage({ type }) {
                     userProfile
                 );
 
+                // --- Update Aggregated Profile Scores ---
+                // Process target muscle(s)
+                processMuscleString(exerciseDetailsFromLib.target, score);
+                // Process secondary muscles (array or string)
+                if (Array.isArray(exerciseDetailsFromLib.secondaryMuscles)) {
+                    exerciseDetailsFromLib.secondaryMuscles.forEach(sec => processMuscleString(sec, score));
+                } else if (typeof exerciseDetailsFromLib.secondaryMuscles === 'string') {
+                    processMuscleString(exerciseDetailsFromLib.secondaryMuscles, score);
+                }
+                // --- End Score Update ---
+
                 // Update personal bests if this workout has sets
                 if (workoutToScore.sets && workoutToScore.sets.length > 0) {
                     const bestSet = workoutToScore.sets.reduce((best, set) => {
                         const setValue = (set.weight || 0) * (1 + (set.reps || 0) / 30); // 1RM calculation
                         const bestValue = (best.weight || 0) * (1 + (best.reps || 0) / 30);
                         return setValue > bestValue ? set : best;
-                    });
+                    }, {});
                     
                     updatedProfile = updatePersonalBests(
                         item.id,
@@ -163,10 +225,9 @@ export default function MainPage({ type }) {
                 }
             }
             
-            // Save updated profile with new personal bests
-            if (updatedProfile !== userProfile) {
-                await saveUserProfile(updatedProfile);
-            }
+            // Save updated profile with new personal bests and muscle scores
+            updatedProfile.muscleScores = profileScores;
+            await saveUserProfile(updatedProfile);
             
             cart.clearCart();
             setCurrentLogData({});
@@ -270,10 +331,18 @@ export default function MainPage({ type }) {
                     )}
                 </>
             ) : (
-                <MuscleGroupProgress 
+                <MuscleGroupProgress
                     logs={history.logs}
                     exerciseLibrary={library.items}
+                    muscleScores={userProfile?.muscleScores || {}}
                 />
+            )}
+            {type === 'exercise' && (
+                <div className="mb-2 flex justify-end">
+                    <Button variant="outline" onClick={recalculateAllScores}>
+                        Recalculate All Scores
+                    </Button>
+                </div>
             )}
         </>
     );

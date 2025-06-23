@@ -3,11 +3,13 @@ import { db } from '../firebase';
 import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
 import useAuthStore from '../store/useAuthStore';
 import { getTimeSegment, isSameDayLocal } from '../utils/timeUtils';
+import { recalculateScoresForHistory } from '../services/scoringService';
 
-export default function useHistory(logType) {
+export default function useHistory(logType, exerciseLibrary = null) {
     const { user } = useAuthStore();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [recalculated, setRecalculated] = useState(false);
 
     const collectionName = logType === 'food' ? 'foodLog' : 'workoutLog';
 
@@ -41,6 +43,27 @@ export default function useHistory(logType) {
 
         return () => unsubscribe();
     }, [user, logType, collectionName]);
+
+    // Effect to recalculate scores when library is available
+    useEffect(() => {
+        if (logType === 'workout' && exerciseLibrary && logs.length > 0 && !recalculated) {
+            const libraryMap = exerciseLibrary.reduce((acc, item) => {
+                acc[item.id] = item;
+                return acc;
+            }, {});
+
+            if (Object.keys(libraryMap).length > 0) {
+                const recalculatedLogs = recalculateScoresForHistory(logs, libraryMap);
+                setLogs(recalculatedLogs);
+                setRecalculated(true);
+            }
+        }
+    }, [logs, exerciseLibrary, logType, recalculated]);
+
+    // Reset recalculation flag if user changes
+    useEffect(() => {
+        setRecalculated(false);
+    }, [user]);
 
     const deleteLog = useCallback(async (id) => {
         if (!user) return;

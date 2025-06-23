@@ -1,67 +1,42 @@
-import React, { useState, useMemo } from 'react';
-import { muscleMapping } from '../utils/muscleMapping'; // Import the new mapping
-import useLibrary from '../hooks/fetchLibrary'; // Custom hook to fetch exercise library
-import useHistory from '../hooks/fetchHistory'; // Custom hook to fetch workout history
+import React, { useMemo } from 'react';
 import MuscleMap from '../components/exercise/MuscleMap';
 import { Card, CardContent } from '@/components/ui/card';
-
-// Generate a definitive list of all unique SVG IDs from our mapping
-const ALL_SVG_MUSCLE_IDS = [...new Set(Object.values(muscleMapping).flat())];
+import useAuthStore from '../store/useAuthStore';
+import { muscleMapping } from '../utils/muscleMapping';
 
 export default function MuscleChartPage() {
-  const { items: exerciseLibrary, loading: libraryLoading } = useLibrary('exercise');
-  const { logs: history, loading: historyLoading } = useHistory('exercise');
+  const { userProfile } = useAuthStore();
 
   const { normalizedScores, rawScores } = useMemo(() => {
-    const raw = ALL_SVG_MUSCLE_IDS.reduce((acc, id) => {
-      acc[id] = 0;
-      return acc;
-    }, {});
-
-    if (exerciseLibrary && history) {
-      const exerciseDetailsMap = exerciseLibrary.reduce((acc, item) => {
-        acc[item.id] = item;
-        return acc;
-      }, {});
-
-      history.forEach(log => {
-        const details = exerciseDetailsMap[log.exerciseId];
-        if (!details) return;
-
-        const score = log.score || 0;
-        if (score === 0) return;
-
-        const processMuscle = (muscleName) => {
-          const cleanedName = muscleName.toLowerCase().trim();
-          const svgIds = muscleMapping[cleanedName];
-          if (svgIds) {
-            svgIds.forEach(id => {
-              raw[id] = (raw[id] || 0) + score;
-            });
-          }
-        };
-
-        if (details.target) processMuscle(details.target);
-        if (details.secondaryMuscles) details.secondaryMuscles.forEach(processMuscle);
+    const libraryScores = userProfile?.muscleScores || {};
+    
+    // Map library muscle scores to SVG muscle scores
+    const svgScores = {};
+    
+    // For each SVG muscle group, sum up scores from all mapped library muscles
+    Object.entries(muscleMapping).forEach(([svgMuscle, libraryMuscles]) => {
+      let totalScore = 0;
+      libraryMuscles.forEach(libraryMuscle => {
+        if (libraryScores[libraryMuscle]) {
+          totalScore += libraryScores[libraryMuscle];
+        }
       });
-    }
+      if (totalScore > 0) {
+        svgScores[svgMuscle] = totalScore;
+      }
+    });
 
-    const normalized = { ...raw };
-    const maxScore = Math.max(...Object.values(normalized));
+    const normalized = { ...svgScores };
+    const maxScore = Math.max(...Object.values(normalized).filter(v => typeof v === 'number'), 1);
+    
     if (maxScore > 0) {
       for (const muscle in normalized) {
-        normalized[muscle] = normalized[muscle] / maxScore;
+        normalized[muscle] = (normalized[muscle] || 0) / maxScore;
       }
     }
 
-    return { normalizedScores: normalized, rawScores: raw };
-  }, [exerciseLibrary, history]);
-
-  const loading = libraryLoading || historyLoading;
-
-  if (loading) {
-    return <div>Analyzing your workout history...</div>;
-  }
+    return { normalizedScores: normalized, rawScores: svgScores };
+  }, [userProfile]);
 
   return (
     <div>

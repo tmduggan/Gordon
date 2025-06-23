@@ -11,7 +11,6 @@ import useAuthStore from "./store/useAuthStore";
 import Auth from "./Auth";
 import ProfileMenu from "./ProfileMenu";
 import MainPage from "./pages/MainPage";
-import ExerciseLibraryPage from "./pages/ExerciseLibraryPage";
 import MuscleChartPage from "./pages/MuscleChartPage";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/toaster";
@@ -103,7 +102,6 @@ export default function App() {
             <Route path="/" element={<Navigate to="/exercise" />} />
             <Route path="/nutrition" element={<MainPage type="food" />} />
             <Route path="/exercise" element={<MainPage type="exercise" />} />
-            <Route path="/exercise-library" element={<ExerciseLibraryPage />} />
             <Route path="/muscle-chart" element={<MuscleChartPage />} />
           </Routes>
         </main>
