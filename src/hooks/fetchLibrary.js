@@ -67,23 +67,29 @@ export default function useLibrary(libraryType, options = {}) {
 
   // Food-specific functions
   const fetchAndSaveFood = async (item) => {
+    console.log('[fetchAndSaveFood] Called with:', item);
     if (libraryType !== 'food') return null;
     
     try {
       const potentialId = generateFoodId(item);
       if (!potentialId || items.some(f => f.id === potentialId)) {
+        console.log('[fetchAndSaveFood] Skipping: Already exists or invalid ID', { potentialId, item });
         return null;
       }
-
+      console.log('[fetchAndSaveFood] About to call fetchFullNutrition with:', item);
       const fullDetails = await fetchFullNutrition(item);
+      console.log('[fetchAndSaveFood] fetchFullNutrition returned:', fullDetails);
       if (fullDetails) {
+        console.log('[fetchAndSaveFood] Full nutrition details:', fullDetails);
         const savedFood = await saveFoodToLibrary(fullDetails);
+        console.log('[fetchAndSaveFood] Saved food:', savedFood);
         setItems(currentItems => [...currentItems, savedFood]);
         return savedFood;
       }
+      console.warn('[fetchAndSaveFood] No full nutrition details returned for:', item);
       return null;
     } catch (error) {
-      console.error("Failed to fetch and save food item:", error);
+      console.error('[fetchAndSaveFood] Failed to fetch and save food item:', error, item);
       return null;
     }
   };
@@ -92,6 +98,7 @@ export default function useLibrary(libraryType, options = {}) {
     if (libraryType !== 'food') return [];
     
     try {
+      console.log('[searchNutritionix] Searching Nutritionix for:', searchQuery);
       const results = await fetchInstantResults(searchQuery);
       setApiResults(results);
 
@@ -106,11 +113,12 @@ export default function useLibrary(libraryType, options = {}) {
         .slice(0, 2);
       
       const itemsToSave = [...newBranded, ...newCommon];
+      console.log('[searchNutritionix] Items to save:', itemsToSave);
       itemsToSave.forEach(item => fetchAndSaveFood(item));
       
       return results;
     } catch (error) {
-      console.error("Failed to search Nutritionix:", error);
+      console.error('[searchNutritionix] Failed to search Nutritionix:', error);
       setApiResults([]);
       return [];
     }

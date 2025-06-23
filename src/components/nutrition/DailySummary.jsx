@@ -138,15 +138,15 @@ const DailySummary = ({ foodLibrary, cart = [], cartTimePeriod }) => {
 
     if (cart.length > 0 && cartTimePeriod && previewMeals[cartTimePeriod]) {
         cart.forEach(cartItem => {
-            const foodDetails = foodLibrary.find(f => f.id === cartItem.id);
-            if (foodDetails) {
-                const macros = getFoodMacros(foodDetails);
-                const quantity = cartItem.quantity || 1;
-                previewMeals[cartTimePeriod].protein += macros.protein * quantity;
-                previewMeals[cartTimePeriod].carbs += macros.carbs * quantity;
-                previewMeals[cartTimePeriod].fat += macros.fat * quantity;
-                previewMeals[cartTimePeriod].calories += macros.calories * quantity;
-            }
+            const calories = cartItem.calories || 0;
+            const fat = cartItem.fat || 0;
+            const carbs = cartItem.carbs || 0;
+            const protein = cartItem.protein || 0;
+            
+            previewMeals[cartTimePeriod].protein += protein;
+            previewMeals[cartTimePeriod].carbs += carbs;
+            previewMeals[cartTimePeriod].fat += fat;
+            previewMeals[cartTimePeriod].calories += calories;
         });
     }
 

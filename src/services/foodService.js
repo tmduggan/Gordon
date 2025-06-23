@@ -1,5 +1,6 @@
 import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getAuth } from 'firebase/auth';
 
 /**
  * A utility to create a URL-friendly "slug" from a string.
@@ -37,6 +38,7 @@ export function generateFoodId(food) {
  */
 export async function loadLocalFoods() {
   const querySnapshot = await getDocs(collection(db, 'foods'));
+  console.log('[loadLocalFoods] Loaded foods count:', querySnapshot.docs.length);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
@@ -50,8 +52,16 @@ export async function loadLocalFoods() {
  * @returns {Promise<object>} A promise that resolves to the saved food object, including its new ID.
  */
 export async function saveFoodToLibrary(food) {
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    console.error('[saveFoodToLibrary] No authenticated user found!');
+  } else {
+    console.log('[saveFoodToLibrary] Authenticated user:', currentUser);
+  }
   const foodId = generateFoodId(food);
   if (!foodId) {
+    console.error('Cannot save food without a valid identifier:', food);
     throw new Error('Cannot save food without a valid identifier.');
   }
 
@@ -62,7 +72,15 @@ export async function saveFoodToLibrary(food) {
     created_at: new Date().toISOString(),
     source: 'nutritionix' // Or determine source based on data
   };
-  
-  await setDoc(doc(db, 'foods', foodId), foodToSave);
-  return foodToSave;
+
+  console.log('Attempting to save food to Firestore:', foodToSave);
+  try {
+    await setDoc(doc(db, 'foods', foodId), foodToSave);
+    console.log('Successfully saved to database as food id', foodId);
+    console.log('Successfully saved food to Firestore:', foodToSave);
+    return foodToSave;
+  } catch (error) {
+    console.error('Error saving food to Firestore:', error, foodToSave);
+    throw error;
+  }
 } 

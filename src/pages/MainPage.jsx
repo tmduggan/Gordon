@@ -8,6 +8,8 @@ import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
+import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
+import MuscleChartDisplay from '../components/exercise/MuscleChartDisplay';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -23,7 +25,7 @@ import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 import { get24Hour } from '../utils/timeUtils';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
 import { groupAndEnrichLogs } from '../utils/timeUtils';
-import { calculateWorkoutScore, updatePersonalBests, recalculateScoresForHistory } from '../services/scoringService';
+import { calculateWorkoutScore, updatePersonalBests } from '../services/scoringService';
 import { muscleMapping } from '../utils/muscleMapping';
 
 
@@ -34,45 +36,6 @@ export default function MainPage({ type }) {
     const { toast } = useToast();
     const [showAllHistory, setShowAllHistory] = useState(false);
     
-    // --- Recalculate Utility ---
-    const recalculateAllScores = async () => {
-        if (type !== 'exercise') return;
-        if (!userProfile || !library?.items || !history?.logs) return;
-        const muscleScores = {};
-
-        // Helper to process a comma-separated muscle string
-        const processMuscleString = (muscleString, score) => {
-            if (!muscleString) return;
-            muscleString.split(',').forEach(muscle => {
-                const name = muscle.trim().toLowerCase();
-                if (!name) return;
-                muscleScores[name] = (muscleScores[name] || 0) + score;
-            });
-        };
-
-        // Recalculate scores for all logs
-        history.logs.forEach(log => {
-            const exercise = library.items.find(e => e.id === log.exerciseId) || {};
-            const score = calculateWorkoutScore(log, history.logs, exercise, userProfile);
-
-            // Process target muscle(s)
-            processMuscleString(exercise.target, score);
-
-            // Process secondary muscles (array or string)
-            if (Array.isArray(exercise.secondaryMuscles)) {
-                exercise.secondaryMuscles.forEach(sec => processMuscleString(sec, score));
-            } else if (typeof exercise.secondaryMuscles === 'string') {
-                processMuscleString(exercise.secondaryMuscles, score);
-            }
-        });
-
-        // Save to user profile
-        const updatedProfile = { ...userProfile, muscleScores };
-        await saveUserProfile(updatedProfile);
-        toast({ title: 'Muscle scores recalculated!', description: 'Profile updated with new scores.' });
-    };
-    // --- End Recalculate Utility ---
-
     // Type-specific hooks and handlers
     let library, history, search, cart, handleSelect, logCart, pinnedItems, historyProps, searchPlaceholder, itemType, onPinToggle, cartProps = {};
     let todayLogs = [];
@@ -258,7 +221,7 @@ export default function MainPage({ type }) {
     }
 
     return (
-        <>
+        <div className="max-w-3xl mx-auto w-full">
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
                 <PinnedItemsGrid
                     items={pinnedItems}
@@ -308,11 +271,21 @@ export default function MainPage({ type }) {
                     />
                 )}
             </div>
+            {type === 'exercise' && (
+                <MuscleChartDisplay className="mt-4 px-4" />
+            )}
             {type === 'food' && (
                 <DailySummary 
                     foodLibrary={library.items} 
                     cart={cart.cart}
                     cartTimePeriod={dateTimePicker.timePeriod}
+                />
+            )}
+            {type === 'food' && (
+                <DailyTotalsCard
+                    logs={todayLogs}
+                    goals={userProfile?.goals || { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 }}
+                    getFoodById={(id) => library.items.find(f => f.id === id)}
                 />
             )}
             {type === 'food' ? (
@@ -329,13 +302,7 @@ export default function MainPage({ type }) {
                         </div>
                     )}
                 </>
-            ) : (
-                <div className="mb-2 flex justify-end">
-                    <Button variant="outline" onClick={recalculateAllScores}>
-                        Recalculate All Scores
-                    </Button>
-                </div>
-            )}
-        </>
+            ) : null}
+        </div>
     );
 } 

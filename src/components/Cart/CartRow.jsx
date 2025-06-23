@@ -27,7 +27,6 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
   );
 
   if (isFoodItem) {
-    const [scaledMacros, setScaledMacros] = useState(() => getFoodMacros(item));
     const currentUnitRef = useRef(item.units);
 
     useEffect(() => {
@@ -35,15 +34,14 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     }, [item.units]);
 
     const handleServingChange = useCallback(({ quantity, units, scaledNutrition }) => {
-      updateCartItem(item.id, { quantity, units });
-      setScaledMacros(scaledNutrition);
+      updateCartItem(item.id, { quantity, units, ...scaledNutrition });
     }, [updateCartItem, item.id]);
 
     return (
       <tr className="border-b align-top">
         <td colSpan="3" className="py-2 px-1">
           <div className="flex flex-col gap-1">
-            <ServingSizeEditor food={item} onChange={handleServingChange} />
+            <ServingSizeEditor food={item} onUpdate={handleServingChange} />
             <div className="flex items-center gap-1">
               <span className="font-semibold text-xs sm:text-sm">{item.label}</span>
               <InfoDialog item={item} isFood={true} />

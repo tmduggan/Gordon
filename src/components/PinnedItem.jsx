@@ -71,97 +71,132 @@ export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
   const renderContent = () => {
     if (itemType === 'food') {
       const macros = getFoodMacros(item);
-      return <MacroDisplay macros={macros} format="stacked">{label}</MacroDisplay>;
+      const thumb = item.photo?.thumb;
+      return (
+        <div className="flex flex-col h-full">
+          {/* Food name and image at top */}
+          <div className="flex-1 flex items-center justify-center min-h-0 w-full">
+            {thumb && (
+              <img src={thumb} alt="food thumb" className="h-5 w-5 rounded mr-1 flex-shrink-0" />
+            )}
+            <strong className="block text-center truncate w-full">{label}</strong>
+          </div>
+          {/* Nutrition preview at bottom */}
+          {/*
+          <div className="mt-auto pt-1">
+            <span className="text-xs text-gray-600 block text-center">
+              <span title="Calories" className="mr-2">🔥{macros.calories}</span>
+              <span title="Fat" className="mr-2">🥑{macros.fat}g</span>
+              <span title="Carbs" className="mr-2">🍞{macros.carbs}g</span>
+              <span title="Protein">🍗{macros.protein}g</span>
+            </span>
+          </div>
+          */}
+        </div>
+      );
     }
     if (itemType === 'exercise') {
       const { target, equipment, difficulty } = item;
-      const subtext = [target].filter(Boolean).join(' • ');
       const equipmentIcon = getEquipmentIcon(equipment);
       const difficultyColor = difficulty ? difficultyColorMap[difficulty.toLowerCase()] : null;
       const muscleIcon = getMuscleIcon(target);
 
       return (
-        <div className="flex-grow pr-1">
-          <strong className="block">{label}</strong>
-          <div className="flex items-center gap-1 text-xs text-gray-600 capitalize">
-            <span>{subtext}</span>
+        <div className="flex flex-col w-full">
+          {/* First row: Exercise Name */}
+          <div className="pr-2 min-w-0">
+            <strong className="block truncate text-center">{label}</strong>
           </div>
-          {muscleIcon && (
-            <Tooltip>
+          {/* Second row: Icons */}
+          <div className="flex items-center gap-1 flex-shrink-0 justify-center mt-1">
+            {muscleIcon && (
+              <Tooltip>
                 <TooltipTrigger asChild>
-                    <img 
-                        src={muscleIcon} 
-                        alt={target} 
-                        className="absolute bottom-1 right-15 h-5 w-5 rounded-md border border-black"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                  <img src={muscleIcon} alt={target} className="h-5 w-5 rounded-md border border-black" onClick={e => e.stopPropagation()} />
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p className="capitalize">{target}</p>
+                  <p className="capitalize">{target}</p>
                 </TooltipContent>
-            </Tooltip>
-          )}
-          {equipmentIcon && (
-            <Tooltip>
+              </Tooltip>
+            )}
+            {equipmentIcon && (
+              <Tooltip>
                 <TooltipTrigger asChild>
-                    <img 
-                        src={equipmentIcon} 
-                        alt={equipment} 
-                        className="absolute bottom-1 right-8 h-5 w-5 p-0.5 bg-blue-100 rounded-md"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                  <img src={equipmentIcon} alt={equipment} className="h-5 w-5 p-0.5 bg-blue-100 rounded-md" onClick={e => e.stopPropagation()} />
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p className="capitalize">{equipment}</p>
+                  <p className="capitalize">{equipment}</p>
                 </TooltipContent>
-            </Tooltip>
-          )}
-          {difficultyColor && (
-            <Tooltip>
+              </Tooltip>
+            )}
+            {difficultyColor && (
+              <Tooltip>
                 <TooltipTrigger asChild>
-                    <div 
-                        className={`absolute bottom-1 right-1 h-5 w-5 rounded-md ${difficultyColor}`}
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                  <div className={`h-5 w-5 rounded-md ${difficultyColor}`} onClick={e => e.stopPropagation()} />
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p className="capitalize">{difficulty}</p>
+                  <p className="capitalize">{difficulty}</p>
                 </TooltipContent>
-            </Tooltip>
-          )}
+              </Tooltip>
+            )}
+          </div>
         </div>
-      )
+      );
     }
     return <strong className="block">{label}</strong>;
   };
   
   const TooltipContentComponent = itemType === 'food' 
-    ? <NutritionLabel food={item} /> 
+    ? (
+        <div className="mb-2">
+          <div className="font-semibold text-base mb-1 text-center">
+            {item.food_name || item.label || item.name}
+            {item.serving_qty && item.serving_unit && (
+              <span className="block text-xs font-normal text-gray-600 mt-0.5">
+                {item.serving_qty} {item.serving_unit}
+                {item.serving_weight_grams ? ` (${item.serving_weight_grams}g)` : ''}
+              </span>
+            )}
+          </div>
+          <NutritionLabel food={item} />
+        </div>
+      )
     : <ExerciseInfoCard exercise={item} />;
 
   return (
-    <Tooltip delayDuration={300}>
-      <TooltipTrigger asChild>
-        <Card
-          className="p-2 flex justify-between items-start cursor-pointer hover:shadow-md transition-shadow relative"
-          onClick={() => onSelect(item)}
-        >
-          {renderContent()}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0 absolute top-1 right-1"
-            onClick={(e) => { e.stopPropagation(); onPinToggle(item.id); }}
-            title="Unpin item"
-          >
-            📌
-          </Button>
-        </Card>
-      </TooltipTrigger>
-      <TooltipContent>
-        {TooltipContentComponent}
-      </TooltipContent>
-    </Tooltip>
+    <Card
+      className="cursor-pointer hover:shadow-lg transition-shadow duration-200 p-2 flex flex-col items-stretch min-w-[120px] max-w-[180px] relative"
+      onClick={() => onSelect?.(item)}
+      tabIndex={0}
+      role="button"
+      aria-label={label}
+    >
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex flex-col items-stretch w-full h-full">
+              {renderContent()}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {TooltipContentComponent}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-1 right-1 h-6 w-6 p-0 text-gray-400 hover:text-red-500 z-10"
+        onClick={e => {
+          e.stopPropagation();
+          onPinToggle?.(item.id);
+        }}
+        tabIndex={-1}
+        aria-label="Unpin"
+      >
+        <span style={{ display: 'inline-block', transform: 'rotate(-90deg)', fontSize: '1.1rem', lineHeight: 1 }} role="img" aria-label="Unpin">📌</span>
+      </Button>
+    </Card>
   );
 }
 

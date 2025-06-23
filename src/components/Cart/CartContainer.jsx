@@ -15,12 +15,17 @@ import { calculateWorkoutScore } from '../../services/scoringService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {
-        const macros = getFoodMacros(item);
-        const quantity = item.quantity || 1;
-        acc.calories += (macros.calories || 0) * quantity;
-        acc.fat += (macros.fat || 0) * quantity;
-        acc.carbs += (macros.carbs || 0) * quantity;
-        acc.protein += (macros.protein || 0) * quantity;
+        // Use the scaled nutrition values that are stored directly on the item
+        // (calculated by ServingSizeEditor) instead of recalculating with getFoodMacros
+        const calories = item.calories || 0;
+        const fat = item.fat || 0;
+        const carbs = item.carbs || 0;
+        const protein = item.protein || 0;
+        
+        acc.calories += calories;
+        acc.fat += fat;
+        acc.carbs += carbs;
+        acc.protein += protein;
         return acc;
     }, { calories: 0, fat: 0, carbs: 0, protein: 0 });
 

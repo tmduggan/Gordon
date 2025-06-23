@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getInitialScaledNutrition } from '../utils/dataUtils';
 
 const useCartStore = create((set) => ({
   carts: {
@@ -14,7 +15,18 @@ const useCartStore = create((set) => ({
     if (existingItemIndex > -1) {
       cart[existingItemIndex].quantity += quantity;
     } else {
-      cart.push({ ...item, quantity });
+      // For food items, calculate initial scaled nutrition
+      if (type === 'food' && item.label) {
+        const initialNutrition = getInitialScaledNutrition(item);
+        cart.push({ 
+          ...item, 
+          quantity,
+          units: item.serving_unit || 'g',
+          ...initialNutrition
+        });
+      } else {
+        cart.push({ ...item, quantity });
+      }
     }
     newCarts[type] = cart;
     return { carts: newCarts };
@@ -26,16 +38,16 @@ const useCartStore = create((set) => ({
     return { carts: newCarts };
   }),
 
-  updateCartItem: (type, itemId, newQuantity) => set((state) => {
+  updateCartItem: (type, itemId, updateObj) => set((state) => {
     const newCarts = { ...state.carts };
     const cart = [...newCarts[type]];
     const itemIndex = cart.findIndex((i) => i.id === itemId);
 
     if (itemIndex > -1) {
-      if (newQuantity <= 0) {
+      if (updateObj.quantity !== undefined && updateObj.quantity <= 0) {
         cart.splice(itemIndex, 1); // Remove if quantity is 0 or less
       } else {
-        cart[itemIndex].quantity = newQuantity;
+        cart[itemIndex] = { ...cart[itemIndex], ...updateObj };
       }
     }
     newCarts[type] = cart;
@@ -57,7 +69,7 @@ const useCart = (type) => {
   const boundActions = {
     addToCart: (item, quantity) => actions.addToCart(type, item, quantity),
     removeFromCart: (itemId) => actions.removeFromCart(type, itemId),
-    updateCartItem: (itemId, newQuantity) => actions.updateCartItem(type, itemId, newQuantity),
+    updateCartItem: (itemId, updateObj) => actions.updateCartItem(type, itemId, updateObj),
     clearCart: () => actions.clearCart(type),
   };
 

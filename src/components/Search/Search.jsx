@@ -9,14 +9,23 @@ import { X } from 'lucide-react';
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     const foodName = item.food_name || item.label;
     const isPinned = userProfile?.pinnedFoods?.includes(item.id);
+    const thumb = item.photo?.thumb;
     return (
         <div
             onClick={() => onSelect(item)}
             className="flex justify-between items-center p-2 hover:bg-accent cursor-pointer"
         >
-            <MacroDisplay macros={getFoodMacros(item)} format="inline-text" truncateLength={40}>
-                {foodName}
-            </MacroDisplay>
+            <div className="flex items-center w-full">
+                {/* Food photo icon or placeholder */}
+                {thumb ? (
+                    <img src={thumb} alt="food thumb" className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0" />
+                ) : (
+                    <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
+                )}
+                <MacroDisplay macros={getFoodMacros(item)} format="inline-text" truncateLength={40}>
+                    {foodName}
+                </MacroDisplay>
+            </div>
             {item.id && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}

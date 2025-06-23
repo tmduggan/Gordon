@@ -14,8 +14,8 @@ export async function fetchInstantResults(query) {
     const response = await fetch(url);
     const data = await response.json();
     
-    const brandedResults = data.branded ? data.branded.slice(0, 5) : [];
-    const commonResults = data.common ? data.common.slice(0, 5) : [];
+    const brandedResults = data.branded ? data.branded.slice(0, 2) : [];
+    const commonResults = data.common ? data.common.slice(0, 2) : [];
     
     const results = [...brandedResults, ...commonResults];
     

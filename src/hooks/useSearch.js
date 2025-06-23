@@ -41,8 +41,13 @@ export default function useSearch(type, library) {
         if (searchQuery.trim() === '' || type !== 'food') return;
         setSearchLoading(true);
         try {
-            const nutritionixResults = await fetchNutritionixSearch(searchQuery);
-            setSearchResults(nutritionixResults);
+            if (type === 'food' && library && typeof library.searchNutritionix === 'function') {
+                const nutritionixResults = await library.searchNutritionix(searchQuery);
+                setSearchResults(nutritionixResults);
+            } else {
+                const nutritionixResults = await fetchNutritionixSearch(searchQuery);
+                setSearchResults(nutritionixResults);
+            }
         } catch (error) {
             console.error("Error fetching from Nutritionix:", error);
             setSearchResults([]);

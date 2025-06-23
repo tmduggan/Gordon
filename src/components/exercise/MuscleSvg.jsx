@@ -28,7 +28,7 @@ const backgroundMuscles = ['body_outline'];
 
 
   return (
-    <svg viewBox="0 0 3528.37 3203.47" {...rest}>
+    <svg viewBox="0 0 3528.37 3203.47" width="100%" height="100%" {...rest}>
       {Object.entries(muscleMap).map(([id, paths]) => {
         const isInteractive = interactiveMuscles.includes(id);
         const isBackground = backgroundMuscles.includes(id);

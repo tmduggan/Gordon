@@ -11,7 +11,6 @@ import useAuthStore from "./store/useAuthStore";
 import Auth from "./Auth";
 import ProfileMenu from "./ProfileMenu";
 import MainPage from "./pages/MainPage";
-import MuscleChartPage from "./pages/MuscleChartPage";
 import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/toaster";
 
@@ -53,12 +52,6 @@ export default function App() {
           onClick={() => navigate("/nutrition")}
         >
           Nutrition
-        </Button>
-        <Button
-          variant={location.pathname === "/muscle-chart" ? "default" : "outline"}
-          onClick={() => navigate("/muscle-chart")}
-        >
-          Chart
         </Button>
       </div>
     );
@@ -102,7 +95,6 @@ export default function App() {
             <Route path="/" element={<Navigate to="/exercise" />} />
             <Route path="/nutrition" element={<MainPage type="food" />} />
             <Route path="/exercise" element={<MainPage type="exercise" />} />
-            <Route path="/muscle-chart" element={<MuscleChartPage />} />
           </Routes>
         </main>
         <Toaster />

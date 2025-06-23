@@ -19,6 +19,63 @@ export const getFoodMacros = (food) => {
     };
 };
 
+// Helper to calculate initial scaled nutrition for cart items
+// This replicates the logic from ServingSizeEditor for initial values
+export const getInitialScaledNutrition = (food) => {
+    if (!food) {
+        return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
+    }
+
+    // Use the same initial values as ServingSizeEditor
+    const quantity = food.serving_qty || 1;
+    const unit = food.serving_unit || 'g';
+    const servingWeightGrams = food.serving_weight_grams || 1;
+    const macros = food.nutritionix_data || food.nutrition || food;
+
+    // Calculate macros per gram
+    const macrosPerGram = {
+        calories: (macros.nf_calories || macros.calories || 0) / servingWeightGrams,
+        fat: (macros.nf_total_fat || macros.fat || 0) / servingWeightGrams,
+        carbs: (macros.nf_total_carbohydrate || macros.carbs || 0) / servingWeightGrams,
+        protein: (macros.nf_protein || macros.protein || 0) / servingWeightGrams,
+        fiber: (macros.nf_dietary_fiber || macros.fiber || 0) / servingWeightGrams,
+    };
+
+    // Convert to grams (same logic as ServingSizeEditor)
+    let grams = 0;
+    if (unit === 'g') {
+        grams = quantity;
+    } else if (unit === food.serving_unit) {
+        // For base unit, use the serving_weight_grams directly
+        grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
+    } else {
+        // Check alt_measures
+        if (food.alt_measures) {
+            const alt = food.alt_measures.find(m => m.measure === unit);
+            if (alt) {
+                grams = (alt.serving_weight / alt.qty) * quantity;
+            } else {
+                // Fallback: treat as base unit
+                grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
+            }
+        } else {
+            // Fallback: treat as base unit
+            grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
+        }
+    }
+
+    // Calculate scaled nutrition
+    const safe = v => (isFinite(v) && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;
+    
+    return {
+        calories: safe(macrosPerGram.calories * grams),
+        fat: safe(macrosPerGram.fat * grams),
+        carbs: safe(macrosPerGram.carbs * grams),
+        protein: safe(macrosPerGram.protein * grams),
+        fiber: safe(macrosPerGram.fiber * grams),
+    };
+};
+
 // Helper to slugify a string for generating consistent document IDs.
 export function slugify(str) {
     return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
