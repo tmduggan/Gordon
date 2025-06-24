@@ -1,5 +1,7 @@
 // Import level service for streak bonuses
 import { calculateStreakBonuses } from './levelService.js';
+// Import suggestion service for lagging muscle bonuses
+import { calculateLaggingMuscleBonus, analyzeLaggingMuscles } from './suggestionService.js';
 
 const SCORING_CONFIG = {
     version: "v4",
@@ -311,6 +313,21 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
             score += streakInfo.dailyBonus + streakInfo.weeklyBonus;
         } catch (error) {
             console.warn('Error calculating streak bonuses:', error);
+        }
+    }
+
+    // 6. Add Lagging Muscle Bonuses
+    if (userProfile?.muscleScores) {
+        try {
+            const laggingMuscles = analyzeLaggingMuscles(userProfile.muscleScores, userWorkoutHistory, [exerciseDetails]);
+            const laggingMuscleBonus = calculateLaggingMuscleBonus(
+                workoutToScore,
+                exerciseDetails,
+                laggingMuscles
+            );
+            score += laggingMuscleBonus;
+        } catch (error) {
+            console.warn('Error calculating lagging muscle bonus:', error);
         }
     }
 

@@ -11,6 +11,8 @@ import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
 import MuscleChartDisplay from '../components/exercise/MuscleChartDisplay';
 import LevelDisplay from '../components/LevelDisplay';
+import EquipmentSelector from '../components/EquipmentSelector';
+import WorkoutSuggestions from '../components/WorkoutSuggestions';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -34,6 +36,7 @@ export default function MainPage({ type }) {
     const { user, userProfile, saveUserProfile, togglePinFood, togglePinExercise } = useAuthStore();
     const dateTimePicker = useDateTimePicker(type);
     const [currentLogData, setCurrentLogData] = useState({}); // For exercise cart inputs
+    const [availableEquipment, setAvailableEquipment] = useState([]); // For equipment preferences
     const { toast } = useToast();
     const [showAllHistory, setShowAllHistory] = useState(false);
     
@@ -300,6 +303,25 @@ export default function MainPage({ type }) {
                         accountCreationDate={accountCreationDate}
                         className="mb-4"
                     />
+                    
+                    {/* Equipment Selector */}
+                    <EquipmentSelector
+                        availableEquipment={availableEquipment}
+                        onEquipmentChange={setAvailableEquipment}
+                        exerciseLibrary={library.items}
+                        className="mb-4"
+                    />
+                    
+                    {/* Workout Suggestions */}
+                    <WorkoutSuggestions
+                        muscleScores={userProfile?.muscleScores || {}}
+                        workoutLogs={history.logs}
+                        exerciseLibrary={library.items}
+                        availableEquipment={availableEquipment}
+                        onAddToCart={handleSelect}
+                        className="mb-4"
+                    />
+                    
                     <MuscleChartDisplay className="mt-4 px-4" />
                 </>
             )}
