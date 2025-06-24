@@ -11,7 +11,6 @@ import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
 import MuscleChartDisplay from '../components/exercise/MuscleChartDisplay';
 import LevelDisplay from '../components/LevelDisplay';
-import EquipmentSelector from '../components/EquipmentSelector';
 import WorkoutSuggestions from '../components/WorkoutSuggestions';
 
 // Hook Imports
@@ -36,7 +35,6 @@ export default function MainPage({ type }) {
     const { user, userProfile, saveUserProfile, togglePinFood, togglePinExercise } = useAuthStore();
     const dateTimePicker = useDateTimePicker(type);
     const [currentLogData, setCurrentLogData] = useState({}); // For exercise cart inputs
-    const [availableEquipment, setAvailableEquipment] = useState([]); // For equipment preferences
     const { toast } = useToast();
     const [showAllHistory, setShowAllHistory] = useState(false);
     
@@ -247,6 +245,16 @@ export default function MainPage({ type }) {
     return (
         <div className="max-w-3xl mx-auto w-full">
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
+                {type === 'exercise' && (
+                    <WorkoutSuggestions
+                        muscleScores={userProfile?.muscleScores || {}}
+                        workoutLogs={history.logs}
+                        exerciseLibrary={library.items}
+                        availableEquipment={userProfile?.availableEquipment || []}
+                        onAddToCart={handleSelect}
+                        className="mb-4"
+                    />
+                )}
                 <PinnedItemsGrid
                     items={pinnedItems}
                     onSelectItem={(item) => cart.addToCart(item, 1)}
@@ -301,24 +309,6 @@ export default function MainPage({ type }) {
                         totalXP={totalXP}
                         workoutLogs={history.logs}
                         accountCreationDate={accountCreationDate}
-                        className="mb-4"
-                    />
-                    
-                    {/* Equipment Selector */}
-                    <EquipmentSelector
-                        availableEquipment={availableEquipment}
-                        onEquipmentChange={setAvailableEquipment}
-                        exerciseLibrary={library.items}
-                        className="mb-4"
-                    />
-                    
-                    {/* Workout Suggestions */}
-                    <WorkoutSuggestions
-                        muscleScores={userProfile?.muscleScores || {}}
-                        workoutLogs={history.logs}
-                        exerciseLibrary={library.items}
-                        availableEquipment={availableEquipment}
-                        onAddToCart={handleSelect}
                         className="mb-4"
                     />
                     

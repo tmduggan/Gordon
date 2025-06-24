@@ -15,7 +15,6 @@ import { Button } from "./components/ui/button";
 import { Toaster } from "./components/ui/toaster";
 
 // Component Imports
-import DailyGoalsModal from './DailyGoalsModal';
 
 export default function App() {
   const { user, init } = useAuthStore();
