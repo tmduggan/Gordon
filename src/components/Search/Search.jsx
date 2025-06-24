@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
-    const foodName = item.food_name || item.label;
+    // Show recipe name if isRecipe, otherwise food_name or label
+    const foodName = item.isRecipe ? item.name : (item.food_name || item.label);
     const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id);
     const isRecipe = item.isRecipe;
     const thumb = item.photo?.thumb;
+    const macros = getFoodMacros(item);
     
     // Determine background color based on item type
     let bgColorClass = "hover:bg-accent";
@@ -23,36 +25,43 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     return (
         <div
             onClick={() => onSelect(item)}
-            className={`flex justify-between items-center p-2 cursor-pointer ${bgColorClass}`}
+            className={`cursor-pointer ${bgColorClass}`}
         >
-            <div className="flex items-center w-full">
-                {/* Food photo icon or placeholder */}
-                {thumb ? (
-                    <img src={thumb} alt="food thumb" className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0" />
-                ) : (
-                    <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
-                )}
-                <div className="flex items-center gap-2">
-                    <MacroDisplay macros={getFoodMacros(item)} format="inline-text" truncateLength={40}>
-                        {foodName}
-                    </MacroDisplay>
-                    {/* Visual indicators for pinned items and recipes */}
-                    {isPinned && (
-                        <span className="text-blue-600 text-xs font-medium">📌 Pinned</span>
+            <div className="grid grid-cols-[minmax(0,1fr)_60px_50px_50px_50px_50px_auto] items-center gap-2 px-2 py-1">
+                {/* Food name and thumb */}
+                <div className="flex items-center min-w-0">
+                    {thumb ? (
+                        <img src={thumb} alt="food thumb" className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0" />
+                    ) : (
+                        <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
                     )}
+                    <span className="truncate font-medium text-sm">{foodName}
+                      {((item.tags && item.tags.food_group !== undefined) ? item.tags.food_group : item.food_group) !== undefined && (
+                        <span className="ml-1 text-xs text-gray-400">fg:{item.tags && item.tags.food_group !== undefined ? item.tags.food_group : item.food_group}</span>
+                      )}
+                    </span>
+                </div>
+                {/* Macros: calories, carbs, fat, protein, fiber */}
+                <div className="text-right w-[60px] font-mono tabular-nums text-xs">{macros.calories} <span role="img" aria-label="calories">🔥</span></div>
+                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.carbs}g <span role="img" aria-label="carbs">🌾</span></div>
+                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.fat}g <span role="img" aria-label="fat">🧈</span></div>
+                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.protein}g <span role="img" aria-label="protein">🥩</span></div>
+                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.fiber}g <span role="img" aria-label="fiber">🌱</span></div>
+                {/* Pin/Recipe/Indicators */}
+                <div className="flex items-center gap-2 justify-end">
                     {isRecipe && (
-                        <span className="text-green-600 text-xs font-medium">👨‍🍳 Recipe</span>
+                        <span className="text-green-600 text-xs font-medium" title="Recipe">👨‍🍳</span>
+                    )}
+                    {item.id && !isRecipe && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
+                            title={isPinned ? "Unpin food" : "Pin food"}
+                        >
+                            {isPinned ? '📌' : '📍'}
+                        </Button>
                     )}
                 </div>
             </div>
-            {item.id && !isRecipe && (
-                <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
-                    title={isPinned ? "Unpin food" : "Pin food"}
-                >
-                    {isPinned ? '📌' : '📍'}
-                </Button>
-            )}
         </div>
     );
 };
@@ -73,10 +82,6 @@ const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
         >
             <div className="flex items-center gap-2">
                 <span>{item.name}</span>
-                {/* Visual indicator for pinned exercises */}
-                {isPinned && (
-                    <span className="text-blue-600 text-xs font-medium">📌 Pinned</span>
-                )}
             </div>
             {item.id && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -217,12 +222,12 @@ export default function Search({
                 )}
 
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                    <div>
+                    <div style={{ maxHeight: '600px', minHeight: '200px', overflowY: 'auto' }}>
                         {isLoading && <div className="p-4 text-sm text-center">Searching...</div>}
                         {!isLoading && searchResults.length === 0 && searchQuery && (
                             <div className="p-4 text-sm text-center">No results found.</div>
                         )}
-                        {searchResults.map((item) => (
+                        {searchResults.slice(0, 40).map((item) => (
                             <ResultComponent
                                 key={item.id || item.food_name}
                                 item={item}

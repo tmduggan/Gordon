@@ -9,8 +9,6 @@ import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
-import RecipeCreator from '../components/nutrition/RecipeCreator';
-import RecipeSelector from '../components/nutrition/RecipeSelector';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -80,19 +78,6 @@ export default function FoodPage() {
                     onPinToggleItem={togglePinFood}
                     itemType="food"
                 />
-                
-                {/* Recipe Section */}
-                <div className="space-y-3">
-                    <RecipeCreator 
-                        onRecipeCreated={handleRecipeCreated}
-                        userProfile={userProfile}
-                    />
-                    <RecipeSelector
-                        recipes={recipes}
-                        onSelectRecipe={handleRecipeSelect}
-                        onDeleteRecipe={handleRecipeDelete}
-                    />
-                </div>
                 
                 <Search
                     type="food"
