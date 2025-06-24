@@ -1,0 +1,46 @@
+import { useState } from 'react';
+import useAuthStore from '../store/useAuthStore';
+import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
+
+export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker) {
+    const { user } = useAuthStore();
+    const [showAllHistory, setShowAllHistory] = useState(false);
+
+    const handleSelect = async (food) => {
+        let foodToLog = food;
+        if (food.isPreview) {
+            const savedFood = await foodLibrary.fetchAndSave(food);
+            if (savedFood) foodToLog = savedFood;
+        }
+        cart.addToCart(foodToLog);
+        search.clearSearch();
+    };
+
+    const logCart = async () => {
+        const timestamp = dateTimePicker.getLogTimestamp();
+        for (const item of cart.cart) {
+            let food = foodLibrary.items.find(f => f.id === item.id);
+            if (!food) {
+                const newFoodId = await foodLibrary.fetchAndSave(item);
+                if (newFoodId) food = { ...item, id: newFoodId };
+                else { 
+                    console.warn("Could not save new food for cart item:", item); 
+                    continue; 
+                }
+            }
+            try {
+                await logFoodEntry(food, user, item.quantity, timestamp);
+            } catch (error) { 
+                console.error("Error adding food log from cart:", error, item); 
+            }
+        }
+        cart.clearCart();
+    };
+
+    return {
+        handleSelect,
+        logCart,
+        showAllHistory,
+        setShowAllHistory
+    };
+} 
