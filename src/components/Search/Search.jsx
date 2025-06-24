@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import MacroDisplay from '../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X } from 'lucide-react';
+import { X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     const foodName = item.food_name || item.label;
@@ -58,22 +58,41 @@ const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
     );
 };
 
-const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterChange }) => (
-    <div className="flex flex-col sm:flex-row gap-2 my-2">
-        <FilterSelect
-            placeholder="Filter by Target"
-            value={filters.target}
-            options={options.targets}
-            onValueChange={(value) => onFilterChange('target', value)}
-            onClear={() => onFilterChange('target', '')}
-        />
-        <FilterSelect
-            placeholder="Filter by Equipment"
-            value={filters.equipment}
-            options={options.equipments}
-            onValueChange={(value) => onFilterChange('equipment', value)}
-            onClear={() => onFilterChange('equipment', '')}
-        />
+const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterChange, isExpanded, onToggleExpanded }) => (
+    <div className="my-2">
+        {/* Filter Toggle Button */}
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleExpanded}
+            className="w-full justify-between"
+        >
+            <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <span>Filter by Target / Equipment</span>
+            </div>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        
+        {/* Filter Controls */}
+        {isExpanded && (
+            <div className="flex flex-col sm:flex-row gap-2 mt-2 p-3 border rounded-md bg-gray-50">
+                <FilterSelect
+                    placeholder="Filter by Target"
+                    value={filters.target}
+                    options={options.targets}
+                    onValueChange={(value) => onFilterChange('target', value)}
+                    onClear={() => onFilterChange('target', '')}
+                />
+                <FilterSelect
+                    placeholder="Filter by Equipment"
+                    value={filters.equipment}
+                    options={options.equipments}
+                    onValueChange={(value) => onFilterChange('equipment', value)}
+                    onClear={() => onFilterChange('equipment', '')}
+                />
+            </div>
+        )}
     </div>
 );
 
@@ -114,6 +133,7 @@ export default function Search({
     filterOptions
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
     useEffect(() => {
         setIsOpen(searchQuery.length > 0 && searchResults.length > 0);
@@ -124,6 +144,10 @@ export default function Search({
         if (value) {
             setSearchQuery(''); // Clear text query when a filter is applied
         }
+    };
+
+    const handleToggleFilterExpanded = () => {
+        setIsFilterExpanded(!isFilterExpanded);
     };
 
     const ResultComponent = type === 'food' ? FoodResult : ExerciseResult;
@@ -155,6 +179,8 @@ export default function Search({
                         filters={filters}
                         setFilters={setFilters}
                         onFilterChange={handleFilterChange}
+                        isExpanded={isFilterExpanded}
+                        onToggleExpanded={handleToggleFilterExpanded}
                     />
                 )}
 

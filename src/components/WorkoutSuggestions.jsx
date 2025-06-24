@@ -206,46 +206,11 @@ export default function WorkoutSuggestions({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex flex-col items-stretch w-full h-full">
-                          {/* Exercise Name + Info Icon */}
-                          <div className="pr-2 min-w-0 flex items-center justify-center gap-1">
+                          {/* Exercise Name */}
+                          <div className="pr-2 min-w-0">
                             <strong className="block truncate text-center text-sm">
                               {suggestion.exercise.name}
                             </strong>
-                            {/* Info icon for mobile tooltip */}
-                            <TooltipProvider delayDuration={100}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="ml-1 p-0.5 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    onClick={e => e.stopPropagation()}
-                                    tabIndex={0}
-                                    aria-label="Show info"
-                                  >
-                                    <Info className="h-4 w-4 text-gray-400" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom">
-                                  <div className="mb-2">
-                                    <div className="font-semibold text-base mb-1">
-                                      {suggestion.exercise.name}
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-2">
-                                      {suggestion.reason}
-                                    </p>
-                                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                                      <span>Target: {suggestion.exercise.target}</span>
-                                      {suggestion.exercise.equipment && (
-                                        <span>Equipment: {suggestion.exercise.equipment}</span>
-                                      )}
-                                      {suggestion.exercise.category && (
-                                        <span>Type: {suggestion.exercise.category}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
                           </div>
                           
                           {/* Icons Row */}
@@ -329,6 +294,43 @@ export default function WorkoutSuggestions({
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">
+                        <div className="mb-2">
+                          <div className="font-semibold text-base mb-1">
+                            {suggestion.exercise.name}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {suggestion.reason}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>Target: {suggestion.exercise.target}</span>
+                            {suggestion.exercise.equipment && (
+                              <span>Equipment: {suggestion.exercise.equipment}</span>
+                            )}
+                            {suggestion.exercise.category && (
+                              <span>Type: {suggestion.exercise.category}</span>
+                            )}
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {/* Info Button - Bottom Left */}
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute bottom-1 left-1 h-6 w-6 p-0 text-gray-400 hover:text-blue-500 z-10"
+                          onClick={e => e.stopPropagation()}
+                          tabIndex={0}
+                          aria-label="Show info"
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
                         <div className="mb-2">
                           <div className="font-semibold text-base mb-1">
                             {suggestion.exercise.name}
