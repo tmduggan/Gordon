@@ -7,7 +7,73 @@ const TooltipProvider = TooltipPrimitive.Provider
 
 const Tooltip = TooltipPrimitive.Root
 
-const TooltipTrigger = TooltipPrimitive.Trigger
+const TooltipTrigger = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger> & {
+    mobileTouchDelay?: number;
+  }
+>(({ className, mobileTouchDelay = 500, children, ...props }, ref) => {
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [isTouchHolding, setIsTouchHolding] = React.useState(false);
+  const touchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    touchTimeoutRef.current = setTimeout(() => {
+      setIsTouchHolding(true);
+    }, mobileTouchDelay);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+    }
+    
+    // Delay hiding to allow for tooltip interaction
+    setTimeout(() => {
+      setIsTouchHolding(false);
+    }, 100);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+    }
+    setIsTouchHolding(false);
+  };
+
+  return (
+    <TooltipPrimitive.Trigger
+      ref={ref}
+      className={cn(className)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      data-touch-holding={isTouchHolding}
+      {...props}
+    >
+      {children}
+    </TooltipPrimitive.Trigger>
+  );
+});
+TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,

@@ -128,6 +128,7 @@ export default function FoodPage() {
                         updateCartItem={cart.updateCartItem}
                         removeFromCart={cart.removeFromCart}
                         logCart={logCart}
+                        onRecipeCreated={handleRecipeCreated}
                     />
                 )}
             </div>

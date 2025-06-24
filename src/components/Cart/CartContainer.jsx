@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CartRow from './CartRow';
 import CartHead from './CartHead';
+import SaveCartAsRecipe from '../nutrition/SaveCartAsRecipe';
 import { getFoodMacros } from '../../utils/dataUtils';
 import { calculateWorkoutScore } from '../../services/scoringService';
 import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/suggestionService';
@@ -192,6 +193,7 @@ export default function CartContainer({
   userWorkoutHistory,
   exerciseLibrary,
   userProfile,
+  onRecipeCreated,
   ...rest
 }) {
   if (items.length === 0) {
@@ -235,7 +237,15 @@ export default function CartContainer({
       </CardContent>
       {type === 'food' && <CartMacroSummary items={items} />}
       <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4">
-        <div>{footerControls}</div>
+        <div className="flex items-center gap-2">
+          {footerControls}
+          {type === 'food' && onRecipeCreated && (
+            <SaveCartAsRecipe 
+              cart={items} 
+              onRecipeCreated={onRecipeCreated}
+            />
+          )}
+        </div>
         <div className="flex w-full sm:w-auto gap-2">
           <Button variant="outline" onClick={clearCart} className="w-1/2 sm:w-auto">Clear</Button>
           <Button onClick={logCart} className="w-1/2 sm:w-auto">Log Items</Button>

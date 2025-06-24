@@ -38,18 +38,18 @@ const LEVEL_CONFIG = {
   
   // Level titles/achievements
   levelTitles: {
-    1: "Novice Lifter",
-    5: "Dedicated Trainee",
-    10: "Fitness Enthusiast",
-    15: "Strength Seeker",
-    20: "Muscle Builder",
-    25: "Power Lifter",
-    30: "Elite Athlete",
-    35: "Fitness Master",
-    40: "Strength Legend",
-    50: "Goliath Champion",
-    75: "Titan of Fitness",
-    100: "Immortal Warrior"
+    1: "Pixel Sprite",
+    5: "Arcade Warrior",
+    10: "Retro Champion",
+    15: "8-Bit Hero",
+    20: "Console Master",
+    25: "Digital Legend",
+    30: "Virtual Champion",
+    35: "Cyber Warrior",
+    40: "Neon Knight",
+    50: "Quantum Hero",
+    75: "Binary Overlord",
+    100: "Digital Deity"
   }
 };
 
