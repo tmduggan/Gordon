@@ -10,24 +10,75 @@ const useCartStore = create((set) => ({
   addToCart: (type, item, quantity = 1) => set((state) => {
     const newCarts = { ...state.carts };
     const cart = [...newCarts[type]];
-    const existingItemIndex = cart.findIndex((i) => i.id === item.id);
 
-    if (existingItemIndex > -1) {
-      cart[existingItemIndex].quantity += quantity;
+    // Handle recipes - expand them into individual food items
+    if (type === 'food' && item.items && Array.isArray(item.items)) {
+      // This is a recipe, expand it into individual items
+      const recipeItems = item.items.map(recipeItem => {
+        const scaledQuantity = recipeItem.quantity * quantity;
+        const scaledMacros = {
+          calories: (recipeItem.macros.calories || 0) * quantity,
+          protein: (recipeItem.macros.protein || 0) * quantity,
+          carbs: (recipeItem.macros.carbs || 0) * quantity,
+          fat: (recipeItem.macros.fat || 0) * quantity,
+          fiber: (recipeItem.macros.fiber || 0) * quantity,
+        };
+
+        return {
+          id: `${item.id}_${recipeItem.id}`,
+          food_name: recipeItem.name,
+          label: recipeItem.name,
+          quantity: scaledQuantity,
+          units: recipeItem.unit,
+          serving_unit: recipeItem.unit,
+          calories: scaledMacros.calories,
+          protein: scaledMacros.protein,
+          carbs: scaledMacros.carbs,
+          fat: scaledMacros.fat,
+          fiber: scaledMacros.fiber,
+          isRecipeItem: true,
+          recipeName: item.name,
+          recipeId: item.id
+        };
+      });
+
+      // Add each recipe item to cart
+      recipeItems.forEach(recipeItem => {
+        const existingItemIndex = cart.findIndex((i) => i.id === recipeItem.id);
+        if (existingItemIndex > -1) {
+          cart[existingItemIndex].quantity += recipeItem.quantity;
+          // Update macros proportionally
+          cart[existingItemIndex].calories += recipeItem.calories;
+          cart[existingItemIndex].protein += recipeItem.protein;
+          cart[existingItemIndex].carbs += recipeItem.carbs;
+          cart[existingItemIndex].fat += recipeItem.fat;
+          cart[existingItemIndex].fiber += recipeItem.fiber;
+        } else {
+          cart.push(recipeItem);
+        }
+      });
     } else {
-      // For food items, calculate initial scaled nutrition
-      if (type === 'food' && item.label) {
-        const initialNutrition = getInitialScaledNutrition(item);
-        cart.push({ 
-          ...item, 
-          quantity,
-          units: item.serving_unit || 'g',
-          ...initialNutrition
-        });
+      // Handle regular food items
+      const existingItemIndex = cart.findIndex((i) => i.id === item.id);
+
+      if (existingItemIndex > -1) {
+        cart[existingItemIndex].quantity += quantity;
       } else {
-        cart.push({ ...item, quantity });
+        // For food items, calculate initial scaled nutrition
+        if (type === 'food' && item.label) {
+          const initialNutrition = getInitialScaledNutrition(item);
+          cart.push({ 
+            ...item, 
+            quantity,
+            units: item.serving_unit || 'g',
+            ...initialNutrition
+          });
+        } else {
+          cart.push({ ...item, quantity });
+        }
       }
     }
+    
     newCarts[type] = cart;
     return { carts: newCarts };
   }),

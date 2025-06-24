@@ -3,11 +3,12 @@ import MacroDisplay from '../nutrition/MacroDisplay';
 import ServingSizeEditor from '../nutrition/ServingSizeEditor';
 import { getFoodMacros } from '../../utils/dataUtils';
 import { Button } from '@/components/ui/button';
-import { XCircle, Info } from 'lucide-react';
+import { XCircle, Info, ChefHat } from 'lucide-react';
 import ExerciseLogInputs from '../exercise/ExerciseLogInputs';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import NutritionLabel from '../nutrition/NutritionLabel';
 import ExerciseInfoCard from '../exercise/ExerciseInfoCard';
+import { Badge } from '@/components/ui/badge';
 
 export default function CartRow({ item, updateCartItem, removeFromCart, logData, onLogDataChange }) {
   // Check if the item is a food item by looking for a unique property like 'label'.
@@ -44,6 +45,12 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
             <ServingSizeEditor food={item} onUpdate={handleServingChange} />
             <div className="flex items-center gap-1">
               <span className="font-semibold text-xs sm:text-sm">{item.label}</span>
+              {item.isRecipeItem && (
+                <Badge variant="outline" className="text-xs">
+                  <ChefHat className="h-3 w-3 mr-1" />
+                  {item.recipeName}
+                </Badge>
+              )}
               <InfoDialog item={item} isFood={true} />
             </div>
           </div>

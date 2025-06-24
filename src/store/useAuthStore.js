@@ -43,6 +43,7 @@ const useAuthStore = create((set, get) => ({
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
           pinnedExercises: [],
+          recipes: [],
           muscleScores: {}, // Initialize with empty scores
         };
         await setDoc(userDocRef, defaultProfile);
@@ -69,7 +70,8 @@ const useAuthStore = create((set, get) => ({
         const defaultProfile = {
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
-          pinnedExercises: []
+          pinnedExercises: [],
+          recipes: []
         };
         await setDoc(userDocRef, defaultProfile); // Create the profile
         set({ userProfile: defaultProfile, loading: false });
@@ -120,6 +122,30 @@ const useAuthStore = create((set, get) => ({
       : [...currentPinned, exerciseId];
       
     const newProfile = { ...userProfile, pinnedExercises: newPinned };
+    await get().saveUserProfile(newProfile);
+  },
+
+  // Add a new recipe
+  addRecipe: async (recipe) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentRecipes = userProfile.recipes || [];
+    const newRecipes = [...currentRecipes, recipe];
+    
+    const newProfile = { ...userProfile, recipes: newRecipes };
+    await get().saveUserProfile(newProfile);
+  },
+
+  // Delete a recipe
+  deleteRecipe: async (recipeId) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentRecipes = userProfile.recipes || [];
+    const newRecipes = currentRecipes.filter(recipe => recipe.id !== recipeId);
+    
+    const newProfile = { ...userProfile, recipes: newRecipes };
     await get().saveUserProfile(newProfile);
   },
 

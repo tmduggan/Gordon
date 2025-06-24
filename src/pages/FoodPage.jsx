@@ -9,6 +9,8 @@ import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
+import RecipeCreator from '../components/nutrition/RecipeCreator';
+import RecipeSelector from '../components/nutrition/RecipeSelector';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -22,7 +24,7 @@ import useFoodLogging from '../hooks/useFoodLogging';
 import { getFoodMacros } from '../utils/dataUtils';
 
 export default function FoodPage() {
-    const { userProfile, togglePinFood } = useAuthStore();
+    const { userProfile, togglePinFood, addRecipe, deleteRecipe } = useAuthStore();
     const dateTimePicker = useDateTimePicker('food');
     
     // Initialize hooks
@@ -40,6 +42,8 @@ export default function FoodPage() {
         ? userProfile.pinnedFoods.map(id => foodLibrary.items.find(f => f.id === id)).filter(Boolean)
         : [];
     
+    const recipes = userProfile?.recipes || [];
+    
     const todayLogs = foodHistory.getLogsForToday();
     const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
 
@@ -49,6 +53,18 @@ export default function FoodPage() {
         getFoodById: (id) => foodLibrary.items.find(f => f.id === id),
         updateLog: foodHistory.updateLog,
         deleteLog: foodHistory.deleteLog,
+    };
+
+    const handleRecipeCreated = async (recipe) => {
+        await addRecipe(recipe);
+    };
+
+    const handleRecipeSelect = (recipe) => {
+        cart.addToCart(recipe, 1);
+    };
+
+    const handleRecipeDelete = async (recipeId) => {
+        await deleteRecipe(recipeId);
     };
 
     if (foodLibrary.loading || foodHistory.loading) {
@@ -64,6 +80,20 @@ export default function FoodPage() {
                     onPinToggleItem={togglePinFood}
                     itemType="food"
                 />
+                
+                {/* Recipe Section */}
+                <div className="space-y-3">
+                    <RecipeCreator 
+                        onRecipeCreated={handleRecipeCreated}
+                        userProfile={userProfile}
+                    />
+                    <RecipeSelector
+                        recipes={recipes}
+                        onSelectRecipe={handleRecipeSelect}
+                        onDeleteRecipe={handleRecipeDelete}
+                    />
+                </div>
+                
                 <Search
                     type="food"
                     searchQuery={search.searchQuery}
