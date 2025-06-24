@@ -39,29 +39,29 @@ export default function App() {
     const location = useLocation();
 
     return (
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
         <Button
           variant={location.pathname === "/exercise" ? "default" : "outline"}
           onClick={() => navigate("/exercise")}
           size="icon"
-          className="h-10 w-10"
+          className="h-12 w-12"
         >
           <img 
             src="/exercise-favicon.png" 
             alt="Exercise" 
-            className="h-6 w-6"
+            className="h-7 w-7"
           />
         </Button>
         <Button
           variant={location.pathname === "/nutrition" ? "default" : "outline"}
           onClick={() => navigate("/nutrition")}
           size="icon"
-          className="h-10 w-10"
+          className="h-12 w-12"
         >
           <img 
             src="/nutrition-favicon.png" 
             alt="Nutrition" 
-            className="h-6 w-6"
+            className="h-7 w-7"
           />
         </Button>
       </div>
@@ -89,10 +89,10 @@ export default function App() {
 
     return (
       <div className={`min-h-screen ${theme}`}>
-        <header className="bg-card shadow-md">
-          <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Navigation />
+        <header className="bg-card shadow-md relative">
+          <div className="container mx-auto px-4 py-2 flex justify-center items-center">
+            <Navigation />
+            <div className="absolute top-2 right-4">
               <ProfileMenu />
             </div>
           </div>
