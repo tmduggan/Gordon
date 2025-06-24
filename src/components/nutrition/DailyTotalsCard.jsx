@@ -2,28 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getFoodMacros } from '../../utils/dataUtils';
+import { calculateDailyFoodXP, calculateDailyTotals } from '../../services/foodScoringService';
 
 const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
-    // Calculate daily totals
-    const calculateDailyTotals = () => {
-        const totals = { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
-        
-        logs.forEach(log => {
-            const food = getFoodById(log.foodId);
-            if (food) {
-                const foodMacros = getFoodMacros(food);
-                totals.calories += (foodMacros.calories || 0) * log.serving;
-                totals.fat += (foodMacros.fat || 0) * log.serving;
-                totals.carbs += (foodMacros.carbs || 0) * log.serving;
-                totals.protein += (foodMacros.protein || 0) * log.serving;
-                totals.fiber += (foodMacros.fiber || 0) * log.serving;
-            }
-        });
-        
-        return totals;
-    };
-
-    const totals = calculateDailyTotals();
+    // Calculate daily totals including micronutrients
+    const totals = calculateDailyTotals(logs, getFoodById);
+    
+    // Calculate daily food XP
+    const dailyXP = calculateDailyFoodXP(logs, getFoodById, goals);
     
     const macroConfig = [
         { key: 'calories', label: '🔥 Calories', goal: goals.calories, color: 'bg-orange-500' },
@@ -63,10 +49,21 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
         );
     };
 
+    // Get micronutrients that have values
+    const micronutrientsWithValues = Object.entries(totals.micronutrients || {})
+        .filter(([label, value]) => value > 0)
+        .sort((a, b) => b[1] - a[1]) // Sort by value descending
+        .slice(0, 5); // Show top 5
+
     return (
         <Card className="mb-4">
             <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Daily Totals</CardTitle>
+                {dailyXP.totalXP > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                        Today's Food XP: <span className="font-semibold text-primary">+{dailyXP.totalXP}</span>
+                    </div>
+                )}
             </CardHeader>
             <CardContent className="space-y-4">
                 {macroConfig.map((config) => (
@@ -77,6 +74,21 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
                         goal={config.goal}
                     />
                 ))}
+                
+                {/* Micronutrients Section */}
+                {micronutrientsWithValues.length > 0 && (
+                    <div className="pt-4 border-t">
+                        <h4 className="text-sm font-medium mb-3">Top Micronutrients</h4>
+                        <div className="space-y-2">
+                            {micronutrientsWithValues.map(([label, value]) => (
+                                <div key={label} className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">{label}</span>
+                                    <span className="font-medium">{Math.round(value)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

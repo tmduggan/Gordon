@@ -76,6 +76,11 @@ const FoodLogRow = ({ log, food, updateLog, deleteLog }) => (
         <td className="py-2 px-1">{log.units}</td>
         <MacroDisplay macros={getFoodMacros(food)} format="table-row-cells" />
         <td className="text-center py-2 px-1">
+            {log.xp && (
+                <span className="text-sm font-medium text-green-600">+{log.xp}</span>
+            )}
+        </td>
+        <td className="text-center py-2 px-1">
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLog(log.id)}>
                 <X className="h-4 w-4 text-red-500" />
             </Button>
@@ -137,6 +142,7 @@ export default function HistoryView({ type, logs, ...props }) {
                                     <th className="text-right py-2 px-1 font-semibold">🍞</th>
                                     <th className="text-right py-2 px-1 font-semibold">🍗</th>
                                     <th className="text-right py-2 px-1 font-semibold">🌱</th>
+                                    <th className="text-center py-2 px-1 font-semibold">XP</th>
                                     <th className="py-2 px-1"></th>
                                 </tr>
                             </thead>

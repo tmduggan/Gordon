@@ -3,7 +3,7 @@ import useAuthStore from '../store/useAuthStore';
 import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 
 export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker) {
-    const { user } = useAuthStore();
+    const { user, addXP } = useAuthStore();
     const [showAllHistory, setShowAllHistory] = useState(false);
 
     const handleSelect = async (food) => {
@@ -18,6 +18,8 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
 
     const logCart = async () => {
         const timestamp = dateTimePicker.getLogTimestamp();
+        let totalXP = 0;
+        
         for (const item of cart.cart) {
             let food = foodLibrary.items.find(f => f.id === item.id);
             if (!food) {
@@ -29,11 +31,18 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
                 }
             }
             try {
-                await logFoodEntry(food, user, item.quantity, timestamp);
+                const loggedEntry = await logFoodEntry(food, user, item.quantity, timestamp);
+                totalXP += loggedEntry.xp || 0;
             } catch (error) { 
                 console.error("Error adding food log from cart:", error, item); 
             }
         }
+        
+        // Add total XP to user's profile
+        if (totalXP > 0) {
+            await addXP(totalXP);
+        }
+        
         cart.clearCart();
     };
 

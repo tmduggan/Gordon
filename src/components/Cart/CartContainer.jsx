@@ -16,6 +16,7 @@ import { getFoodMacros } from '../../utils/dataUtils';
 import { calculateWorkoutScore } from '../../services/scoringService';
 import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/suggestionService';
 import { calculateStreakBonuses } from '../../services/levelService';
+import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../services/foodScoringService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {
@@ -50,6 +51,72 @@ const CartMacroSummary = ({ items }) => {
                 <MacroPill label="Fat" value={Math.round(totals.fat)} unit="g" className="bg-amber-100 text-amber-800" />
             </div>
         </div>
+    );
+};
+
+const CartFoodSummary = ({ items }) => {
+    const totalXP = items.reduce((acc, item) => {
+        const xp = calculateFoodXP(item, item.quantity || 1);
+        return acc + xp;
+    }, 0);
+
+    // Calculate breakdown for tooltip
+    const xpBreakdown = items.map(item => {
+        const baseXP = calculateFoodXP(item, item.quantity || 1);
+        const multiplier = calculateFoodGroupMultiplier(item);
+        const multiplierBonus = Math.round(baseXP * (multiplier - 1));
+        
+        const lines = [
+            { xp: baseXP, label: 'Base XP' }
+        ];
+        
+        if (multiplierBonus > 0) {
+            lines.push({ xp: multiplierBonus, label: 'Food group bonus' });
+        }
+        
+        return {
+            name: item.label || item.food_name,
+            lines: lines,
+            totalXP: baseXP + multiplierBonus
+        };
+    });
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                        <span className="font-semibold">Total XP:</span>
+                        <span className="text-lg font-bold text-primary">{totalXP}</span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                    <div className="space-y-2">
+                        <div className="font-semibold text-sm">Cart Breakdown:</div>
+                        {xpBreakdown.map((item, index) => (
+                            <div key={index} className="mb-2">
+                                <div className="truncate max-w-[180px] font-medium text-xs mb-1">{item.name}</div>
+                                <div className="text-xs text-gray-700">
+                                    {item.lines.map((line, i) => (
+                                        <div key={i} style={{ display: 'flex', fontFamily: 'monospace', alignItems: 'center' }}>
+                                            <span style={{ display: 'inline-block', minWidth: 36, textAlign: 'right', color: '#059669', fontWeight: 600 }}>+{line.xp}</span>
+                                            <span style={{ marginLeft: 4, minWidth: 24 }}>XP</span>
+                                            <span style={{ marginLeft: 8 }}>{line.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        <div className="border-t pt-1 mt-2">
+                            <div className="flex justify-between text-sm font-semibold">
+                                <span>Total:</span>
+                                <span className="text-green-600">+{totalXP}</span>
+                            </div>
+                        </div>
+                    </div>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 };
 
@@ -217,6 +284,9 @@ export default function CartContainer({
                     library={exerciseLibrary}
                     userProfile={userProfile}
                 />
+            )}
+            {type === 'food' && (
+                <CartFoodSummary items={items} />
             )}
         </div>
       </CardHeader>

@@ -5,7 +5,7 @@ import { calculateWorkoutScore, updatePersonalBests } from '../services/scoringS
 import { useToast } from './use-toast';
 
 export default function useExerciseLogging(exerciseLibrary, exerciseHistory, cart, search, dateTimePicker) {
-    const { user, userProfile, saveUserProfile } = useAuthStore();
+    const { user, userProfile, saveUserProfile, addXP } = useAuthStore();
     const { toast } = useToast();
     const [currentLogData, setCurrentLogData] = useState({}); // For exercise cart inputs
 
@@ -20,6 +20,7 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
         const userWorkoutHistory = exerciseHistory.logs; // All past logs
         let updatedProfile = { ...userProfile };
         let profileScores = updatedProfile.muscleScores || {};
+        let totalXP = 0;
 
         // Helper to process a comma-separated muscle string
         const processMuscleString = (muscleString, score) => {
@@ -47,6 +48,8 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
                 exerciseDetailsFromLib,
                 userProfile
             );
+
+            totalXP += score;
 
             // --- Update Aggregated Profile Scores ---
             // Process target muscle(s)
@@ -93,6 +96,11 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
             } catch (error) {
                 console.error("Error saving workout log:", error);
             }
+        }
+        
+        // Add total XP to user's profile
+        if (totalXP > 0) {
+            await addXP(totalXP);
         }
         
         // Save updated profile with new personal bests and muscle scores

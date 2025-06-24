@@ -45,6 +45,7 @@ const useAuthStore = create((set, get) => ({
           pinnedExercises: [],
           recipes: [],
           muscleScores: {}, // Initialize with empty scores
+          totalXP: 0, // Initialize total XP
         };
         await setDoc(userDocRef, defaultProfile);
         set({ userProfile: defaultProfile, loading: false });
@@ -71,7 +72,8 @@ const useAuthStore = create((set, get) => ({
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
           pinnedExercises: [],
-          recipes: []
+          recipes: [],
+          totalXP: 0, // Initialize total XP
         };
         await setDoc(userDocRef, defaultProfile); // Create the profile
         set({ userProfile: defaultProfile, loading: false });
@@ -95,6 +97,20 @@ const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("Error saving user profile:", error);
     }
+  },
+
+  // Add XP to user's total (for both exercise and food)
+  addXP: async (xpAmount) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentXP = userProfile.totalXP || 0;
+    const newXP = currentXP + xpAmount;
+    
+    const newProfile = { ...userProfile, totalXP: newXP };
+    await get().saveUserProfile(newProfile);
+    
+    console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
   },
 
   // Toggle a pinned food
