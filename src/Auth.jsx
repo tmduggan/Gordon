@@ -1,6 +1,6 @@
 import React from 'react';
 import { auth, googleProvider, signInWithPopup } from './firebase';
-import { Button } from "@/components/ui/button.jsx";
+import { Button } from "@/components/ui/button";
 import { Chrome } from 'lucide-react';
 
 export default function Auth() {
