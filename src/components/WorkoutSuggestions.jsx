@@ -17,6 +17,64 @@ import {
   generateWorkoutSuggestions 
 } from '../services/suggestionService';
 
+// Equipment icon mapping (same as PinnedItem)
+const equipmentIconMap = {
+  'smith machine': '/icons/smith.png',
+  'dumbbell': '/icons/dumbbell.png',
+  'barbell': '/icons/barbell.png',
+  'kettlebell': '/icons/kettlebell.png',
+  'sled machine': '/icons/sled machine.jpg',
+  'body weight': '/icons/bodyweight.png',
+  'machine': '/icons/machine.png',
+};
+
+const getEquipmentIcon = (equipmentName) => {
+  if (!equipmentName) return null;
+  const lowerCaseEquipment = equipmentName.toLowerCase();
+  
+  if (lowerCaseEquipment.includes('dumbbell')) return equipmentIconMap['dumbbell'];
+  if (lowerCaseEquipment.includes('barbell')) return equipmentIconMap['barbell'];
+  if (lowerCaseEquipment.includes('kettlebell')) return equipmentIconMap['kettlebell'];
+  if (lowerCaseEquipment === 'smith machine') return equipmentIconMap['smith machine'];
+  if (lowerCaseEquipment === 'sled machine') return equipmentIconMap['sled machine'];
+  if (lowerCaseEquipment === 'body weight') return equipmentIconMap['body weight'];
+  if (lowerCaseEquipment === 'leverage machine' || lowerCaseEquipment === 'cable') {
+    return equipmentIconMap['machine'];
+  }
+
+  return null;
+};
+
+// Muscle icon mapping (same as PinnedItem)
+const muscleIconMap = {
+  'quads': '/icons/Muscle-Quads.jpeg',
+  'abductors': '/icons/Muscle-Abductors.jpeg',
+  'abs': '/icons/Muscle-Abs.jpeg',
+  'adductors': '/icons/Muscle-Adductors.jpeg',
+  'biceps': '/icons/Muscle-Biceps.jpeg',
+  'calves': '/icons/Muscle-Calves.jpeg',
+  'delts': '/icons/Muscle-Deltoids.jpeg',
+  'forearms': '/icons/Muscle-Forearms.jpeg',
+  'hamstrings': '/icons/Muscle-Hamstrings.jpeg',
+  'pectorals': '/icons/Muscle-Pectorals.jpeg',
+  'serratus anterior': '/icons/Muscle-serratus anterior.jpeg',
+  'traps': '/icons/Muscle-Traps.jpeg',
+  'triceps': '/icons/Muscle-Triceps.jpeg',
+  'glutes': '/icons/Muscle-glutes.jpeg',
+};
+
+const getMuscleIcon = (muscleName) => {
+  if (!muscleName) return null;
+  const lowerCaseMuscle = muscleName.toLowerCase();
+  return muscleIconMap[lowerCaseMuscle] || null;
+}
+
+const difficultyColorMap = {
+  beginner: 'bg-sky-500',
+  intermediate: 'bg-emerald-600',
+  advanced: 'bg-orange-500',
+};
+
 export default function WorkoutSuggestions({ 
   muscleScores = {}, 
   workoutLogs = [], 
@@ -126,84 +184,153 @@ export default function WorkoutSuggestions({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="space-y-3">
-            {suggestions.map((suggestion) => (
-              <div 
-                key={suggestion.id} 
-                className="border rounded-lg p-3 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-sm">
-                        {suggestion.exercise.name}
-                      </h4>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${getLaggingTypeColor(suggestion.laggingMuscle.laggingType)}`}
-                      >
-                        {getLaggingTypeIcon(suggestion.laggingMuscle.laggingType)}
-                        <span className="ml-1">
-                          {suggestion.laggingMuscle.laggingType === 'neverTrained' && 'Never Trained'}
-                          {suggestion.laggingMuscle.laggingType === 'underTrained' && 'Under Trained'}
-                          {suggestion.laggingMuscle.laggingType === 'neglected' && 'Neglected'}
-                        </span>
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 mb-2">
-                      {suggestion.reason}
-                    </p>
-                    
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>Target: {suggestion.exercise.target}</span>
-                      {suggestion.exercise.equipment && (
-                        <span>Equipment: {suggestion.exercise.equipment}</span>
-                      )}
-                      {suggestion.exercise.category && (
-                        <span>Type: {suggestion.exercise.category}</span>
-                      )}
-                    </div>
-                  </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {suggestions.map((suggestion) => {
+              const { target, equipment, difficulty } = suggestion.exercise;
+              const equipmentIcon = getEquipmentIcon(equipment);
+              const difficultyColor = difficulty ? difficultyColorMap[difficulty.toLowerCase()] : null;
+              const muscleIcon = getMuscleIcon(target);
+              const isNeverTrained = suggestion.laggingMuscle.laggingType === 'neverTrained';
+              
+              return (
+                <Card
+                  key={suggestion.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow duration-200 p-2 flex flex-col items-stretch min-w-[120px] max-w-[180px] relative"
+                  onClick={() => handleAddToCart(suggestion)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={suggestion.exercise.name}
+                >
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex flex-col items-stretch w-full h-full">
+                          {/* Exercise Name */}
+                          <div className="pr-2 min-w-0">
+                            <strong className="block truncate text-center text-sm">
+                              {suggestion.exercise.name}
+                            </strong>
+                          </div>
+                          
+                          {/* Icons Row */}
+                          <div className="flex items-center gap-1 flex-shrink-0 justify-center mt-1">
+                            {muscleIcon && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <img 
+                                    src={muscleIcon} 
+                                    alt={target} 
+                                    className="h-5 w-5 rounded-md border border-black" 
+                                    onClick={e => e.stopPropagation()} 
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="capitalize">{target}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {equipmentIcon && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <img 
+                                    src={equipmentIcon} 
+                                    alt={equipment} 
+                                    className="h-5 w-5 p-0.5 bg-blue-100 rounded-md" 
+                                    onClick={e => e.stopPropagation()} 
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="capitalize">{equipment}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {difficultyColor && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div 
+                                    className={`h-5 w-5 rounded-md ${difficultyColor}`} 
+                                    onClick={e => e.stopPropagation()} 
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="capitalize">{difficulty}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                          
+                          {/* Lagging Type Badge */}
+                          <div className="flex justify-center mt-1">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${getLaggingTypeColor(suggestion.laggingMuscle.laggingType)}`}
+                            >
+                              {getLaggingTypeIcon(suggestion.laggingMuscle.laggingType)}
+                              <span className="ml-1">
+                                {suggestion.laggingMuscle.laggingType === 'neverTrained' && 'Never Trained'}
+                                {suggestion.laggingMuscle.laggingType === 'underTrained' && 'Under Trained'}
+                                {suggestion.laggingMuscle.laggingType === 'neglected' && 'Neglected'}
+                              </span>
+                            </Badge>
+                          </div>
+                          
+                          {/* Bonus XP Badge */}
+                          <div className="flex justify-center mt-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                    <Zap className="h-3 w-3 mr-1" />
+                                    +{suggestion.bonus} XP
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Bonus XP for targeting lagging muscle group</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <div className="mb-2">
+                          <div className="font-semibold text-base mb-1">
+                            {suggestion.exercise.name}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {suggestion.reason}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>Target: {suggestion.exercise.target}</span>
+                            {suggestion.exercise.equipment && (
+                              <span>Equipment: {suggestion.exercise.equipment}</span>
+                            )}
+                            {suggestion.exercise.category && (
+                              <span>Type: {suggestion.exercise.category}</span>
+                            )}
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
-                  <div className="flex items-center gap-2 ml-3">
-                    {/* Bonus XP Display */}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
-                            <Zap className="h-3 w-3 mr-1" />
-                            +{suggestion.bonus} XP
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Bonus XP for targeting lagging muscle group</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    {/* Add to Cart Button */}
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAddToCart(suggestion)}
-                      className="h-8 px-3"
-                    >
-                      Add
-                    </Button>
-                    
-                    {/* Hide Button */}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleHideSuggestion(suggestion.id)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                  {/* Hide Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 p-0 text-gray-400 hover:text-red-500 z-10"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleHideSuggestion(suggestion.id);
+                    }}
+                    tabIndex={-1}
+                    aria-label="Hide suggestion"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </Card>
+              );
+            })}
           </div>
           
           <div className="mt-3 text-xs text-gray-500">
