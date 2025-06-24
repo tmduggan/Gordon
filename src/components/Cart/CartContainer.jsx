@@ -8,6 +8,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CartRow from './CartRow';
 import CartHead from './CartHead';
 import { getFoodMacros } from '../../utils/dataUtils';
@@ -63,11 +64,55 @@ const CartExerciseSummary = ({ items, logData, history, library, userProfile }) 
         return acc + score;
     }, 0);
 
+    // Calculate breakdown for tooltip
+    const scoreBreakdown = items.map(item => {
+        const workoutData = logData[item.id] || {};
+        const exerciseDetails = library.find(e => e.id === item.id) || {};
+        
+        const score = calculateWorkoutScore(
+            { ...workoutData, timestamp: new Date() },
+            history,
+            exerciseDetails,
+            userProfile
+        );
+        
+        return {
+            name: item.name,
+            score,
+            hasData: !!(workoutData.weight || workoutData.reps || workoutData.duration)
+        };
+    });
+
     return (
-        <div className="flex items-center gap-2">
-            <span className="font-semibold">Total XP:</span>
-            <span className="text-lg font-bold text-primary">{totalScore}</span>
-        </div>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                        <span className="font-semibold">Total XP:</span>
+                        <span className="text-lg font-bold text-primary">{totalScore}</span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                    <div className="space-y-2">
+                        <div className="font-semibold text-sm">Cart Breakdown:</div>
+                        {scoreBreakdown.map((item, index) => (
+                            <div key={index} className="flex justify-between text-xs">
+                                <span className="truncate max-w-[150px]">{item.name}</span>
+                                <span className={`font-medium ${item.hasData ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {item.hasData ? `+${item.score}` : 'No data'}
+                                </span>
+                            </div>
+                        ))}
+                        <div className="border-t pt-1 mt-2">
+                            <div className="flex justify-between text-sm font-semibold">
+                                <span>Total:</span>
+                                <span className="text-green-600">+{totalScore}</span>
+                            </div>
+                        </div>
+                    </div>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 };
 

@@ -10,6 +10,7 @@ import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
 import MuscleChartDisplay from '../components/exercise/MuscleChartDisplay';
+import LevelDisplay from '../components/LevelDisplay';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -100,6 +101,20 @@ export default function MainPage({ type }) {
         itemType = 'exercise';
         searchPlaceholder = "Search for an exercise...";
         onPinToggle = togglePinExercise;
+
+        // Calculate total XP from workout history
+        const totalXP = useMemo(() => {
+            return history.logs.reduce((total, log) => total + (log.score || 0), 0);
+        }, [history.logs]);
+
+        // Get account creation date (use user creation time or default to 30 days ago)
+        const accountCreationDate = useMemo(() => {
+            if (user?.metadata?.creationTime) {
+                return new Date(user.metadata.creationTime);
+            }
+            // Default to 30 days ago if no creation time available
+            return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        }, [user]);
 
         handleSelect = (exercise) => {
             cart.addToCart(exercise);
@@ -272,7 +287,15 @@ export default function MainPage({ type }) {
                 )}
             </div>
             {type === 'exercise' && (
-                <MuscleChartDisplay className="mt-4 px-4" />
+                <>
+                    <LevelDisplay 
+                        totalXP={totalXP}
+                        workoutLogs={history.logs}
+                        accountCreationDate={accountCreationDate}
+                        className="mb-4"
+                    />
+                    <MuscleChartDisplay className="mt-4 px-4" />
+                </>
             )}
             {type === 'food' && (
                 <DailySummary 

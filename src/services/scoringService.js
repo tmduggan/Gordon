@@ -1,3 +1,6 @@
+// Import level service for streak bonuses
+import { calculateStreakBonuses } from './levelService.js';
+
 const SCORING_CONFIG = {
     version: "v4",
     diminishingReturns: {
@@ -294,6 +297,21 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
         score += SCORING_CONFIG.noveltyBonus.firstOfWeek;
     } else if (!hasWorkedMuscleToday) {
         score += SCORING_CONFIG.noveltyBonus.firstOfDay;
+    }
+
+    // 5. Add Streak Bonuses (only for the first workout of the day)
+    const todaysWorkouts = userWorkoutHistory.filter(log => 
+        isSameDay(new Date(log.timestamp.seconds * 1000), today)
+    );
+    
+    // Only apply streak bonus if this is the first workout of the day
+    if (todaysWorkouts.length === 0) {
+        try {
+            const streakInfo = calculateStreakBonuses(userWorkoutHistory);
+            score += streakInfo.dailyBonus + streakInfo.weeklyBonus;
+        } catch (error) {
+            console.warn('Error calculating streak bonuses:', error);
+        }
     }
 
     return Math.round(score);
