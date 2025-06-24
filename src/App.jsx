@@ -43,14 +43,26 @@ export default function App() {
         <Button
           variant={location.pathname === "/exercise" ? "default" : "outline"}
           onClick={() => navigate("/exercise")}
+          size="icon"
+          className="h-10 w-10"
         >
-          Exercise
+          <img 
+            src="/exercise-favicon.png" 
+            alt="Exercise" 
+            className="h-6 w-6"
+          />
         </Button>
         <Button
           variant={location.pathname === "/nutrition" ? "default" : "outline"}
           onClick={() => navigate("/nutrition")}
+          size="icon"
+          className="h-10 w-10"
         >
-          Nutrition
+          <img 
+            src="/nutrition-favicon.png" 
+            alt="Nutrition" 
+            className="h-6 w-6"
+          />
         </Button>
       </div>
     );
@@ -59,7 +71,6 @@ export default function App() {
   const MainApp = () => {
     const location = useLocation();
     const [theme, setTheme] = useState('theme-exercise');
-    const [iconSrc, setIconSrc] = useState('/exercise-favicon.png');
 
     useEffect(() => {
       const favicon = document.getElementById('favicon');
@@ -69,12 +80,10 @@ export default function App() {
         setTheme('theme-nutrition');
         const newIcon = '/nutrition-favicon.png';
         favicon.href = newIcon;
-        setIconSrc(newIcon);
       } else if (location.pathname.includes('/exercise')) {
         setTheme('theme-exercise');
         const newIcon = '/exercise-favicon.png';
         favicon.href = newIcon;
-        setIconSrc(newIcon);
       }
     }, [location]);
 
@@ -82,7 +91,6 @@ export default function App() {
       <div className={`min-h-screen ${theme}`}>
         <header className="bg-card shadow-md">
           <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-            <img src={iconSrc} alt="Goliath Logo" className="h-10 w-10 rounded-lg" />
             <div className="flex items-center space-x-4">
               <Navigation />
               <ProfileMenu />

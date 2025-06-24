@@ -31,7 +31,6 @@ export default function ProfileMenu() {
     <>
       <div className="relative">
         <div className="flex items-center gap-2">
-          <span className="text-sm">{user.displayName || user.email}</span>
           <div className="relative">
             <TooltipProvider>
               <Tooltip>
@@ -53,6 +52,9 @@ export default function ProfileMenu() {
             </TooltipProvider>
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 p-1">
+                <div className="px-3 py-2 border-b border-gray-200">
+                  <div className="text-sm font-medium">{user.displayName || user.email}</div>
+                </div>
                 <Button
                   variant="ghost"
                   onClick={() => {
