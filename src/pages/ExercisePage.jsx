@@ -33,7 +33,7 @@ export default function ExercisePage() {
     // Initialize hooks
     const exerciseLibrary = useLibrary('exercise');
     const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
-    const search = useSearch('exercise', exerciseLibrary);
+    const search = useSearch('exercise', exerciseLibrary, userProfile);
     const cart = useCart('exercise');
     
     // Use custom exercise logging hook

@@ -18,7 +18,7 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
   const [currentQuantity, setCurrentQuantity] = useState(1);
   
   const foodLibrary = useLibrary('food');
-  const search = useSearch('food', foodLibrary);
+  const search = useSearch('food', foodLibrary, userProfile);
 
   const handleAddFood = () => {
     if (currentFood && currentQuantity > 0) {

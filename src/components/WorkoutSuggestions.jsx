@@ -185,7 +185,7 @@ export default function WorkoutSuggestions({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 gap-3">
             {suggestions.map((suggestion) => {
               const { target, equipment, difficulty } = suggestion.exercise;
               const equipmentIcon = getEquipmentIcon(equipment);
@@ -196,7 +196,7 @@ export default function WorkoutSuggestions({
               return (
                 <Card
                   key={suggestion.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow duration-200 p-2 flex flex-col items-stretch min-w-[120px] max-w-[180px] relative"
+                  className="cursor-pointer hover:shadow-lg transition-shadow duration-200 p-4 flex flex-row items-center justify-between min-w-full relative"
                   onClick={() => handleAddToCart(suggestion)}
                   tabIndex={0}
                   role="button"
@@ -205,91 +205,94 @@ export default function WorkoutSuggestions({
                   <TooltipProvider delayDuration={100}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex flex-col items-stretch w-full h-full">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
                           {/* Exercise Name */}
-                          <div className="pr-2 min-w-0">
-                            <strong className="block truncate text-center text-sm">
+                          <div className="flex-1 min-w-0 w-full sm:w-auto">
+                            <strong className="block text-lg">
                               {suggestion.exercise.name}
                             </strong>
                           </div>
                           
-                          {/* Icons Row */}
-                          <div className="flex items-center gap-1 flex-shrink-0 justify-center mt-1">
-                            {muscleIcon && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <img 
-                                    src={muscleIcon} 
-                                    alt={target} 
-                                    className="h-5 w-5 rounded-md border border-black" 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{target}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            {equipmentIcon && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <img 
-                                    src={equipmentIcon} 
-                                    alt={equipment} 
-                                    className="h-5 w-5 p-0.5 bg-blue-100 rounded-md" 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{equipment}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            {difficultyColor && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div 
-                                    className={`h-5 w-5 rounded-md ${difficultyColor}`} 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{difficulty}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                          
-                          {/* Lagging Type Badge */}
-                          <div className="flex justify-center mt-1">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${getLaggingTypeColor(suggestion.laggingMuscle.laggingType)}`}
-                            >
-                              {getLaggingTypeIcon(suggestion.laggingMuscle.laggingType)}
-                              <span className="ml-1">
-                                {suggestion.laggingMuscle.laggingType === 'neverTrained' && 'Never Trained'}
-                                {suggestion.laggingMuscle.laggingType === 'underTrained' && 'Under Trained'}
-                                {suggestion.laggingMuscle.laggingType === 'neglected' && 'Neglected'}
-                              </span>
-                            </Badge>
-                          </div>
-                          
-                          {/* Bonus XP Badge */}
-                          <div className="flex justify-center mt-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                                    <Zap className="h-3 w-3 mr-1" />
-                                    +{suggestion.bonus} XP
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Bonus XP for targeting lagging muscle group</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                          {/* Icons and Badges Row */}
+                          <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            {/* Icons Row */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {muscleIcon && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <img 
+                                      src={muscleIcon} 
+                                      alt={target} 
+                                      className="h-6 w-6 rounded-md border border-black" 
+                                      onClick={e => e.stopPropagation()} 
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="capitalize">{target}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {equipmentIcon && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <img 
+                                      src={equipmentIcon} 
+                                      alt={equipment} 
+                                      className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                                      onClick={e => e.stopPropagation()} 
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="capitalize">{equipment}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {difficultyColor && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div 
+                                      className={`h-6 w-6 rounded-md ${difficultyColor}`} 
+                                      onClick={e => e.stopPropagation()} 
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="capitalize">{difficulty}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                            
+                            {/* Lagging Type Badge */}
+                            <div className="flex-shrink-0">
+                              <Badge 
+                                variant="outline" 
+                                className={`text-sm ${getLaggingTypeColor(suggestion.laggingMuscle.laggingType)}`}
+                              >
+                                {getLaggingTypeIcon(suggestion.laggingMuscle.laggingType)}
+                                <span className="ml-1">
+                                  {suggestion.laggingMuscle.laggingType === 'neverTrained' && 'Never Trained'}
+                                  {suggestion.laggingMuscle.laggingType === 'underTrained' && 'Under Trained'}
+                                  {suggestion.laggingMuscle.laggingType === 'neglected' && 'Neglected'}
+                                </span>
+                              </Badge>
+                            </div>
+                            
+                            {/* Bonus XP Badge */}
+                            <div className="flex-shrink-0">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
+                                      <Zap className="h-4 w-4 mr-1" />
+                                      +{suggestion.bonus} XP
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Bonus XP for targeting lagging muscle group</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </div>
                         </div>
                       </TooltipTrigger>

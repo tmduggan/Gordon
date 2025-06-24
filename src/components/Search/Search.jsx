@@ -8,12 +8,22 @@ import { X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     const foodName = item.food_name || item.label;
-    const isPinned = userProfile?.pinnedFoods?.includes(item.id);
+    const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id);
+    const isRecipe = item.isRecipe;
     const thumb = item.photo?.thumb;
+    
+    // Determine background color based on item type
+    let bgColorClass = "hover:bg-accent";
+    if (isPinned) {
+        bgColorClass = "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-400";
+    } else if (isRecipe) {
+        bgColorClass = "bg-green-50 hover:bg-green-100 border-l-4 border-green-400";
+    }
+    
     return (
         <div
             onClick={() => onSelect(item)}
-            className="flex justify-between items-center p-2 hover:bg-accent cursor-pointer"
+            className={`flex justify-between items-center p-2 cursor-pointer ${bgColorClass}`}
         >
             <div className="flex items-center w-full">
                 {/* Food photo icon or placeholder */}
@@ -22,11 +32,20 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
                 ) : (
                     <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
                 )}
-                <MacroDisplay macros={getFoodMacros(item)} format="inline-text" truncateLength={40}>
-                    {foodName}
-                </MacroDisplay>
+                <div className="flex items-center gap-2">
+                    <MacroDisplay macros={getFoodMacros(item)} format="inline-text" truncateLength={40}>
+                        {foodName}
+                    </MacroDisplay>
+                    {/* Visual indicators for pinned items and recipes */}
+                    {isPinned && (
+                        <span className="text-blue-600 text-xs font-medium">📌 Pinned</span>
+                    )}
+                    {isRecipe && (
+                        <span className="text-green-600 text-xs font-medium">👨‍🍳 Recipe</span>
+                    )}
+                </div>
             </div>
-            {item.id && (
+            {item.id && !isRecipe && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
                     title={isPinned ? "Unpin food" : "Pin food"}
@@ -39,13 +58,26 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
 };
 
 const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
-    const isPinned = userProfile?.pinnedExercises?.includes(item.id);
+    const isPinned = item.isPinned || userProfile?.pinnedExercises?.includes(item.id);
+    
+    // Determine background color based on item type
+    let bgColorClass = "hover:bg-accent";
+    if (isPinned) {
+        bgColorClass = "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-400";
+    }
+    
     return (
         <div
             onClick={() => onSelect(item)}
-            className="flex justify-between items-center p-2 hover:bg-accent cursor-pointer"
+            className={`flex justify-between items-center p-2 cursor-pointer ${bgColorClass}`}
         >
-            <span>{item.name}</span>
+            <div className="flex items-center gap-2">
+                <span>{item.name}</span>
+                {/* Visual indicator for pinned exercises */}
+                {isPinned && (
+                    <span className="text-blue-600 text-xs font-medium">📌 Pinned</span>
+                )}
+            </div>
             {item.id && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}

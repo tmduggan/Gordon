@@ -5,6 +5,16 @@ export const getFoodMacros = (food) => {
         return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
     }
 
+    // If this is a recipe, return its totalMacros if present
+    if (food.isRecipe) {
+        console.log('Recipe in search:', food);
+        if (food.totalMacros) {
+            return food.totalMacros;
+        }
+        // fallback: return zeros if missing
+        return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
+    }
+
     // This function is now robust enough to handle any food data structure
     // in the database, whether it's the newest format, an older nested
     // format, or the original default food format.

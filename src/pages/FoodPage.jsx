@@ -30,7 +30,7 @@ export default function FoodPage() {
     // Initialize hooks
     const foodLibrary = useLibrary('food');
     const foodHistory = useHistory('food');
-    const search = useSearch('food', foodLibrary);
+    const search = useSearch('food', foodLibrary, userProfile);
     const cart = useCart('food');
     
     // Use custom food logging hook
