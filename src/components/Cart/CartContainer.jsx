@@ -13,6 +13,8 @@ import CartRow from './CartRow';
 import CartHead from './CartHead';
 import { getFoodMacros } from '../../utils/dataUtils';
 import { calculateWorkoutScore } from '../../services/scoringService';
+import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/suggestionService';
+import { calculateStreakBonuses } from '../../services/levelService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {
@@ -68,18 +70,70 @@ const CartExerciseSummary = ({ items, logData, history, library, userProfile }) 
     const scoreBreakdown = items.map(item => {
         const workoutData = logData[item.id] || {};
         const exerciseDetails = library.find(e => e.id === item.id) || {};
-        
-        const score = calculateWorkoutScore(
-            { ...workoutData, timestamp: new Date() },
-            history,
-            exerciseDetails,
-            userProfile
-        );
-        
+        let lines = [];
+        let hasData = false;
+        if (workoutData.sets && Array.isArray(workoutData.sets)) {
+            hasData = workoutData.sets.some(set => set && (set.weight || set.reps || set.duration));
+        }
+        if (workoutData.duration) {
+            hasData = true;
+        }
+        if (!hasData) {
+            return {
+                name: item.name,
+                lines: ["No data"],
+                hasData: false
+            };
+        }
+
+        // XP line objects: {xp, label}
+        let xpLines = [];
+        // Base XP calculation
+        if (workoutData.sets && workoutData.sets.length > 0) {
+            workoutData.sets.forEach((set, idx) => {
+                const weight = set.weight || 0;
+                const reps = set.reps || 0;
+                if (weight || reps) {
+                    const setXP = Math.round((weight * 0.1) + reps);
+                    let label = [];
+                    if (weight) label.push(`${weight} lbs`);
+                    if (reps) label.push(`${reps} reps`);
+                    xpLines.push({ xp: setXP, label: label.join(' ') });
+                }
+            });
+        } else if (workoutData.duration) {
+            const durXP = Math.round(workoutData.duration * 10);
+            xpLines.push({ xp: durXP, label: `${workoutData.duration} min` });
+        }
+
+        // Lagging muscle bonus
+        if (userProfile?.muscleScores) {
+            const laggingMuscles = analyzeLaggingMuscles(userProfile.muscleScores, history, [exerciseDetails]);
+            const laggingBonus = calculateLaggingMuscleBonus(workoutData, exerciseDetails, laggingMuscles);
+            if (laggingBonus > 0) xpLines.push({ xp: laggingBonus, label: 'Lagging muscle bonus' });
+        }
+
+        // Streak bonuses
+        if (history && history.length > 0) {
+            const streaks = calculateStreakBonuses(history);
+            if (streaks.dailyBonus > 0) {
+                xpLines.push({ xp: streaks.dailyBonus, label: 'First workout of day' });
+            }
+            if (streaks.weeklyBonus > 0) {
+                xpLines.push({ xp: streaks.weeklyBonus, label: 'First workout of week' });
+            }
+        }
+
+        // Novelty bonuses
+        if (exerciseDetails.target) {
+            xpLines.push({ xp: 40, label: 'First of day' });
+            xpLines.push({ xp: 75, label: 'First of week' });
+        }
+
         return {
             name: item.name,
-            score,
-            hasData: !!(workoutData.weight || workoutData.reps || workoutData.duration)
+            lines: xpLines,
+            hasData: true
         };
     });
 
@@ -96,11 +150,21 @@ const CartExerciseSummary = ({ items, logData, history, library, userProfile }) 
                     <div className="space-y-2">
                         <div className="font-semibold text-sm">Cart Breakdown:</div>
                         {scoreBreakdown.map((item, index) => (
-                            <div key={index} className="flex justify-between text-xs">
-                                <span className="truncate max-w-[150px]">{item.name}</span>
-                                <span className={`font-medium ${item.hasData ? 'text-green-600' : 'text-gray-400'}`}>
-                                    {item.hasData ? `+${item.score}` : 'No data'}
-                                </span>
+                            <div key={index} className="mb-2">
+                                <div className="truncate max-w-[180px] font-medium text-xs mb-1">{item.name}</div>
+                                <div className="text-xs text-gray-700">
+                                    {item.lines.length === 0 ? (
+                                        <div>No data</div>
+                                    ) : (
+                                        item.lines.map((line, i) => (
+                                            <div key={i} style={{ display: 'flex', fontFamily: 'monospace', alignItems: 'center' }}>
+                                                <span style={{ display: 'inline-block', minWidth: 36, textAlign: 'right', color: '#059669', fontWeight: 600 }}>+{line.xp}</span>
+                                                <span style={{ marginLeft: 4, minWidth: 24 }}>XP</span>
+                                                <span style={{ marginLeft: 8 }}>{line.label}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         ))}
                         <div className="border-t pt-1 mt-2">

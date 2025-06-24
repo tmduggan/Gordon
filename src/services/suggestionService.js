@@ -134,6 +134,7 @@ function getPriorityScore(laggingType, score, daysSinceTrained) {
 
 /**
  * Generate workout suggestions based on lagging muscles and available equipment
+ * Ensures each suggestion is a unique exercise, prefers different equipment, and randomizes selection.
  * @param {Array} laggingMuscles - Array of lagging muscle objects
  * @param {Array} exerciseLibrary - Available exercises
  * @param {Array} availableEquipment - User's available equipment
@@ -142,16 +143,21 @@ function getPriorityScore(laggingType, score, daysSinceTrained) {
  */
 export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, availableEquipment = [], hiddenSuggestions = []) {
   const suggestions = [];
-  
+  const usedExerciseIds = new Set();
+  const usedEquipment = new Set();
+
+  // Helper to get a random element from an array
+  function getRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
   laggingMuscles.forEach(laggingMuscle => {
     // Find exercises that target this muscle and use available equipment
-    const matchingExercises = exerciseLibrary.filter(exercise => {
+    let matchingExercises = exerciseLibrary.filter(exercise => {
       // Check if exercise targets the lagging muscle
       const targets = [exercise.target, ...(Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [exercise.secondaryMuscles])];
       const targetsMuscle = targets.some(target => target && target.toLowerCase().trim() === laggingMuscle.muscle);
-      
       if (!targetsMuscle) return false;
-      
       // Check if exercise uses available equipment
       if (availableEquipment.length > 0) {
         const exerciseEquipment = exercise.equipment?.toLowerCase() || '';
@@ -159,28 +165,26 @@ export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, avai
           exerciseEquipment.includes(equipment.toLowerCase())
         );
       }
-      
       return true; // If no equipment specified, include all exercises
     });
-    
-    // Sort exercises by effectiveness (compound exercises first, then isolation)
-    const sortedExercises = matchingExercises.sort((a, b) => {
-      const aIsCompound = a.category?.toLowerCase() === 'compound';
-      const bIsCompound = b.category?.toLowerCase() === 'compound';
-      
-      if (aIsCompound && !bIsCompound) return -1;
-      if (!aIsCompound && bIsCompound) return 1;
-      return 0;
+
+    // Remove exercises already suggested
+    matchingExercises = matchingExercises.filter(ex => !usedExerciseIds.has(ex.id));
+
+    // Prefer exercises with equipment not already used in this batch
+    let preferredExercises = matchingExercises.filter(ex => {
+      if (!ex.equipment) return true;
+      return !usedEquipment.has(ex.equipment);
     });
-    
-    // Take the best exercise for this muscle
-    if (sortedExercises.length > 0) {
-      const exercise = sortedExercises[0];
+    // If not enough variety, fall back to all matching
+    if (preferredExercises.length === 0) preferredExercises = matchingExercises;
+
+    // Randomly pick one exercise from preferred list
+    if (preferredExercises.length > 0) {
+      const exercise = getRandom(preferredExercises);
       const suggestionId = `${exercise.id}-${laggingMuscle.muscle}`;
-      
       // Skip if this suggestion was hidden
       if (hiddenSuggestions.includes(suggestionId)) return;
-      
       suggestions.push({
         id: suggestionId,
         exercise,
@@ -188,9 +192,11 @@ export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, avai
         reason: getSuggestionReason(laggingMuscle),
         bonus: laggingMuscle.bonus
       });
+      usedExerciseIds.add(exercise.id);
+      if (exercise.equipment) usedEquipment.add(exercise.equipment);
     }
   });
-  
+
   // Limit to max suggestions
   return suggestions.slice(0, SUGGESTION_CONFIG.maxSuggestions);
 }
