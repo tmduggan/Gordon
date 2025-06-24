@@ -11,8 +11,8 @@ import useAuthStore from "./store/useAuthStore";
 import Auth from "./Auth";
 import ProfileMenu from "./ProfileMenu";
 import MainPage from "./pages/MainPage";
-import { Button } from "./components/ui/button";
-import { Toaster } from "./components/ui/toaster";
+import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/toaster";
 
 // Component Imports
 
