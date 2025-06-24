@@ -37,14 +37,34 @@ export default function MainPage({ type }) {
     const { toast } = useToast();
     const [showAllHistory, setShowAllHistory] = useState(false);
     
+    // Get account creation date (use user creation time or default to 30 days ago)
+    const accountCreationDate = useMemo(() => {
+        if (user?.metadata?.creationTime) {
+            return new Date(user.metadata.creationTime);
+        }
+        // Default to 30 days ago if no creation time available
+        return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }, [user]);
+    
+    // Initialize hooks for both types
+    const foodLibrary = useLibrary('food');
+    const foodHistory = useHistory('food');
+    const exerciseLibrary = useLibrary('exercise');
+    const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
+    
+    // Calculate total XP from workout history (always calculate, but only use for exercise)
+    const totalXP = useMemo(() => {
+        return exerciseHistory.logs.reduce((total, log) => total + (log.score || 0), 0);
+    }, [exerciseHistory.logs]);
+    
     // Type-specific hooks and handlers
     let library, history, search, cart, handleSelect, logCart, pinnedItems, historyProps, searchPlaceholder, itemType, onPinToggle, cartProps = {};
     let todayLogs = [];
     let exerciseFilterOptions = {};
     
     if (type === 'food') {
-        library = useLibrary('food');
-        history = useHistory('food');
+        library = foodLibrary;
+        history = foodHistory;
         search = useSearch('food', library);
         cart = useCart('food');
         itemType = 'food';
@@ -94,27 +114,13 @@ export default function MainPage({ type }) {
         };
 
     } else { // exercise
-        library = useLibrary('exercise');
-        history = useHistory('exercise', library.items);
+        library = exerciseLibrary;
+        history = exerciseHistory;
         search = useSearch('exercise', library);
         cart = useCart('exercise');
         itemType = 'exercise';
         searchPlaceholder = "Search for an exercise...";
         onPinToggle = togglePinExercise;
-
-        // Calculate total XP from workout history
-        const totalXP = useMemo(() => {
-            return history.logs.reduce((total, log) => total + (log.score || 0), 0);
-        }, [history.logs]);
-
-        // Get account creation date (use user creation time or default to 30 days ago)
-        const accountCreationDate = useMemo(() => {
-            if (user?.metadata?.creationTime) {
-                return new Date(user.metadata.creationTime);
-            }
-            // Default to 30 days ago if no creation time available
-            return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        }, [user]);
 
         handleSelect = (exercise) => {
             cart.addToCart(exercise);
