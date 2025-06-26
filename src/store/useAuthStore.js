@@ -36,9 +36,36 @@ const useAuthStore = create((set, get) => ({
         // --- DEBUGGING ---
         console.log("Auth store received profile update:", snap.data());
         // --- END DEBUGGING ---
-        set({ userProfile: snap.data(), loading: false });
+        const profileData = snap.data();
+        
+        // Ensure subscription field exists
+        if (!profileData.subscription) {
+          console.log('Subscription field missing in loaded profile, creating it...');
+          const currentUser = get().user;
+          const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
+          
+          const updatedProfile = {
+            ...profileData,
+            subscription: {
+              status: isAdminUser ? 'admin' : 'basic',
+              plan: isAdminUser ? 'admin' : 'basic',
+              expiresAt: null,
+              features: isAdminUser ? ['all_features'] : ['basic_logging', 'basic_tracking']
+            }
+          };
+          
+          await setDoc(userDocRef, updatedProfile, { merge: true });
+          set({ userProfile: updatedProfile, loading: false });
+        } else {
+          set({ userProfile: profileData, loading: false });
+        }
       } else {
         console.log("No user profile found, creating a default one.");
+        
+        // Get current user to check if it's the admin
+        const currentUser = get().user;
+        const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
+        
         const defaultProfile = {
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
@@ -46,6 +73,17 @@ const useAuthStore = create((set, get) => ({
           recipes: [],
           muscleScores: {}, // Initialize with empty scores
           totalXP: 0, // Initialize total XP
+          subscription: {
+            status: isAdminUser ? 'admin' : 'basic', // Set admin for your email
+            plan: isAdminUser ? 'admin' : 'basic',
+            expiresAt: null,
+            features: isAdminUser ? ['all_features'] : ['basic_logging', 'basic_tracking']
+          },
+          hiddenExercises: [], // Array of exercise IDs that user has manually hidden
+          hideCount: {
+            date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+            count: 0 // Reset daily
+          }
         };
         await setDoc(userDocRef, defaultProfile);
         set({ userProfile: defaultProfile, loading: false });
@@ -68,12 +106,28 @@ const useAuthStore = create((set, get) => ({
       } else {
         // Handle case where user exists but has no profile yet
         console.log("No user profile found, creating a default one.");
+        
+        // Get current user to check if it's the admin
+        const currentUser = get().user;
+        const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
+        
         const defaultProfile = {
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
           pinnedExercises: [],
           recipes: [],
           totalXP: 0, // Initialize total XP
+          subscription: {
+            status: isAdminUser ? 'admin' : 'basic', // Set admin for your email
+            plan: isAdminUser ? 'admin' : 'basic',
+            expiresAt: null,
+            features: isAdminUser ? ['all_features'] : ['basic_logging', 'basic_tracking']
+          },
+          hiddenExercises: [],
+          hideCount: {
+            date: new Date().toISOString().split('T')[0],
+            count: 0
+          }
         };
         await setDoc(userDocRef, defaultProfile); // Create the profile
         set({ userProfile: defaultProfile, loading: false });
@@ -97,6 +151,133 @@ const useAuthStore = create((set, get) => ({
     } catch (error) {
       console.error("Error saving user profile:", error);
     }
+  },
+
+  // Check if user is admin
+  isAdmin: () => {
+    const { user, userProfile } = get();
+    return user?.email === 'timdug4@gmail.com' || // Replace with your email
+           userProfile?.subscription?.status === 'admin';
+  },
+
+  // Check if user has premium access
+  isPremium: () => {
+    const { userProfile } = get();
+    return userProfile?.subscription?.status === 'premium' || 
+           userProfile?.subscription?.status === 'admin';
+  },
+
+  // Toggle subscription status (for testing)
+  toggleSubscriptionStatus: async () => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentStatus = userProfile.subscription?.status || 'basic';
+    let newStatus;
+    
+    switch (currentStatus) {
+      case 'basic':
+        newStatus = 'premium';
+        break;
+      case 'premium':
+        newStatus = 'admin';
+        break;
+      case 'admin':
+        newStatus = 'basic';
+        break;
+      default:
+        newStatus = 'basic';
+    }
+    
+    const newProfile = {
+      ...userProfile,
+      subscription: {
+        ...userProfile.subscription,
+        status: newStatus,
+        plan: newStatus === 'admin' ? 'admin' : newStatus
+      }
+    };
+    
+    await get().saveUserProfile(newProfile);
+    console.log(`Subscription status changed to: ${newStatus}`);
+  },
+
+  // Hide an exercise from suggestions
+  hideExercise: async (exerciseId) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    // Check daily hide limit for basic users
+    const today = new Date().toISOString().split('T')[0];
+    const hideCount = userProfile.hideCount || { date: today, count: 0 };
+    
+    // Reset count if it's a new day
+    if (hideCount.date !== today) {
+      hideCount.date = today;
+      hideCount.count = 0;
+    }
+    
+    // Check limit for basic users (2 hides per day)
+    const isBasic = userProfile.subscription?.status === 'basic';
+    const maxHides = isBasic ? 2 : Infinity;
+    
+    if (hideCount.count >= maxHides) {
+      console.log(`Daily hide limit reached (${maxHides} hides per day)`);
+      return false; // Indicate failure
+    }
+    
+    // Add to hidden exercises
+    const currentHidden = userProfile.hiddenExercises || [];
+    if (!currentHidden.includes(exerciseId)) {
+      const newHidden = [...currentHidden, exerciseId];
+      const newHideCount = { ...hideCount, count: hideCount.count + 1 };
+      
+      const newProfile = {
+        ...userProfile,
+        hiddenExercises: newHidden,
+        hideCount: newHideCount
+      };
+      
+      await get().saveUserProfile(newProfile);
+      console.log(`Exercise ${exerciseId} hidden. Hides today: ${newHideCount.count}/${maxHides}`);
+      return true; // Indicate success
+    }
+    
+    return true;
+  },
+
+  // Unhide an exercise from suggestions
+  unhideExercise: async (exerciseId) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentHidden = userProfile.hiddenExercises || [];
+    const newHidden = currentHidden.filter(id => id !== exerciseId);
+    
+    const newProfile = {
+      ...userProfile,
+      hiddenExercises: newHidden
+    };
+    
+    await get().saveUserProfile(newProfile);
+    console.log(`Exercise ${exerciseId} unhidden`);
+  },
+
+  // Get remaining hides for today
+  getRemainingHides: () => {
+    const { userProfile } = get();
+    if (!userProfile) return 0;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const hideCount = userProfile.hideCount || { date: today, count: 0 };
+    
+    // Reset count if it's a new day
+    if (hideCount.date !== today) {
+      return userProfile.subscription?.status === 'basic' ? 2 : Infinity;
+    }
+    
+    const maxHides = userProfile.subscription?.status === 'basic' ? 2 : Infinity;
+    return Math.max(0, maxHides - hideCount.count);
   },
 
   // Add XP to user's total (for both exercise and food)
@@ -281,6 +462,36 @@ const useAuthStore = create((set, get) => ({
     
     const newProfile = { ...userProfile, recipes: newRecipes };
     await get().saveUserProfile(newProfile);
+  },
+
+  // Ensure subscription field exists in user profile
+  ensureSubscriptionField: async () => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    // Check if subscription field exists
+    if (!userProfile.subscription) {
+      console.log('Subscription field missing, creating it...');
+      const currentUser = get().user;
+      const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
+      
+      const newProfile = {
+        ...userProfile,
+        subscription: {
+          status: isAdminUser ? 'admin' : 'basic',
+          plan: isAdminUser ? 'admin' : 'basic',
+          expiresAt: null,
+          features: isAdminUser ? ['all_features'] : ['basic_logging', 'basic_tracking']
+        }
+      };
+      
+      await get().saveUserProfile(newProfile);
+      console.log('Subscription field created successfully');
+      return newProfile;
+    }
+    
+    console.log('Subscription field already exists');
+    return userProfile;
   },
 
 }));

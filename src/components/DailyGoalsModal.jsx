@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Medal, Apple, Dumbbell, User, Bug, Target } from 'lucide-react';
+import { Medal, Apple, Dumbbell, User, Bug, Target, Crown, Settings, RefreshCw, Shield } from 'lucide-react';
 import LevelDisplay from './LevelDisplay';
 import useAuthStore from '../store/useAuthStore';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,9 @@ import useLibrary from '../hooks/fetchLibrary';
 import useHistory from '../hooks/fetchHistory';
 import { validateUserXP } from '../services/levelService';
 import { useToast } from '../hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
@@ -47,7 +50,7 @@ const cardioOptions = [
 ];
 
 export default function ProfileModal({ open, onOpenChange }) {
-  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP, migrateMuscleScores } = useAuthStore();
+  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP, migrateMuscleScores, isAdmin, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
   const { toast } = useToast();
   const [tab, setTab] = useState('achievements');
   const [goals, setGoals] = useState(userProfile?.goals || DEFAULT_GOALS);
@@ -188,6 +191,56 @@ export default function ProfileModal({ open, onOpenChange }) {
   const gymInvalid = selectedGym.length === 0;
   const cardioInvalid = selectedCardio.length === 0;
 
+  const isAdminUser = isAdmin();
+
+  // Admin functions
+  const handleToggleSubscription = async () => {
+    try {
+      await toggleSubscriptionStatus();
+      toast({
+        title: "Subscription Status Updated",
+        description: "Your subscription status has been changed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update subscription status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEnsureSubscription = async () => {
+    try {
+      await ensureSubscriptionField();
+      toast({
+        title: "Subscription Field Ensured",
+        description: "Subscription field has been created/verified.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to ensure subscription field.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getSubscriptionStatus = () => {
+    const status = userProfile?.subscription?.status || 'basic';
+    switch (status) {
+      case 'admin':
+        return { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Crown };
+      case 'premium':
+        return { label: 'Premium', color: 'bg-green-100 text-green-800 border-green-200', icon: Crown };
+      case 'basic':
+      default:
+        return { label: 'Basic', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: User };
+    }
+  };
+
+  const { icon: StatusIcon, label: statusLabel, color: statusColor } = getSubscriptionStatus();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -195,7 +248,7 @@ export default function ProfileModal({ open, onOpenChange }) {
           <DialogTitle>Profile</DialogTitle>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="w-full mt-2">
-          <TabsList className="grid grid-cols-4 gap-2 mb-4">
+          <TabsList className="grid grid-cols-5 gap-2 mb-4">
             <TabsTrigger value="achievements">
               <Medal className="inline-block mr-1" /> Achievements
             </TabsTrigger>
@@ -208,6 +261,11 @@ export default function ProfileModal({ open, onOpenChange }) {
             <TabsTrigger value="profile">
               <User className="inline-block mr-1" /> Profile
             </TabsTrigger>
+            {isAdminUser && (
+              <TabsTrigger value="admin">
+                <Crown className="inline-block mr-1" /> Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Achievements Tab */}
@@ -470,6 +528,86 @@ export default function ProfileModal({ open, onOpenChange }) {
               </div>
             </div>
           </TabsContent>
+
+          {/* Admin Tab */}
+          {isAdminUser && (
+            <TabsContent value="admin">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Crown className="h-5 w-5 text-purple-600" />
+                      User Type Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium">Current Status:</span>
+                        <Badge className={statusColor}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {statusLabel}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Button 
+                          onClick={handleToggleSubscription}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Toggle Subscription Status
+                        </Button>
+                        
+                        <Button 
+                          onClick={handleEnsureSubscription}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Ensure Subscription Field
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bug className="h-5 w-5 text-orange-600" />
+                      Debug Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>User ID:</span>
+                        <span className="font-mono text-xs">{user?.uid}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Email:</span>
+                        <span className="font-mono text-xs">{user?.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Subscription Status:</span>
+                        <span className="font-mono text-xs">{userProfile?.subscription?.status || 'undefined'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Subscription Plan:</span>
+                        <span className="font-mono text-xs">{userProfile?.subscription?.plan || 'undefined'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Has Subscription Field:</span>
+                        <span className="font-mono text-xs">{userProfile?.subscription ? 'true' : 'false'}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>

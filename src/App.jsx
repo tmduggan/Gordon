@@ -16,8 +16,37 @@ import { Toaster } from "@/components/ui/toaster";
 
 // Component Imports
 
+// Add global debug functions for development
+if (process.env.NODE_ENV === 'development') {
+  window.debugUserProfile = () => {
+    const { user, userProfile, isAdmin, isPremium, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore.getState();
+    
+    console.log('=== USER PROFILE DEBUG ===');
+    console.log('User:', user);
+    console.log('User Profile:', userProfile);
+    console.log('Subscription Status:', userProfile?.subscription?.status);
+    console.log('Is Admin:', isAdmin());
+    console.log('Is Premium:', isPremium());
+    console.log('========================');
+    
+    return { user, userProfile, isAdmin: isAdmin(), isPremium: isPremium() };
+  };
+  
+  window.fixUserProfile = async () => {
+    const { ensureSubscriptionField, toggleSubscriptionStatus } = useAuthStore.getState();
+    await ensureSubscriptionField();
+    console.log('User profile subscription field ensured');
+  };
+  
+  window.toggleUserStatus = async () => {
+    const { toggleSubscriptionStatus } = useAuthStore.getState();
+    await toggleSubscriptionStatus();
+    console.log('User subscription status toggled');
+  };
+}
+
 export default function App() {
-  const { user, init } = useAuthStore();
+  const { user, init, loading } = useAuthStore();
 
   // --- Initialize Auth Listener ---
   useEffect(() => {
@@ -30,6 +59,17 @@ export default function App() {
   const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
 
   // --- Render Logic ---
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return <Auth />;
   }

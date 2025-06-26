@@ -9,6 +9,7 @@ import MuscleChartDisplay from '../components/exercise/MuscleChartDisplay';
 import LevelDisplay from '../components/LevelDisplay';
 import WorkoutSuggestions from '../components/WorkoutSuggestions';
 import { Button } from '../components/ui/button';
+import PaywalledMuscleChart from '../components/exercise/PaywalledMuscleChart';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -178,7 +179,7 @@ export default function ExercisePage() {
                     />
                 )}
             </div>
-            <MuscleChartDisplay className="mt-4 px-4" />
+            <PaywalledMuscleChart className="mt-4 px-4" />
         </div>
     );
 } 

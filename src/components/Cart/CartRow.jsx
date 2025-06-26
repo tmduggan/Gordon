@@ -7,37 +7,100 @@ import { XCircle, Info, ChefHat } from 'lucide-react';
 import ExerciseLogInputs from '../exercise/ExerciseLogInputs';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import NutritionLabel from '../nutrition/NutritionLabel';
-import ExerciseInfoCard from '../exercise/ExerciseInfoCard';
 import { Badge } from '@/components/ui/badge';
+
+// Mobile detection (same as WorkoutSuggestions)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+}
+
+// Tooltip content (same as WorkoutSuggestions)
+function renderTooltipContent(exercise) {
+  return (
+    <div className="max-w-xs">
+      <div className="font-semibold text-base mb-2">
+        {exercise.name}
+      </div>
+      {exercise.description && (
+        <div className="mb-3">
+          <div className="font-medium text-sm mb-1 text-blue-600">Description:</div>
+          <p className="text-sm text-gray-700 leading-relaxed">{exercise.description}</p>
+        </div>
+      )}
+      {exercise.instructions && Array.isArray(exercise.instructions) && exercise.instructions.length > 0 && (
+        <div className="mb-3">
+          <div className="font-medium text-sm mb-1 text-green-600">Instructions:</div>
+          <ol className="text-sm text-gray-700 space-y-1">
+            {exercise.instructions.map((instruction, index) => (
+              <li key={index} className="leading-relaxed">
+                {index + 1}. {instruction}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2">
+        <span>Target: {exercise.target}</span>
+        {exercise.equipment && <span>Equipment: {exercise.equipment}</span>}
+        {exercise.category && <span>Type: {exercise.category}</span>}
+      </div>
+    </div>
+  );
+}
 
 export default function CartRow({ item, updateCartItem, removeFromCart, logData, onLogDataChange }) {
   // Check if the item is a food item by looking for a unique property like 'label'.
   const isFoodItem = 'label' in item;
+  const isMobile = useIsMobile();
 
-  const InfoDialog = ({ item, isFood }) => (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <Info className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-auto max-w-sm p-0">
-        {isFood ? <NutritionLabel food={item} /> : <ExerciseInfoCard exercise={item} />}
-      </DialogContent>
-    </Dialog>
-  );
+  const InfoDialog = ({ item, isFood }) => {
+    if (isFood) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="w-auto max-w-sm p-0">
+            <NutritionLabel food={item} />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    // Only show on mobile for exercises
+    if (!isMobile) return null;
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-6 w-6">
+            <Info className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="w-auto max-w-sm p-0">
+          {renderTooltipContent(item)}
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   if (isFoodItem) {
     const currentUnitRef = useRef(item.units);
-
     useEffect(() => {
       currentUnitRef.current = item.units;
     }, [item.units]);
-
     const handleServingChange = useCallback(({ quantity, units, scaledNutrition }) => {
       updateCartItem(item.id, { quantity, units, ...scaledNutrition });
     }, [updateCartItem, item.id]);
-
     return (
       <tr className="border-b align-top">
         <td colSpan="3" className="py-2 px-1">
@@ -66,11 +129,9 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     // Render exercise item row
     const { name, id } = item;
     const itemLogData = logData && logData[id] ? logData[id] : {};
-
     const handleLogChange = (newValues) => {
       onLogDataChange(id, newValues);
     };
-
     return (
       <tr className="border-b align-top">
         <td colSpan="5" className="py-2 px-1">

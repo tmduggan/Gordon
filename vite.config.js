@@ -10,4 +10,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 3001,
+    host: true, // This allows external connections if needed
+    strictPort: true, // This will fail if port 3001 is already in use
+  },
 }) 
