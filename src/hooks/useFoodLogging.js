@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
+import { useToast } from './use-toast';
 
 export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker) {
     const { user, addXP } = useAuthStore();
     const [showAllHistory, setShowAllHistory] = useState(false);
+    const { toast } = useToast();
 
     const handleSelect = async (food) => {
         let foodToLog = food;
@@ -14,6 +16,31 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
         }
         cart.addToCart(foodToLog);
         search.clearSearch();
+    };
+
+    const handleNutrientsAdd = async (foods) => {
+        console.log('[handleNutrientsAdd] Adding foods to cart:', foods.length);
+        // Add all foods to cart with default quantities
+        foods.forEach(food => {
+            cart.addToCart(food);
+        });
+        
+        // Show success toast
+        if (foods.length === 1) {
+            toast({
+                title: "Food Added",
+                description: `Added ${foods[0].food_name || foods[0].label} to your cart`,
+            });
+        } else {
+            toast({
+                title: "Foods Added",
+                description: `Added ${foods.length} foods to your cart`,
+            });
+        }
+        
+        if (search && search.clearSearch) {
+            search.clearSearch();
+        }
     };
 
     const logCart = async () => {
@@ -48,6 +75,7 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
 
     return {
         handleSelect,
+        handleNutrientsAdd,
         logCart,
         showAllHistory,
         setShowAllHistory

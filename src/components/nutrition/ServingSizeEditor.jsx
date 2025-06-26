@@ -10,78 +10,96 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
  * @param {function} onUpdate - Callback that returns the new quantity, units, and scaled nutrition.
  */
 const ServingSizeEditor = ({ food, onUpdate }) => {
-    // Default to the food's serving_qty and serving_unit, fallback to 1 and 'g' if not available
-    const [quantity, setQuantity] = useState(food.serving_qty || 1);
+    // Store quantity as a string to allow empty input
+    const [quantity, setQuantity] = useState((food.serving_qty || 1).toString());
     const [unit, setUnit] = useState(food.serving_unit || 'g');
 
     // Calculate macros per gram once
     const macrosPerGram = useMemo(() => {
-        const servingWeightGrams = food.serving_weight_grams || 1;
+        const servingWeightGrams = food.serving_weight_grams;
         const macros = food.nutritionix_data || food.nutrition || food;
-        
+        if (!servingWeightGrams) {
+            // No weight in grams: treat macros as per serving
+            return {
+                calories: macros.nf_calories || macros.calories || 0,
+                fat: macros.nf_total_fat || macros.fat || 0,
+                carbs: macros.nf_total_carbohydrate || macros.carbs || 0,
+                protein: macros.nf_protein || macros.protein || 0,
+                fiber: macros.nf_dietary_fiber || macros.fiber || 0,
+                perServing: true
+            };
+        }
         return {
             calories: (macros.nf_calories || macros.calories || 0) / servingWeightGrams,
             fat: (macros.nf_total_fat || macros.fat || 0) / servingWeightGrams,
             carbs: (macros.nf_total_carbohydrate || macros.carbs || 0) / servingWeightGrams,
             protein: (macros.nf_protein || macros.protein || 0) / servingWeightGrams,
             fiber: (macros.nf_dietary_fiber || macros.fiber || 0) / servingWeightGrams,
+            perServing: false
         };
     }, [food]);
 
     // Get all available units (base unit + alt_measures + grams)
     const availableUnits = useMemo(() => {
         const units = new Set();
-        
         // Add base unit
         if (food.serving_unit) {
             units.add(food.serving_unit);
         }
-        
-        // Add grams
-        units.add('g');
-        
-        // Add alt_measures
-        if (food.alt_measures) {
-            food.alt_measures.forEach(measure => {
-                if (measure.measure) {
-                    units.add(measure.measure);
-                }
-            });
+        // Only add grams and alt_measures if we have a valid weight in grams
+        if (food.serving_weight_grams) {
+            units.add('g');
+            if (food.alt_measures && Array.isArray(food.alt_measures) && food.alt_measures.length > 0) {
+                food.alt_measures.forEach(measure => {
+                    if (measure.measure) {
+                        units.add(measure.measure);
+                    }
+                });
+            }
         }
-        
         return Array.from(units).sort();
     }, [food]);
 
     // Convert any unit to grams
     const convertToGrams = (qty, unit) => {
+        if (!food.serving_weight_grams) {
+            // No grams reference: only allow base unit, treat as 1 serving = 1 unit
+            return qty;
+        }
         if (unit === 'g') {
             return qty;
         }
-        
         // Check if it's the base unit
         if (unit === food.serving_unit) {
             // For base unit, use the serving_weight_grams directly
             return (food.serving_weight_grams / (food.serving_qty || 1)) * qty;
         }
-        
         // Check alt_measures
-        if (food.alt_measures) {
+        if (food.alt_measures && Array.isArray(food.alt_measures)) {
             const alt = food.alt_measures.find(m => m.measure === unit);
             if (alt) {
                 return (alt.serving_weight / alt.qty) * qty;
             }
         }
-        
-        // Fallback: treat as base unit
+        // Fallback: treat as base unit (never return 0 unless qty is 0)
         return (food.serving_weight_grams / (food.serving_qty || 1)) * qty;
     };
 
     // Calculate scaled nutrition
     const getScaledNutrition = (qty, unit) => {
+        if (macrosPerGram.perServing) {
+            // No grams reference: just multiply per serving macros by qty
+            const safe = v => (isFinite(v) && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;
+            return {
+                calories: safe(macrosPerGram.calories * qty),
+                fat: safe(macrosPerGram.fat * qty),
+                carbs: safe(macrosPerGram.carbs * qty),
+                protein: safe(macrosPerGram.protein * qty),
+                fiber: safe(macrosPerGram.fiber * qty),
+            };
+        }
         const grams = convertToGrams(qty, unit);
-        
         const safe = v => (isFinite(v) && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;
-        
         return {
             calories: safe(macrosPerGram.calories * grams),
             fat: safe(macrosPerGram.fat * grams),
@@ -92,13 +110,15 @@ const ServingSizeEditor = ({ food, onUpdate }) => {
     };
 
     const handleQuantityChange = (e) => {
-        const newQuantity = parseFloat(e.target.value) || 0;
-        setQuantity(newQuantity);
+        const value = e.target.value;
+        setQuantity(value);
+        // Treat empty string as 0 for calculations
+        const parsedQuantity = value === '' ? 0 : parseFloat(value);
         if (onUpdate) {
             onUpdate({
-                quantity: newQuantity,
+                quantity: parsedQuantity,
                 units: unit,
-                scaledNutrition: getScaledNutrition(newQuantity, unit)
+                scaledNutrition: getScaledNutrition(parsedQuantity, unit)
             });
         }
     };

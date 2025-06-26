@@ -41,11 +41,6 @@ export default function ExercisePage() {
         exerciseLibrary, exerciseHistory, cart, search, dateTimePicker
     );
     
-    // Calculate total XP from workout history
-    const totalXP = useMemo(() => {
-        return exerciseHistory.logs.reduce((total, log) => total + (log.score || 0), 0);
-    }, [exerciseHistory.logs]);
-
     const pinnedItems = (userProfile?.pinnedExercises && exerciseLibrary.items)
         ? userProfile.pinnedExercises.map(id => exerciseLibrary.items.find(e => e.id === id)).filter(Boolean)
         : [];
@@ -61,6 +56,12 @@ export default function ExercisePage() {
 
     return (
         <div className="max-w-3xl mx-auto w-full">
+            <LevelDisplay
+                totalXP={userProfile?.totalXP || 0}
+                workoutLogs={exerciseHistory.logs}
+                accountCreationDate={accountCreationDate}
+                className="mb-4"
+            />
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
                 <WorkoutSuggestions
                     muscleScores={userProfile?.muscleScores || {}}
@@ -117,14 +118,6 @@ export default function ExercisePage() {
                     />
                 )}
             </div>
-            
-            <LevelDisplay 
-                totalXP={totalXP}
-                workoutLogs={exerciseHistory.logs}
-                accountCreationDate={accountCreationDate}
-                className="mb-4"
-            />
-            
             <MuscleChartDisplay className="mt-4 px-4" />
         </div>
     );

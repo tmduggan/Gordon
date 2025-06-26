@@ -7,7 +7,6 @@ export const getFoodMacros = (food) => {
 
     // If this is a recipe, return its totalMacros if present
     if (food.isRecipe) {
-        console.log('Recipe in search:', food);
         if (food.totalMacros) {
             return food.totalMacros;
         }

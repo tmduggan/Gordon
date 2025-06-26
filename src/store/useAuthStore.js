@@ -102,15 +102,69 @@ const useAuthStore = create((set, get) => ({
   // Add XP to user's total (for both exercise and food)
   addXP: async (xpAmount) => {
     const { userProfile } = get();
-    if (!userProfile) return;
+    if (!userProfile) {
+      console.warn('Cannot add XP: no user profile found');
+      return;
+    }
     
     const currentXP = userProfile.totalXP || 0;
     const newXP = currentXP + xpAmount;
+    
+    console.log(`Adding XP: current=${currentXP}, adding=${xpAmount}, new=${newXP}`);
     
     const newProfile = { ...userProfile, totalXP: newXP };
     await get().saveUserProfile(newProfile);
     
     console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
+  },
+
+  // Fix XP discrepancies by recalculating from all logs
+  fixXPDiscrepancy: async (exerciseLogs = [], foodLogs = []) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    // Import the validation function
+    const { recalculateTotalXPFromLogs, validateUserXP } = await import('../services/levelService');
+    
+    const validation = validateUserXP(userProfile, exerciseLogs, foodLogs);
+    
+    if (!validation.isValid) {
+      console.log(`XP discrepancy detected: stored=${validation.storedXP}, calculated=${validation.calculatedXP}, difference=${validation.discrepancy}`);
+      
+      const correctedProfile = { ...userProfile, totalXP: validation.calculatedXP };
+      await get().saveUserProfile(correctedProfile);
+      
+      console.log(`Fixed XP discrepancy. New total: ${validation.calculatedXP}`);
+      return validation.calculatedXP;
+    }
+    
+    console.log('XP validation passed - no discrepancy found');
+    return validation.storedXP;
+  },
+
+  // Manually recalculate and sync total XP from all logs
+  recalculateAndSyncXP: async (exerciseLogs = [], foodLogs = []) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    // Import the recalculation function
+    const { recalculateTotalXPFromLogs } = await import('../services/levelService');
+    
+    const calculatedXP = recalculateTotalXPFromLogs(exerciseLogs, foodLogs);
+    const currentXP = userProfile.totalXP || 0;
+    
+    console.log(`Recalculating XP: current=${currentXP}, calculated=${calculatedXP}`);
+    
+    if (calculatedXP !== currentXP) {
+      const correctedProfile = { ...userProfile, totalXP: calculatedXP };
+      await get().saveUserProfile(correctedProfile);
+      
+      console.log(`Synced XP to calculated total: ${calculatedXP}`);
+      return calculatedXP;
+    }
+    
+    console.log('XP already in sync');
+    return currentXP;
   },
 
   // Toggle a pinned food

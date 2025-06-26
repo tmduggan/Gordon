@@ -1,12 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchInstantResults as fetchNutritionixSearch } from '../api/nutritionixAPI';
+import { fetchInstantResults as fetchNutritionixSearch, fetchNutrients } from '../api/nutritionixAPI';
+import { generateFoodId } from '../services/foodService';
+import { useToast } from './use-toast';
 
-export default function useSearch(type, library, userProfile) {
+export default function useSearch(type, library, userProfile, options = {}) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
+    const [nutrientsLoading, setNutrientsLoading] = useState(false);
     const [targetFilter, setTargetFilter] = useState('');
     const [equipmentFilter, setEquipmentFilter] = useState('');
+    const { toast } = useToast();
 
     // Helper function to check if an item matches the search query
     const itemMatchesQuery = (item, query) => {
@@ -74,9 +78,17 @@ export default function useSearch(type, library, userProfile) {
             }
             results = exerciseResults;
         } else { // Food search
-            const foodResults = library.items.filter(item =>
-                item.label.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            // Get pinned items first
+            const pinnedItems = getMatchingPinnedItems;
+            
+            // Create a set of pinned item IDs for efficient lookup
+            const pinnedIds = new Set(pinnedItems.map(item => item.id || item.food_name));
+            
+            // Filter regular results, excluding items that are already pinned
+            const foodResults = library.items
+                .filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                .filter(item => !pinnedIds.has(item.id || item.food_name)); // Remove items already in pinned
+            
             results = foodResults;
         }
 
@@ -105,7 +117,15 @@ export default function useSearch(type, library, userProfile) {
             const pinnedItems = getMatchingPinnedItems;
             const recipes = getMatchingRecipes;
             
-            const combinedResults = [...pinnedItems, ...recipes, ...nutritionixResults];
+            // Create a set of pinned item IDs for efficient lookup
+            const pinnedIds = new Set(pinnedItems.map(item => item.id || item.food_name));
+            
+            // Filter out API results that are already pinned
+            const filteredApiResults = nutritionixResults.filter(item => 
+                !pinnedIds.has(item.id || item.food_name)
+            );
+            
+            const combinedResults = [...pinnedItems, ...recipes, ...filteredApiResults];
             setSearchResults(combinedResults);
         } catch (error) {
             console.error("Error fetching from Nutritionix:", error);
@@ -115,6 +135,73 @@ export default function useSearch(type, library, userProfile) {
             setSearchResults([...pinnedItems, ...recipes]);
         } finally {
             setSearchLoading(false);
+        }
+    };
+
+    const handleNutrientsSearch = async () => {
+        if (searchQuery.trim() === '' || type !== 'food') return;
+        
+        setNutrientsLoading(true);
+        try {
+            console.log('[handleNutrientsSearch] Processing query:', searchQuery);
+            const nutrientsResults = await fetchNutrients(searchQuery);
+            
+            if (nutrientsResults.length === 0) {
+                console.log('[handleNutrientsSearch] No foods found for query:', searchQuery);
+                toast({
+                    title: "No Foods Found",
+                    description: "Could not find any foods matching your query. Try a different description.",
+                    variant: "destructive",
+                });
+                return;
+            }
+            
+            console.log('[handleNutrientsSearch] Found foods:', nutrientsResults);
+            
+            // Process each result: check if in library, save if not, add to cart
+            const processedFoods = [];
+            for (const food of nutrientsResults) {
+                // Check if food already exists in library
+                const existingFood = library.items.find(item => 
+                    item.id === generateFoodId(food)
+                );
+                
+                if (existingFood) {
+                    // Use existing food from library
+                    processedFoods.push(existingFood);
+                    console.log('[handleNutrientsSearch] Using existing food:', existingFood.food_name);
+                } else {
+                    // Save new food to library
+                    if (library && typeof library.fetchAndSave === 'function') {
+                        const savedFood = await library.fetchAndSave(food);
+                        if (savedFood) {
+                            processedFoods.push(savedFood);
+                            console.log('[handleNutrientsSearch] Saved new food:', savedFood.food_name);
+                        }
+                    } else {
+                        console.warn('[handleNutrientsSearch] Library fetchAndSave not available');
+                    }
+                }
+            }
+            
+            // Add all processed foods to cart
+            if (options.onNutrientsAdd && processedFoods.length > 0) {
+                options.onNutrientsAdd(processedFoods);
+                console.log('[handleNutrientsSearch] Added foods to cart:', processedFoods.length);
+            }
+            
+            // Clear search after successful processing
+            clearSearch();
+            
+        } catch (error) {
+            console.error('[handleNutrientsSearch] Error processing nutrients:', error);
+            toast({
+                title: "Error Processing Foods",
+                description: "There was an error processing your food query. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setNutrientsLoading(false);
         }
     };
 
@@ -132,7 +219,9 @@ export default function useSearch(type, library, userProfile) {
         setSearchQuery,
         searchResults,
         searchLoading,
+        nutrientsLoading,
         handleApiSearch,
+        handleNutrientsSearch,
         clearSearch,
         filters: {
             target: targetFilter,

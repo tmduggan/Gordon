@@ -106,3 +106,30 @@ exports.nutritionixFullNutrition = onRequest((req, res) => {
         }
     });
 });
+
+exports.nutritionixNutrients = onRequest((req, res) => {
+    cors(req, res, async () => {
+        const { query } = req.query;
+        if (!query) {
+            return res.status(400).send('Missing query parameter');
+        }
+
+        logger.info(`Nutrients search for query: ${query}`, {structuredData: true});
+
+        try {
+            const response = await axios.post(`${NUTRITIONIX_BASE_URL}/natural/nutrients`, {
+                query: query
+            }, {
+                headers: {
+                    'x-app-id': NUTRITIONIX_APP_ID,
+                    'x-app-key': NUTRITIONIX_API_KEY,
+                    'Content-Type': 'application/json'
+                }
+            });
+            res.status(200).send(response.data);
+        } catch (error) {
+            logger.error('Error calling Nutritionix nutrients API:', error);
+            res.status(500).send('Error proxying request to Nutritionix API');
+        }
+    });
+});

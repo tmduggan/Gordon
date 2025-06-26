@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Medal, Apple, Dumbbell, User } from 'lucide-react';
+import { Medal, Apple, Dumbbell, User, Bug } from 'lucide-react';
 import LevelDisplay from './LevelDisplay';
 import useAuthStore from '../store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import useLibrary from '../hooks/fetchLibrary';
+import useHistory from '../hooks/fetchHistory';
+import { validateUserXP } from '../services/levelService';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
 export default function ProfileModal({ open, onOpenChange }) {
-  const { user, userProfile, saveUserProfile } = useAuthStore();
+  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP } = useAuthStore();
   const [tab, setTab] = useState('achievements');
   const [goals, setGoals] = useState(userProfile?.goals || DEFAULT_GOALS);
   const exerciseLibrary = useLibrary('exercise');
+  const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
+  const foodHistory = useHistory('food');
   const [availableEquipment, setAvailableEquipment] = useState(userProfile?.availableEquipment || []);
   const [profile, setProfile] = useState({
     name: userProfile?.name || user?.displayName || '',
     email: user?.email || '',
     timeZone: userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || '',
   });
+  const [xpValidation, setXpValidation] = useState(null);
 
   // Get all unique equipment options from the exercise library
   const equipmentOptions = React.useMemo(() => {
@@ -35,6 +40,17 @@ export default function ProfileModal({ open, onOpenChange }) {
     }
     // eslint-disable-next-line
   }, [open, equipmentOptions.length]);
+
+  // Auto-validate XP when modal opens
+  useEffect(() => {
+    if (open && !exerciseHistory.loading && !foodHistory.loading) {
+      // Small delay to ensure all data is loaded
+      const timer = setTimeout(() => {
+        validateXP();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [open, exerciseHistory.loading, foodHistory.loading]);
 
   // Save handlers
   const handleSaveGoals = () => {
@@ -57,6 +73,24 @@ export default function ProfileModal({ open, onOpenChange }) {
     } else {
       setAvailableEquipment([...availableEquipment, equipment]);
     }
+  };
+
+  // XP validation and fix functions
+  const validateXP = () => {
+    const validation = validateUserXP(userProfile, exerciseHistory.logs, foodHistory.logs);
+    setXpValidation(validation);
+  };
+
+  const handleFixXP = async () => {
+    if (xpValidation && !xpValidation.isValid) {
+      await fixXPDiscrepancy(exerciseHistory.logs, foodHistory.logs);
+      setXpValidation(null);
+    }
+  };
+
+  const handleSyncXP = async () => {
+    await recalculateAndSyncXP(exerciseHistory.logs, foodHistory.logs);
+    setXpValidation(null);
   };
 
   // Robust default for goals
@@ -92,6 +126,75 @@ export default function ProfileModal({ open, onOpenChange }) {
               accountCreationDate={user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined}
               className="mb-4"
             />
+            
+            {/* XP Debug Section */}
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center gap-2 mb-3">
+                <Bug className="w-4 h-4 text-gray-600" />
+                <h3 className="font-semibold text-sm">XP Debug</h3>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Stored XP:</span>
+                  <span className="font-mono">{userProfile?.totalXP || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Exercise Logs:</span>
+                  <span className="font-mono">{exerciseHistory.logs.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Food Logs:</span>
+                  <span className="font-mono">{foodHistory.logs.length}</span>
+                </div>
+                
+                {xpValidation && (
+                  <div className="mt-3 p-2 rounded border">
+                    <div className="flex justify-between mb-1">
+                      <span>Calculated XP:</span>
+                      <span className="font-mono">{xpValidation.calculatedXP}</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span>Discrepancy:</span>
+                      <span className={`font-mono ${xpValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                        {xpValidation.discrepancy}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {xpValidation.isValid ? '✅ XP is accurate' : '⚠️ XP discrepancy detected'}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={validateXP}
+                    disabled={exerciseHistory.loading || foodHistory.loading}
+                  >
+                    Validate XP
+                  </Button>
+                  {xpValidation && !xpValidation.isValid && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleFixXP}
+                    >
+                      Fix XP
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSyncXP}
+                    disabled={exerciseHistory.loading || foodHistory.loading}
+                  >
+                    Sync XP
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Nutrition Tab */}

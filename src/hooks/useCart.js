@@ -8,6 +8,15 @@ const useCartStore = create((set) => ({
   },
 
   addToCart: (type, item, quantity = 1) => set((state) => {
+    // Debug: Log relevant fields when adding to cart
+    console.log('[Cart Add]', {
+      id: item.id,
+      label: item.label || item.food_name || item.name,
+      serving_qty: item.serving_qty,
+      serving_unit: item.serving_unit,
+      serving_weight_grams: item.serving_weight_grams,
+      alt_measures: item.alt_measures
+    });
     const newCarts = { ...state.carts };
     const cart = [...newCarts[type]];
 
@@ -95,8 +104,10 @@ const useCartStore = create((set) => ({
     const itemIndex = cart.findIndex((i) => i.id === itemId);
 
     if (itemIndex > -1) {
-      if (updateObj.quantity !== undefined && updateObj.quantity <= 0) {
-        cart.splice(itemIndex, 1); // Remove if quantity is 0 or less
+      // Allow quantity 0 during editing - only remove if explicitly requested
+      // or if quantity is negative (which shouldn't happen with proper input validation)
+      if (updateObj.quantity !== undefined && updateObj.quantity < 0) {
+        cart.splice(itemIndex, 1); // Remove if quantity is negative
       } else {
         cart[itemIndex] = { ...cart[itemIndex], ...updateObj };
       }

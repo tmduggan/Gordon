@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import MacroDisplay from '../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Filter, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -13,7 +13,22 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     const isRecipe = item.isRecipe;
     const thumb = item.photo?.thumb;
     const macros = getFoodMacros(item);
-    
+    const isBranded = !!item.brand_name;
+
+    const formatQty = (qty) => {
+        if (typeof qty === 'number') {
+            return qty % 1 === 0 ? qty : qty.toFixed(2);
+        }
+        if (!isNaN(Number(qty))) {
+            const num = Number(qty);
+            return num % 1 === 0 ? num : num.toFixed(2);
+        }
+        return qty || '';
+    };
+    const subtext = isBranded
+        ? `${item.brand_name || ''}${item.serving_qty && item.serving_unit ? ", " + formatQty(item.serving_qty) + " " + item.serving_unit : ''}`
+        : '';
+
     // Determine background color based on item type
     let bgColorClass = "hover:bg-accent";
     if (isPinned) {
@@ -27,26 +42,37 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
             onClick={() => onSelect(item)}
             className={`cursor-pointer ${bgColorClass}`}
         >
-            <div className="grid grid-cols-[minmax(0,1fr)_60px_50px_50px_50px_50px_auto] items-center gap-2 px-2 py-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_80px_auto] items-center gap-2 px-2 py-1">
                 {/* Food name and thumb */}
-                <div className="flex items-center min-w-0">
-                    {thumb ? (
-                        <img src={thumb} alt="food thumb" className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0" />
-                    ) : (
-                        <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
-                    )}
-                    <span className="truncate font-medium text-sm">{foodName}
-                      {((item.tags && item.tags.food_group !== undefined) ? item.tags.food_group : item.food_group) !== undefined && (
-                        <span className="ml-1 text-xs text-gray-400">fg:{item.tags && item.tags.food_group !== undefined ? item.tags.food_group : item.food_group}</span>
-                      )}
+                <div className="flex flex-col min-w-0">
+                    <div className="flex items-center min-w-0">
+                        {thumb ? (
+                            <img src={thumb} alt="food thumb" className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0" />
+                        ) : (
+                            <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
+                        )}
+                        <span className="truncate font-medium text-sm">{foodName}
+                          {((item.tags && item.tags.food_group !== undefined) ? item.tags.food_group : item.food_group) !== undefined && (
+                            <span className="ml-1 text-xs text-gray-400">fg:{item.tags && item.tags.food_group !== undefined ? item.tags.food_group : item.food_group}</span>
+                          )}
+                        </span>
+                    </div>
+                    {/* Subtext line */}
+                    <div className="flex items-center min-h-[18px] text-xs text-gray-500">
+                        {isBranded ? (
+                            <span>{subtext}</span>
+                        ) : (
+                            <span className="opacity-0">placeholder</span>
+                        )}
+                    </div>
+                </div>
+                {/* Calories only, right-aligned */}
+                <div className="flex flex-col items-end justify-center">
+                    <span className="flex items-baseline">
+                        <span className="font-mono text-base text-right">{macros.calories}</span>
+                        <span className="ml-1 text-xs text-gray-500">cal</span>
                     </span>
                 </div>
-                {/* Macros: calories, carbs, fat, protein, fiber */}
-                <div className="text-right w-[60px] font-mono tabular-nums text-xs">{macros.calories} <span role="img" aria-label="calories">🔥</span></div>
-                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.carbs}g <span role="img" aria-label="carbs">🌾</span></div>
-                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.fat}g <span role="img" aria-label="fat">🧈</span></div>
-                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.protein}g <span role="img" aria-label="protein">🥩</span></div>
-                <div className="text-right w-[50px] font-mono tabular-nums text-xs">{macros.fiber}g <span role="img" aria-label="fiber">🌱</span></div>
                 {/* Pin/Recipe/Indicators */}
                 <div className="flex items-center gap-2 justify-end">
                     {isRecipe && (
@@ -159,8 +185,10 @@ export default function Search({
     setSearchQuery,
     searchResults = [],
     handleApiSearch,
+    handleNutrientsSearch,
     handleSelect,
     isLoading,
+    nutrientsLoading,
     userProfile,
     togglePin,
     getFoodMacros,
@@ -171,6 +199,7 @@ export default function Search({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
 
     useEffect(() => {
         setIsOpen(searchQuery.length > 0 && searchResults.length > 0);
@@ -189,23 +218,65 @@ export default function Search({
 
     const ResultComponent = type === 'food' ? FoodResult : ExerciseResult;
 
+    // Only show up to 20 results total, and paginate 10 at a time
+    const paginatedResults = searchResults.slice(0, 20).slice(0, visibleCount);
+    const canShowMore = visibleCount < Math.min(20, searchResults.length);
+
+    // Show loading state in search results area
+    const showLoadingInResults = isLoading && searchQuery.length > 0;
+
     return (
         <div className="relative">
             <Popover open={isOpen} onOpenChange={setIsOpen}>
                 <PopoverAnchor asChild>
                     <div className="flex items-center space-x-2">
-                        <Input
-                            type="text"
-                            placeholder={placeholder}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => setIsOpen(true)}
-                            className="flex-grow"
-                        />
+                        <div className="relative flex-grow">
+                            <Input
+                                type="text"
+                                placeholder={placeholder}
+                                value={searchQuery}
+                                onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(10); }}
+                                onFocus={() => setIsOpen(true)}
+                                className={`${nutrientsLoading ? 'border-blue-300 bg-blue-50' : ''}`}
+                            />
+                            {nutrientsLoading && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                </div>
+                            )}
+                        </div>
                         {type === 'food' && (
-                            <Button onClick={handleApiSearch} disabled={isLoading}>
-                                {isLoading ? '...' : 'Search'}
-                            </Button>
+                            <>
+                                <Button 
+                                    onClick={handleApiSearch} 
+                                    disabled={isLoading || nutrientsLoading || !searchQuery.trim()}
+                                    className="min-w-[80px]"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                            Searching...
+                                        </>
+                                    ) : (
+                                        'Search'
+                                    )}
+                                </Button>
+                                <Button 
+                                    onClick={handleNutrientsSearch} 
+                                    disabled={isLoading || nutrientsLoading || !searchQuery.trim()}
+                                    variant="secondary"
+                                    className="min-w-[100px]"
+                                >
+                                    {nutrientsLoading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        'Add Foods'
+                                    )}
+                                </Button>
+                            </>
                         )}
                     </div>
                 </PopoverAnchor>
@@ -223,11 +294,18 @@ export default function Search({
 
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <div style={{ maxHeight: '600px', minHeight: '200px', overflowY: 'auto' }}>
-                        {isLoading && <div className="p-4 text-sm text-center">Searching...</div>}
-                        {!isLoading && searchResults.length === 0 && searchQuery && (
-                            <div className="p-4 text-sm text-center">No results found.</div>
+                        {showLoadingInResults && (
+                            <div className="p-4 text-sm text-center flex items-center justify-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Searching for foods...</span>
+                            </div>
                         )}
-                        {searchResults.slice(0, 40).map((item) => (
+                        {!showLoadingInResults && searchResults.length === 0 && searchQuery && (
+                            <div className="p-4 text-sm text-center text-gray-500">
+                                No results found. Try a different search term.
+                            </div>
+                        )}
+                        {!showLoadingInResults && paginatedResults.map((item) => (
                             <ResultComponent
                                 key={item.id || item.food_name}
                                 item={item}
@@ -240,6 +318,13 @@ export default function Search({
                                 getFoodMacros={getFoodMacros} // Only used by FoodResult
                             />
                         ))}
+                        {canShowMore && (
+                            <div className="flex justify-center py-2">
+                                <Button variant="outline" size="sm" onClick={() => setVisibleCount(visibleCount + 10)}>
+                                    Show more
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </PopoverContent>
             </Popover>

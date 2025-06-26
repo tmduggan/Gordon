@@ -249,4 +249,47 @@ export function calculateTotalXPForLevel(level, accountCreationDate = new Date()
     totalXP += calculateXPForLevel(i, accountCreationDate);
   }
   return totalXP;
+}
+
+/**
+ * Recalculate total XP from all user logs to ensure accuracy
+ * This is useful for debugging or fixing XP discrepancies
+ * @param {Array} exerciseLogs - Array of exercise log entries
+ * @param {Array} foodLogs - Array of food log entries
+ * @returns {number} Total calculated XP from all logs
+ */
+export function recalculateTotalXPFromLogs(exerciseLogs = [], foodLogs = []) {
+  let totalXP = 0;
+  
+  // Sum XP from exercise logs
+  exerciseLogs.forEach(log => {
+    totalXP += log.score || 0;
+  });
+  
+  // Sum XP from food logs
+  foodLogs.forEach(log => {
+    totalXP += log.xp || 0;
+  });
+  
+  return totalXP;
+}
+
+/**
+ * Validate and fix user's total XP if there's a discrepancy
+ * @param {object} userProfile - Current user profile
+ * @param {Array} exerciseLogs - Array of exercise log entries
+ * @param {Array} foodLogs - Array of food log entries
+ * @returns {object} { isValid, calculatedXP, discrepancy } - Validation result
+ */
+export function validateUserXP(userProfile, exerciseLogs = [], foodLogs = []) {
+  const storedXP = userProfile?.totalXP || 0;
+  const calculatedXP = recalculateTotalXPFromLogs(exerciseLogs, foodLogs);
+  const discrepancy = Math.abs(storedXP - calculatedXP);
+  
+  return {
+    isValid: discrepancy < 1, // Allow for small rounding differences
+    calculatedXP,
+    discrepancy,
+    storedXP
+  };
 } 

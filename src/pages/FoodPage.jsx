@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import LevelDisplay from '../components/LevelDisplay';
 
 // Component Imports
 import CartContainer from '../components/Cart/CartContainer';
@@ -22,19 +23,23 @@ import useFoodLogging from '../hooks/useFoodLogging';
 import { getFoodMacros } from '../utils/dataUtils';
 
 export default function FoodPage() {
-    const { userProfile, togglePinFood, addRecipe, deleteRecipe } = useAuthStore();
+    const { userProfile, togglePinFood, addRecipe, deleteRecipe, user } = useAuthStore();
     const dateTimePicker = useDateTimePicker('food');
     
     // Initialize hooks
     const foodLibrary = useLibrary('food');
     const foodHistory = useHistory('food');
-    const search = useSearch('food', foodLibrary, userProfile);
     const cart = useCart('food');
     
-    // Use custom food logging hook
-    const { handleSelect, logCart, showAllHistory, setShowAllHistory } = useFoodLogging(
-        foodLibrary, cart, search, dateTimePicker
+    // Use custom food logging hook with nutrients support
+    const { handleSelect, handleNutrientsAdd, logCart, showAllHistory, setShowAllHistory } = useFoodLogging(
+        foodLibrary, cart, null, dateTimePicker
     );
+    
+    // Initialize search with nutrients callback
+    const search = useSearch('food', foodLibrary, userProfile, {
+        onNutrientsAdd: handleNutrientsAdd
+    });
 
     const pinnedItems = (userProfile?.pinnedFoods && foodLibrary.items)
         ? userProfile.pinnedFoods.map(id => foodLibrary.items.find(f => f.id === id)).filter(Boolean)
@@ -65,12 +70,28 @@ export default function FoodPage() {
         await deleteRecipe(recipeId);
     };
 
+    // Get account creation date (use user creation time or default to 30 days ago)
+    const accountCreationDate = useMemo(() => {
+        if (user?.metadata?.creationTime) {
+            return new Date(user.metadata.creationTime);
+        }
+        // Default to 30 days ago if no creation time available
+        return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }, [user]);
+
     if (foodLibrary.loading || foodHistory.loading) {
         return <div>Loading food data...</div>;
     }
 
     return (
         <div className="max-w-3xl mx-auto w-full">
+            {/* XP Progress at the very top */}
+            <LevelDisplay
+                totalXP={userProfile?.totalXP || 0}
+                workoutLogs={foodHistory.logs}
+                accountCreationDate={accountCreationDate}
+                className="mb-4"
+            />
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
                 <PinnedItemsGrid
                     items={pinnedItems}
@@ -85,8 +106,10 @@ export default function FoodPage() {
                     setSearchQuery={search.setSearchQuery}
                     searchResults={search.searchResults}
                     handleApiSearch={search.handleApiSearch}
+                    handleNutrientsSearch={search.handleNutrientsSearch}
                     handleSelect={handleSelect}
                     isLoading={search.searchLoading}
+                    nutrientsLoading={search.nutrientsLoading}
                     userProfile={userProfile}
                     togglePin={togglePinFood}
                     getFoodMacros={getFoodMacros}
