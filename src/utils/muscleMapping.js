@@ -1,7 +1,12 @@
 export const muscleMapping = {
-  // SVG muscle groups mapped to library muscle names
-  // Each SVG muscle can map to multiple library muscles for better matching
-  
+  // MAPPING STRUCTURE: {SVG_muscle_group}: [library_muscle_names]
+  // 
+  // This maps SVG muscle groups (used in the visual chart) to exercise library muscle names.
+  // When an exercise targets a library muscle name, it adds score to the corresponding SVG group.
+  // 
+  // Example: Exercise with target="pectorals" will shade the "pectorals" SVG muscle group
+  // Example: Exercise with target="shoulders" will shade the "deltoids" SVG muscle group
+
   // Core muscles
   abs: ['abs', 'abdominals', 'abdominal', 'core'],
   obliques: ['obliques', 'oblique'],
@@ -33,6 +38,7 @@ export const muscleMapping = {
   upper_pecs: ['chest', 'pecs', 'pectorals', 'pectoral'],
   lower_pecs: ['chest', 'pecs', 'pectorals', 'pectoral'],
   middle_pecs: ['chest', 'pecs', 'pectorals', 'pectoral'],
+  pectorals: ['pectorals', 'chest', 'pecs', 'pectoral'],
   
   // Back muscles
   lats: ['lats', 'latissimus', 'latissimus dorsi'],

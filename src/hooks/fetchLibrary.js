@@ -20,8 +20,19 @@ export default function useLibrary(libraryType, options = {}) {
         if (libraryType === 'exercise') {
           const querySnapshot = await getDocs(collection(db, 'exerciseLibrary'));
           const exercises = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setItems(exercises);
-          console.log(`✅ Loaded ${exercises.length} exercises from local library`);
+          
+          // Deduplicate exercises by ID to prevent duplicate key warnings
+          const uniqueExercises = exercises.reduce((acc, exercise) => {
+            if (!acc.find(ex => ex.id === exercise.id)) {
+              acc.push(exercise);
+            } else {
+              console.warn(`Duplicate exercise found with ID ${exercise.id}: ${exercise.name}`);
+            }
+            return acc;
+          }, []);
+          
+          setItems(uniqueExercises);
+          console.log(`✅ Loaded ${uniqueExercises.length} exercises from local library (${exercises.length - uniqueExercises.length} duplicates removed)`);
         } else if (libraryType === 'food') {
           const localFoods = await loadLocalFoods();
           setItems(localFoods);

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import MuscleMap from './MuscleMap';
 import useAuthStore from '../../store/useAuthStore';
 import { muscleMapping } from '../../utils/muscleMapping';
+import { getMuscleScore } from '../../services/muscleScoreService';
 
 export default function MuscleChartDisplay({ className = "" }) {
   const { userProfile } = useAuthStore();
@@ -16,8 +17,10 @@ export default function MuscleChartDisplay({ className = "" }) {
     Object.entries(muscleMapping).forEach(([svgMuscle, libraryMuscles]) => {
       let totalScore = 0;
       libraryMuscles.forEach(libraryMuscle => {
-        if (libraryScores[libraryMuscle]) {
-          totalScore += libraryScores[libraryMuscle];
+        // Use lifetime score for the muscle chart display
+        const score = getMuscleScore(libraryScores, libraryMuscle, 'lifetime');
+        if (score > 0) {
+          totalScore += score;
         }
       });
       if (totalScore > 0) {

@@ -64,6 +64,12 @@ export default function useSearch(type, library, userProfile, options = {}) {
         let results = [];
 
         if (type === 'exercise') {
+            // Get pinned items first
+            const pinnedItems = getMatchingPinnedItems;
+            
+            // Create a set of pinned item IDs for efficient lookup
+            const pinnedIds = new Set(pinnedItems.map(item => item.id));
+            
             let exerciseResults = library.items;
             if (targetFilter) {
                 exerciseResults = exerciseResults.filter(item => item.target === targetFilter);
@@ -76,7 +82,9 @@ export default function useSearch(type, library, userProfile, options = {}) {
                     item.name.toLowerCase().includes(searchQuery.toLowerCase())
                 );
             }
-            results = exerciseResults;
+            
+            // Filter out exercises that are already pinned
+            results = exerciseResults.filter(item => !pinnedIds.has(item.id));
         } else { // Food search
             // Get pinned items first
             const pinnedItems = getMatchingPinnedItems;

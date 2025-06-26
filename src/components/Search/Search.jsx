@@ -220,6 +220,19 @@ export default function Search({
 
     // Only show up to 20 results total, and paginate 10 at a time
     const paginatedResults = searchResults.slice(0, 20).slice(0, visibleCount);
+    
+    // Final deduplication to prevent duplicate key warnings
+    const uniqueResults = paginatedResults.reduce((acc, item, index) => {
+      const key = type === 'food' ? (item.id || item.food_name || `food-${index}`) : (item.id || `exercise-${index}`);
+      if (!acc.find(existing => {
+        const existingKey = type === 'food' ? (existing.id || existing.food_name) : existing.id;
+        return existingKey === key;
+      })) {
+        acc.push(item);
+      }
+      return acc;
+    }, []);
+    
     const canShowMore = visibleCount < Math.min(20, searchResults.length);
 
     // Show loading state in search results area
@@ -305,9 +318,9 @@ export default function Search({
                                 No results found. Try a different search term.
                             </div>
                         )}
-                        {!showLoadingInResults && paginatedResults.map((item) => (
+                        {!showLoadingInResults && uniqueResults.map((item, index) => (
                             <ResultComponent
-                                key={item.id || item.food_name}
+                                key={type === 'food' ? (item.id || item.food_name || `food-${index}`) : (item.id || `exercise-${index}`)}
                                 item={item}
                                 onSelect={(selectedItem) => {
                                     handleSelect(selectedItem);

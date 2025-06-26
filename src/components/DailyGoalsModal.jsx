@@ -1,30 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Medal, Apple, Dumbbell, User, Bug } from 'lucide-react';
+import { Medal, Apple, Dumbbell, User, Bug, Target } from 'lucide-react';
 import LevelDisplay from './LevelDisplay';
 import useAuthStore from '../store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import useLibrary from '../hooks/fetchLibrary';
 import useHistory from '../hooks/fetchHistory';
 import { validateUserXP } from '../services/levelService';
+import { useToast } from '../hooks/use-toast';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
+// Define equipment options for each category
+const bodyweightOptions = [
+  'body weight',
+  'band',
+  'medicine ball',
+  'roller',
+  'wheel roller',
+  'stability ball',
+  // Add more accessories as needed
+];
+const gymOptions = [
+  'dumbbell',
+  'barbell',
+  'cable',
+  'leverage machine',
+  'sled machine',
+  'ez barbell',
+  'weighted (e.g. weight vest, ankle weights)',
+  // Accessories also available in gym
+  'band',
+  'medicine ball',
+  'roller',
+  'wheel roller',
+  'stability ball',
+  // Add more gym equipment as needed
+];
+const cardioOptions = [
+  'stationary bike',
+  'upper body ergometer',
+  'elliptical machine',
+  'skierg machine',
+  // Add more cardio machines as needed
+];
+
 export default function ProfileModal({ open, onOpenChange }) {
-  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP } = useAuthStore();
+  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP, migrateMuscleScores } = useAuthStore();
+  const { toast } = useToast();
   const [tab, setTab] = useState('achievements');
   const [goals, setGoals] = useState(userProfile?.goals || DEFAULT_GOALS);
   const exerciseLibrary = useLibrary('exercise');
   const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
   const foodHistory = useHistory('food');
-  const [availableEquipment, setAvailableEquipment] = useState(userProfile?.availableEquipment || []);
+  const [availableEquipment, setAvailableEquipment] = useState(userProfile?.availableEquipment || { bodyweight: [], gym: [], cardio: [] });
   const [profile, setProfile] = useState({
     name: userProfile?.name || user?.displayName || '',
     email: user?.email || '',
     timeZone: userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || '',
   });
   const [xpValidation, setXpValidation] = useState(null);
+  const [equipmentCategory, setEquipmentCategory] = useState('bodyweight');
+  const [selectedBodyweight, setSelectedBodyweight] = useState(availableEquipment.bodyweight || []);
+  const [selectedGym, setSelectedGym] = useState(availableEquipment.gym || []);
+  const [selectedCardio, setSelectedCardio] = useState(availableEquipment.cardio || []);
 
   // Get all unique equipment options from the exercise library
   const equipmentOptions = React.useMemo(() => {
@@ -58,7 +98,13 @@ export default function ProfileModal({ open, onOpenChange }) {
     onOpenChange(false);
   };
   const handleSaveEquipment = () => {
-    saveUserProfile({ ...userProfile, availableEquipment });
+    const newAvailableEquipment = {
+      bodyweight: selectedBodyweight,
+      gym: selectedGym,
+      cardio: selectedCardio,
+    };
+    setAvailableEquipment(newAvailableEquipment);
+    saveUserProfile({ ...userProfile, availableEquipment: newAvailableEquipment });
     onOpenChange(false);
   };
   const handleSaveProfile = () => {
@@ -93,8 +139,54 @@ export default function ProfileModal({ open, onOpenChange }) {
     setXpValidation(null);
   };
 
+  const handleMigrateMuscleScores = async () => {
+    try {
+      await migrateMuscleScores(exerciseHistory.logs, exerciseLibrary.items);
+      toast({
+        title: "Muscle scores updated!",
+        description: "Your muscle scores have been migrated to the new time-based format."
+      });
+    } catch (error) {
+      console.error("Error migrating muscle scores:", error);
+      toast({
+        title: "Migration failed",
+        description: "There was an error updating your muscle scores.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Robust default for goals
   const currentGoals = userProfile?.goals || goals || DEFAULT_GOALS;
+
+  // Replace the Goliath Tab content with category-based equipment selection
+  const handleBodyweightCheckboxChange = (option) => {
+    if (selectedBodyweight.includes(option)) {
+      setSelectedBodyweight(selectedBodyweight.filter(e => e !== option));
+    } else {
+      setSelectedBodyweight([...selectedBodyweight, option]);
+    }
+  };
+
+  const handleGymCheckboxChange = (option) => {
+    if (selectedGym.includes(option)) {
+      setSelectedGym(selectedGym.filter(e => e !== option));
+    } else {
+      setSelectedGym([...selectedGym, option]);
+    }
+  };
+
+  const handleCardioCheckboxChange = (option) => {
+    if (selectedCardio.includes(option)) {
+      setSelectedCardio(selectedCardio.filter(e => e !== option));
+    } else {
+      setSelectedCardio([...selectedCardio, option]);
+    }
+  };
+
+  // Add validation and disable Save button if any set is empty
+  const gymInvalid = selectedGym.length === 0;
+  const cardioInvalid = selectedCardio.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,6 +287,41 @@ export default function ProfileModal({ open, onOpenChange }) {
                 </div>
               </div>
             </div>
+
+            {/* Muscle Score Migration Section */}
+            <div className="border rounded-lg p-4 bg-blue-50 mt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-blue-600" />
+                <h3 className="font-semibold text-sm text-blue-800">Muscle Score Migration</h3>
+              </div>
+              
+              <div className="space-y-2 text-sm text-blue-700">
+                <p>
+                  Update your muscle scores to the new time-based format for better tracking and suggestions.
+                </p>
+                
+                <div className="flex justify-between">
+                  <span>Current Format:</span>
+                  <span className="font-mono">
+                    {userProfile?.muscleScores && 
+                     Object.values(userProfile.muscleScores).some(score => typeof score === 'number') 
+                     ? 'Legacy' : 'Time-based'}
+                  </span>
+                </div>
+                
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleMigrateMuscleScores}
+                    disabled={exerciseHistory.loading || exerciseLibrary.loading}
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Update Muscle Scores
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Nutrition Tab */}
@@ -225,27 +352,81 @@ export default function ProfileModal({ open, onOpenChange }) {
           <TabsContent value="goliath">
             <div className="mb-4">
               <h3 className="font-semibold mb-2">Available Equipment</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                {equipmentOptions.length === 0 && <div className="col-span-full">No equipment options found.</div>}
-                {equipmentOptions.map(option => {
-                  const selected = availableEquipment.includes(option);
-                  return (
+              <div className="mb-2">
+                <Tabs value={equipmentCategory} onValueChange={setEquipmentCategory} className="w-full">
+                  <TabsList className="grid grid-cols-3 gap-2 mb-4">
+                    <TabsTrigger value="bodyweight">Body Weight</TabsTrigger>
+                    <TabsTrigger value="gym">Gym Equipment</TabsTrigger>
+                    <TabsTrigger value="cardio">Cardio</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              {/* Category-specific equipment selection */}
+              {equipmentCategory === 'bodyweight' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                  <button
+                    key="body weight"
+                    type="button"
+                    className="px-3 py-2 rounded border text-sm font-medium transition-colors bg-blue-600 text-white border-blue-600 shadow cursor-not-allowed opacity-70"
+                    disabled
+                  >
+                    body weight
+                  </button>
+                  {bodyweightOptions.filter(opt => opt !== 'body weight').map(option => (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => handleCheckboxChange(option)}
+                      onClick={() => handleBodyweightCheckboxChange(option)}
                       className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                        ${selected ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
+                        ${selectedBodyweight.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
                     >
                       {option}
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
+              {equipmentCategory === 'gym' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                  {gymOptions.map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleGymCheckboxChange(option)}
+                      className={`px-3 py-2 rounded border text-sm font-medium transition-colors
+                        ${selectedGym.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                  {gymInvalid && (
+                    <div className="col-span-full text-red-600 text-sm mt-2">Must select at least one equipment option</div>
+                  )}
+                </div>
+              )}
+              {equipmentCategory === 'cardio' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                  {cardioOptions.map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handleCardioCheckboxChange(option)}
+                      className={`px-3 py-2 rounded border text-sm font-medium transition-colors
+                        ${selectedCardio.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                  {cardioInvalid && (
+                    <div className="col-span-full text-red-600 text-sm mt-2">Must select at least one equipment option</div>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button onClick={handleSaveEquipment}>Save Equipment</Button>
+                <Button onClick={handleSaveEquipment} disabled={gymInvalid || cardioInvalid}>Save Equipment</Button>
               </div>
             </div>
           </TabsContent>

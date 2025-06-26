@@ -2,6 +2,7 @@
 import { calculateStreakBonuses } from './levelService.js';
 // Import suggestion service for lagging muscle bonuses
 import { calculateLaggingMuscleBonus, analyzeLaggingMuscles } from './suggestionService.js';
+import { hasWorkedMuscle } from './muscleScoreService.js';
 
 const SCORING_CONFIG = {
     version: "v4",
@@ -289,11 +290,11 @@ export function calculateWorkoutScore(workoutToScore, userWorkoutHistory = [], e
     const today = workoutToScore.timestamp;
     const targetMuscle = exerciseDetails.target;
 
-    const todaysLogs = userWorkoutHistory.filter(log => isSameDay(new Date(log.timestamp.seconds * 1000), today));
-    const thisWeeksLogs = userWorkoutHistory.filter(log => isSameWeek(new Date(log.timestamp.seconds * 1000), today));
-
-    const hasWorkedMuscleToday = todaysLogs.some(log => log.target === targetMuscle);
-    const hasWorkedMuscleThisWeek = thisWeeksLogs.some(log => log.target === targetMuscle);
+    // Use time-based muscle scores instead of scanning logs
+    const hasWorkedMuscleToday = userProfile?.muscleScores ? 
+      hasWorkedMuscle(userProfile.muscleScores, targetMuscle, 'today') : false;
+    const hasWorkedMuscleThisWeek = userProfile?.muscleScores ? 
+      hasWorkedMuscle(userProfile.muscleScores, targetMuscle, '7day') : false;
 
     if (!hasWorkedMuscleThisWeek) {
         score += SCORING_CONFIG.noveltyBonus.firstOfWeek;

@@ -118,6 +118,46 @@ const useAuthStore = create((set, get) => ({
     console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
   },
 
+  // Migrate muscle scores to new time-based format
+  migrateMuscleScores: async (exerciseLogs = [], exerciseLibrary = []) => {
+    const { userProfile } = get();
+    if (!userProfile) {
+      console.warn('Cannot migrate muscle scores: no user profile found');
+      return;
+    }
+
+    // Import the migration function
+    const { migrateMuscleScores, calculateTimeBasedMuscleScores } = await import('../services/muscleScoreService');
+    
+    console.log('Starting muscle score migration...');
+    
+    let newMuscleScores;
+    
+    // Check if we need to migrate from old format or recalculate from logs
+    const hasOldFormat = userProfile.muscleScores && 
+      Object.values(userProfile.muscleScores).some(score => typeof score === 'number');
+    
+    if (hasOldFormat) {
+      // Migrate from old single-value format
+      console.log('Migrating from old single-value format...');
+      newMuscleScores = migrateMuscleScores(userProfile.muscleScores);
+    } else if (exerciseLogs.length > 0 && exerciseLibrary.length > 0) {
+      // Recalculate from historical logs
+      console.log('Recalculating from historical logs...');
+      newMuscleScores = calculateTimeBasedMuscleScores(exerciseLogs, exerciseLibrary);
+    } else {
+      // Initialize empty structure
+      console.log('Initializing empty muscle score structure...');
+      newMuscleScores = {};
+    }
+    
+    const updatedProfile = { ...userProfile, muscleScores: newMuscleScores };
+    await get().saveUserProfile(updatedProfile);
+    
+    console.log('Muscle score migration completed');
+    return newMuscleScores;
+  },
+
   // Fix XP discrepancies by recalculating from all logs
   fixXPDiscrepancy: async (exerciseLogs = [], foodLogs = []) => {
     const { userProfile } = get();
@@ -167,32 +207,56 @@ const useAuthStore = create((set, get) => ({
     return currentXP;
   },
 
-  // Toggle a pinned food
+  // Toggle a pinned food with optimistic updates
   togglePinFood: async (foodId) => {
     const { userProfile } = get();
     if (!userProfile) return;
     
     const currentPinned = userProfile.pinnedFoods || [];
-    const newPinned = currentPinned.includes(foodId)
+    const isCurrentlyPinned = currentPinned.includes(foodId);
+    const newPinned = isCurrentlyPinned
       ? currentPinned.filter(id => id !== foodId)
       : [...currentPinned, foodId];
       
-    const newProfile = { ...userProfile, pinnedFoods: newPinned };
-    await get().saveUserProfile(newProfile);
+    // Optimistically update the UI immediately
+    const optimisticProfile = { ...userProfile, pinnedFoods: newPinned };
+    set({ userProfile: optimisticProfile });
+    
+    // Then update Firestore in the background
+    try {
+      const newProfile = { ...userProfile, pinnedFoods: newPinned };
+      await get().saveUserProfile(newProfile);
+    } catch (error) {
+      console.error("Error updating pinned foods:", error);
+      // Revert optimistic update on error
+      set({ userProfile });
+    }
   },
 
-  // Toggle a pinned exercise
+  // Toggle a pinned exercise with optimistic updates
   togglePinExercise: async (exerciseId) => {
     const { userProfile } = get();
     if (!userProfile) return;
     
     const currentPinned = userProfile.pinnedExercises || [];
-    const newPinned = currentPinned.includes(exerciseId)
+    const isCurrentlyPinned = currentPinned.includes(exerciseId);
+    const newPinned = isCurrentlyPinned
       ? currentPinned.filter(id => id !== exerciseId)
       : [...currentPinned, exerciseId];
       
-    const newProfile = { ...userProfile, pinnedExercises: newPinned };
-    await get().saveUserProfile(newProfile);
+    // Optimistically update the UI immediately
+    const optimisticProfile = { ...userProfile, pinnedExercises: newPinned };
+    set({ userProfile: optimisticProfile });
+    
+    // Then update Firestore in the background
+    try {
+      const newProfile = { ...userProfile, pinnedExercises: newPinned };
+      await get().saveUserProfile(newProfile);
+    } catch (error) {
+      console.error("Error updating pinned exercises:", error);
+      // Revert optimistic update on error
+      set({ userProfile });
+    }
   },
 
   // Add a new recipe

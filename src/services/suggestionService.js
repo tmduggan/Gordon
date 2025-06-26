@@ -2,6 +2,7 @@
 // Analyzes user's muscle scores and generates personalized workout recommendations
 
 import { muscleMapping } from '../utils/muscleMapping';
+import { getMuscleScore, hasWorkedMuscle } from './muscleScoreService';
 
 const SUGGESTION_CONFIG = {
   // Bonus XP for working lagging muscle groups
@@ -28,13 +29,12 @@ const SUGGESTION_CONFIG = {
 /**
  * Analyze user's muscle scores to find lagging muscle groups
  * @param {object} muscleScores - User's current muscle scores
- * @param {Array} workoutLogs - User's workout history
+ * @param {Array} workoutLogs - User's workout history (deprecated, kept for compatibility)
  * @param {Array} exerciseLibrary - Available exercises
  * @returns {Array} Array of lagging muscle objects
  */
 export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerciseLibrary = []) {
   const laggingMuscles = [];
-  const now = new Date();
   
   // Get all possible muscle groups from the library
   const allMuscles = new Set();
@@ -51,22 +51,23 @@ export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerc
     }
   });
   
-  // Analyze each muscle group
+  // Analyze each muscle group using time-based scores
   allMuscles.forEach(muscle => {
-    const score = muscleScores[muscle] || 0;
-    const lastTrained = getLastTrainedDate(muscle, workoutLogs, exerciseLibrary);
-    const daysSinceTrained = lastTrained ? Math.floor((now - lastTrained) / (1000 * 60 * 60 * 24)) : Infinity;
+    const lifetimeScore = getMuscleScore(muscleScores, muscle, 'lifetime');
+    const hasWorkedToday = hasWorkedMuscle(muscleScores, muscle, 'today');
+    const hasWorkedThisWeek = hasWorkedMuscle(muscleScores, muscle, '7day');
+    const hasWorkedRecently = hasWorkedMuscle(muscleScores, muscle, '14day');
     
     let laggingType = null;
     let bonus = 0;
     
-    if (score === 0) {
+    if (lifetimeScore === 0) {
       laggingType = 'neverTrained';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.neverTrained;
-    } else if (score < SUGGESTION_CONFIG.thresholds.underTrained) {
+    } else if (lifetimeScore < SUGGESTION_CONFIG.thresholds.underTrained) {
       laggingType = 'underTrained';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.underTrained;
-    } else if (daysSinceTrained > SUGGESTION_CONFIG.neglectedDays) {
+    } else if (!hasWorkedRecently) {
       laggingType = 'neglected';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.neglected;
     }
@@ -74,45 +75,17 @@ export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerc
     if (laggingType) {
       laggingMuscles.push({
         muscle,
-        score,
+        score: lifetimeScore,
         laggingType,
         bonus,
-        daysSinceTrained,
-        priority: getPriorityScore(laggingType, score, daysSinceTrained)
+        daysSinceTrained: hasWorkedRecently ? 0 : 14, // Simplified for now
+        priority: getPriorityScore(laggingType, lifetimeScore, hasWorkedRecently ? 0 : 14)
       });
     }
   });
   
   // Sort by priority (never trained first, then by days since trained)
   return laggingMuscles.sort((a, b) => b.priority - a.priority);
-}
-
-/**
- * Get the last date a specific muscle was trained
- * @param {string} muscle - Muscle name to check
- * @param {Array} workoutLogs - User's workout history
- * @param {Array} exerciseLibrary - Available exercises
- * @returns {Date|null} Last training date or null if never trained
- */
-function getLastTrainedDate(muscle, workoutLogs, exerciseLibrary) {
-  let lastDate = null;
-  
-  workoutLogs.forEach(log => {
-    const exercise = exerciseLibrary.find(e => e.id === log.exerciseId);
-    if (!exercise) return;
-    
-    const targets = [exercise.target, ...(Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [exercise.secondaryMuscles])];
-    const hasMuscle = targets.some(target => target && target.toLowerCase().trim() === muscle);
-    
-    if (hasMuscle) {
-      const logDate = new Date(log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp);
-      if (!lastDate || logDate > lastDate) {
-        lastDate = logDate;
-      }
-    }
-  });
-  
-  return lastDate;
 }
 
 /**
@@ -133,15 +106,18 @@ function getPriorityScore(laggingType, score, daysSinceTrained) {
 }
 
 /**
- * Generate workout suggestions based on lagging muscles and available equipment
- * Ensures each suggestion is a unique exercise, prefers different equipment, and randomizes selection.
+ * Generate workout suggestions based on lagging muscles, available equipment, and selected category
  * @param {Array} laggingMuscles - Array of lagging muscle objects
  * @param {Array} exerciseLibrary - Available exercises
- * @param {Array} availableEquipment - User's available equipment
+ * @param {Array} availableEquipment - User's available equipment (legacy, not used in new logic)
  * @param {Array} hiddenSuggestions - Previously hidden suggestion IDs
+ * @param {string} exerciseCategory - 'bodyweight', 'gym', or 'cardio'
+ * @param {Array} selectedBodyweight - Selected equipment for bodyweight
+ * @param {Array} selectedGym - Selected equipment for gym
+ * @param {Array} selectedCardio - Selected equipment for cardio
  * @returns {Array} Array of workout suggestions
  */
-export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, availableEquipment = [], hiddenSuggestions = []) {
+export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, availableEquipment = [], hiddenSuggestions = [], exerciseCategory = 'bodyweight', selectedBodyweight = [], selectedGym = [], selectedCardio = []) {
   const suggestions = [];
   const usedExerciseIds = new Set();
   const usedEquipment = new Set();
@@ -151,21 +127,29 @@ export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, avai
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  // Helper to check if all required equipment is present
+  function hasAllEquipment(exerciseEquipment, selectedEquipment) {
+    if (!exerciseEquipment) return true;
+    const required = exerciseEquipment.split(',').map(e => e.trim().toLowerCase());
+    return required.every(req => selectedEquipment.map(e => e.toLowerCase()).includes(req));
+  }
+
   laggingMuscles.forEach(laggingMuscle => {
-    // Find exercises that target this muscle and use available equipment
+    // Find exercises that target this muscle and use available equipment/category
     let matchingExercises = exerciseLibrary.filter(exercise => {
       // Check if exercise targets the lagging muscle
       const targets = [exercise.target, ...(Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [exercise.secondaryMuscles])];
       const targetsMuscle = targets.some(target => target && target.toLowerCase().trim() === laggingMuscle.muscle);
       if (!targetsMuscle) return false;
-      // Check if exercise uses available equipment
-      if (availableEquipment.length > 0) {
-        const exerciseEquipment = exercise.equipment?.toLowerCase() || '';
-        return availableEquipment.some(equipment => 
-          exerciseEquipment.includes(equipment.toLowerCase())
-        );
+      // Category-based filtering
+      if (exerciseCategory === 'cardio') {
+        return (exercise.category && exercise.category.toLowerCase() === 'cardio') || (exercise.target && exercise.target.toLowerCase() === 'cardiovascular');
+      } else if (exerciseCategory === 'bodyweight') {
+        return hasAllEquipment(exercise.equipment, selectedBodyweight);
+      } else if (exerciseCategory === 'gym') {
+        return hasAllEquipment(exercise.equipment, selectedGym);
       }
-      return true; // If no equipment specified, include all exercises
+      return true;
     });
 
     // Remove exercises already suggested

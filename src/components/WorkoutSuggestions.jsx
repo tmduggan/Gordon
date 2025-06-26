@@ -82,23 +82,45 @@ export default function WorkoutSuggestions({
   exerciseLibrary = [], 
   availableEquipment = [],
   onAddToCart,
-  className = "" 
+  className = "",
+  exerciseCategory = 'bodyweight',
+  selectedBodyweight = [],
+  selectedGym = [],
+  selectedCardio = [],
 }) {
   const [suggestions, setSuggestions] = useState([]);
   const [hiddenSuggestions, setHiddenSuggestions] = useState([]);
   const [recentlyHidden, setRecentlyHidden] = useState(null);
+  const [loading, setLoading] = useState(false);
   
   // Generate suggestions when dependencies change
+  const refreshSuggestions = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const laggingMuscles = analyzeLaggingMuscles(muscleScores, workoutLogs, exerciseLibrary);
+      let selectedEquipment = [];
+      if (exerciseCategory === 'bodyweight') selectedEquipment = selectedBodyweight;
+      else if (exerciseCategory === 'gym') selectedEquipment = selectedGym;
+      else if (exerciseCategory === 'cardio') selectedEquipment = selectedCardio;
+      const newSuggestions = generateWorkoutSuggestions(
+        laggingMuscles, 
+        exerciseLibrary, 
+        availableEquipment, 
+        hiddenSuggestions,
+        exerciseCategory,
+        selectedBodyweight,
+        selectedGym,
+        selectedCardio
+      );
+      setSuggestions(newSuggestions);
+      setLoading(false);
+    }, 800); // 800ms for a brief loading animation
+  };
+
   useEffect(() => {
-    const laggingMuscles = analyzeLaggingMuscles(muscleScores, workoutLogs, exerciseLibrary);
-    const newSuggestions = generateWorkoutSuggestions(
-      laggingMuscles, 
-      exerciseLibrary, 
-      availableEquipment, 
-      hiddenSuggestions
-    );
-    setSuggestions(newSuggestions);
-  }, [muscleScores, workoutLogs, exerciseLibrary, availableEquipment, hiddenSuggestions]);
+    refreshSuggestions();
+    // eslint-disable-next-line
+  }, [muscleScores, workoutLogs, exerciseLibrary, availableEquipment, hiddenSuggestions, exerciseCategory, selectedBodyweight, selectedGym, selectedCardio]);
   
   const handleHideSuggestion = (suggestionId) => {
     setHiddenSuggestions(prev => [...prev, suggestionId]);
@@ -147,9 +169,67 @@ export default function WorkoutSuggestions({
     }
   };
   
-  if (suggestions.length === 0) {
-    return null;
+  if (loading) {
+    return (
+      <div className={className}>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                Suggested Workouts
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+              {/* Show 3 loading placeholder cards to maintain consistent height */}
+              {Array.from({ length: 3 }, (_, index) => (
+                <Card
+                  key={`loading-${index}`}
+                  className="p-4 flex flex-row items-center justify-between min-w-full relative"
+                >
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
+                    <div className="flex-1 min-w-0 w-full sm:w-auto">
+                      <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <div className="mt-3 text-xs text-gray-500">
+              Loading suggestions...
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
+  if (suggestions.length === 0) {
+    return (
+      <div className={className}>
+        <div className="text-center py-8">
+          <div className="mb-2 text-gray-700">No exercises available for your current equipment selection.</div>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            onClick={refreshSuggestions}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show at least 3 suggestions to maintain consistent sizing
+  const minSuggestions = 3;
+  const placeholderCount = Math.max(0, minSuggestions - suggestions.length);
   
   return (
     <div className={className}>
@@ -185,7 +265,7 @@ export default function WorkoutSuggestions({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
             {suggestions.map((suggestion) => {
               const { target, equipment, difficulty } = suggestion.exercise;
               const equipmentIcon = getEquipmentIcon(equipment);
@@ -372,6 +452,24 @@ export default function WorkoutSuggestions({
                 </Card>
               );
             })}
+            
+            {/* Add placeholder cards to maintain consistent sizing */}
+            {Array.from({ length: placeholderCount }, (_, index) => (
+              <Card
+                key={`placeholder-${index}`}
+                className="p-4 flex flex-row items-center justify-between min-w-full relative opacity-30"
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
+                  <div className="flex-1 min-w-0 w-full sm:w-auto">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                    <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
           
           <div className="mt-3 text-xs text-gray-500">

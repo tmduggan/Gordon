@@ -25,6 +25,7 @@ import { getFoodMacros } from '../utils/dataUtils';
 export default function FoodPage() {
     const { userProfile, togglePinFood, addRecipe, deleteRecipe, user } = useAuthStore();
     const dateTimePicker = useDateTimePicker('food');
+    const [showPinnedFoods, setShowPinnedFoods] = useState(false); // Temporarily hide pinned foods
     
     // Initialize hooks
     const foodLibrary = useLibrary('food');
@@ -93,12 +94,27 @@ export default function FoodPage() {
                 className="mb-4"
             />
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
-                <PinnedItemsGrid
-                    items={pinnedItems}
-                    onSelectItem={(item) => cart.addToCart(item, 1)}
-                    onPinToggleItem={togglePinFood}
-                    itemType="food"
-                />
+                {/* Toggle button for pinned foods */}
+                {pinnedItems.length > 0 && (
+                    <div className="flex justify-center">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowPinnedFoods(!showPinnedFoods)}
+                            className="text-xs"
+                        >
+                            {showPinnedFoods ? 'Hide' : 'Show'} Pinned Foods ({pinnedItems.length})
+                        </Button>
+                    </div>
+                )}
+                {showPinnedFoods && (
+                    <PinnedItemsGrid
+                        items={pinnedItems}
+                        onSelectItem={(item) => cart.addToCart(item, 1)}
+                        onPinToggleItem={togglePinFood}
+                        itemType="food"
+                    />
+                )}
                 
                 <Search
                     type="food"
