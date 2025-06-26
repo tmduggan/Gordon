@@ -174,7 +174,6 @@ export default function WorkoutSuggestions({
     
     try {
       await saveUserProfile(updatedProfile);
-      console.log(`✅ Saved ${newSuggestions.length} suggestions for ${categoryKey}`);
     } catch (error) {
       console.error('Error saving workout suggestions to profile:', error);
     }
@@ -204,7 +203,6 @@ export default function WorkoutSuggestions({
       
       try {
         await saveUserProfile(updatedProfile);
-        console.log('🗑️ Cleared all saved suggestions');
         // Generate new suggestions
         refreshSuggestions();
       } catch (error) {
@@ -227,14 +225,11 @@ export default function WorkoutSuggestions({
         const freshSuggestions = clearStaleSuggestions(savedSuggestions);
         
         if (freshSuggestions.length > 0) {
-          console.log(`📋 Loading ${freshSuggestions.length} saved suggestions for ${categoryKey}`);
-          
           // Reconstruct suggestions from saved data
           const reconstructedSuggestions = freshSuggestions
             .map(saved => {
               const exercise = exerciseLibrary.find(e => e.id === saved.exerciseId);
               if (!exercise) {
-                console.warn(`❌ Exercise not found in library: ${saved.exerciseId}`);
                 return null;
               }
               
@@ -249,23 +244,15 @@ export default function WorkoutSuggestions({
             .filter(Boolean);
           
           if (reconstructedSuggestions.length > 0) {
-            console.log(`✅ Successfully loaded ${reconstructedSuggestions.length} suggestions`);
             setSuggestions(reconstructedSuggestions);
             setLoading(false);
             return;
-          } else {
-            console.log(`⚠️ No valid suggestions found after reconstruction`);
           }
-        } else {
-          console.log(`⏰ Saved suggestions are stale, generating new ones`);
         }
-      } else {
-        console.log(`📭 No saved suggestions found for ${categoryKey}`);
       }
     }
     
     // If no saved suggestions or they're invalid, generate new ones
-    console.log(`🔄 Generating new suggestions for ${exerciseCategory}`);
     refreshSuggestions();
   }, [muscleScores, workoutLogs, exerciseLibrary, availableEquipment, hiddenSuggestions, exerciseCategory, selectedBodyweight, selectedGym, selectedCardio, userProfile]);
   

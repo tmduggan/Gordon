@@ -70,7 +70,6 @@ export default function PaywalledMuscleChart({ className = "" }) {
 
   const handleUpgrade = () => {
     // TODO: Implement Stripe checkout
-    console.log('Upgrade to premium clicked');
   };
 
   const subscriptionStatus = userProfile?.subscription?.status || 'basic';

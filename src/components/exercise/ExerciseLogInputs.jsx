@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Check, Trash } from 'lucide-react';
+import SwipeToDelete from 'react-swipe-to-delete-component';
+import 'react-swipe-to-delete-component/dist/swipe-to-delete.css';
 
-const ExerciseLogInputs = ({ exercise, logData, onLogDataChange }) => {
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+}
+
+const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlaceholder }) => {
   const isStrength = !exercise.category || exercise.category.toLowerCase() !== 'cardio';
   const isBodyweight = exercise.equipment === 'body weight';
+  const isMobile = useIsMobile();
   
   // Initialize sets from logData or with a default first set if none exist.
-  const [sets, setSets] = useState(logData?.sets && logData.sets.length > 0 ? logData.sets : [{ weight: '', reps: '' }]);
+  const [sets, setSets] = useState(
+    logData?.sets && logData.sets.length > 0
+      ? logData.sets.map(set => ({ ...set, completed: false }))
+      : [{ weight: '', reps: '', completed: false }]
+  );
 
   // When sets change, update the parent component's state.
   useEffect(() => {
@@ -23,7 +43,7 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange }) => {
   };
 
   const addSet = () => {
-    setSets([...sets, { weight: '', reps: '' }]);
+    setSets([...sets, { weight: '', reps: '', completed: false }]);
   };
 
   const removeSet = (index) => {
@@ -32,7 +52,13 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange }) => {
     const newSets = sets.filter((_, i) => i !== index);
     setSets(newSets);
   };
-  
+
+  const toggleCompleted = (index) => {
+    const newSets = [...sets];
+    newSets[index].completed = !newSets[index].completed;
+    setSets(newSets);
+  };
+
   const handleDurationChange = (e) => {
     onLogDataChange({ ...logData, duration: e.target.value });
   };
@@ -53,45 +79,102 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange }) => {
     );
   }
 
-  return (
-    <div className="space-y-2">
-      {sets.map((set, index) => (
-        <div key={index} className="flex items-end gap-2">
-          {!isBodyweight && (
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-500">Weight (lbs)</label>
-              <input
-                type="number"
-                placeholder="e.g., 135"
-                value={set.weight}
-                onChange={(e) => handleSetChange(index, 'weight', e.target.value)}
-                className="w-24 border rounded px-2 py-1 text-sm"
-              />
-            </div>
-          )}
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Reps</label>
-            <input
-              type="number"
-              placeholder="e.g., 10"
-              value={set.reps}
-              onChange={(e) => handleSetChange(index, 'reps', e.target.value)}
-              className="w-24 border rounded px-2 py-1 text-sm"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => removeSet(index)}
+  // Render sets with swipe-to-delete on mobile, no remove button on desktop
+  const renderSet = (set, index) => (
+    <div
+      key={index}
+      className={`flex items-end gap-2 p-1 rounded bg-white ${set.completed ? 'bg-green-100' : ''}`}
+    >
+      {!isBodyweight && (
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-500">Weight (lbs)</label>
+          <input
+            type="number"
+            placeholder={
+              set.weight === '' && lastSetPlaceholder && lastSetPlaceholder.weight
+                ? `${lastSetPlaceholder.weight}`
+                : 'e.g., 135'
+            }
+            value={set.weight}
+            onChange={(e) => handleSetChange(index, 'weight', e.target.value)}
+            className={`w-24 border rounded px-2 py-1 text-sm ${set.weight === '' && lastSetPlaceholder && lastSetPlaceholder.weight ? 'placeholder-gray-400' : ''}`}
+            style={{ color: set.weight === '' ? '#9ca3af' : undefined }}
+          />
+        </div>
+      )}
+      <div className="flex flex-col">
+        <label className="text-xs text-gray-500">Reps</label>
+        <input
+          type="number"
+          placeholder={
+            set.reps === '' && lastSetPlaceholder && lastSetPlaceholder.reps
+              ? `${lastSetPlaceholder.reps}`
+              : 'e.g., 10'
+          }
+          value={set.reps}
+          onChange={(e) => handleSetChange(index, 'reps', e.target.value)}
+          className={`w-24 border rounded px-2 py-1 text-sm ${set.reps === '' && lastSetPlaceholder && lastSetPlaceholder.reps ? 'placeholder-gray-400' : ''}`}
+          style={{ color: set.reps === '' ? '#9ca3af' : undefined }}
+        />
+      </div>
+      <Button
+        type="button"
+        variant={set.completed ? 'default' : 'outline'}
+        size="icon"
+        className={`h-8 w-8 ${set.completed ? 'bg-green-500 text-white' : ''}`}
+        onClick={() => toggleCompleted(index)}
+        title={set.completed ? 'Mark as incomplete' : 'Mark as complete'}
+      >
+        <Check className="h-4 w-4" />
+      </Button>
+      {/* Remove set button only on desktop */}
+      {!isMobile && sets.length > 1 && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => removeSet(index)}
+          title="Remove set"
+        >
+          <X className="h-4 w-4 text-red-500" />
+        </Button>
+      )}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div>
+        {sets.map((set, index) => (
+          <SwipeToDelete
+            key={index}
+            onDelete={() => removeSet(index)}
+            height={64}
+            transitionDuration={250}
+            rtl={false}
             disabled={sets.length === 1}
-            title="Remove set"
+            deleteComponent={
+              <div className="flex items-center justify-end h-full pr-6 bg-red-500 text-white rounded">
+                <Trash className="h-6 w-6" />
+              </div>
+            }
           >
-            <X className="h-4 w-4 text-red-500" />
+            {renderSet(set, index)}
+          </SwipeToDelete>
+        ))}
+        <div className="pt-2">
+          <Button type="button" variant="outline" size="sm" onClick={addSet} className="w-full">
+            Add Set
           </Button>
         </div>
-      ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {sets.map((set, index) => renderSet(set, index))}
       <Button type="button" variant="outline" size="sm" onClick={addSet}>
         Add Set
       </Button>

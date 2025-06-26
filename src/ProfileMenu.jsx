@@ -85,13 +85,6 @@ export default function ProfileMenu() {
 
   // Debug function to log current user profile
   const handleDebugProfile = () => {
-    console.log('=== USER PROFILE DEBUG ===');
-    console.log('User:', user);
-    console.log('User Profile:', userProfile);
-    console.log('Subscription Status:', userProfile?.subscription?.status);
-    console.log('Is Admin:', isAdminUser);
-    console.log('Is Premium:', userProfile?.subscription?.status === 'premium' || userProfile?.subscription?.status === 'admin');
-    console.log('========================');
     toast({
       title: "Profile Debugged",
       description: "Check the browser console for user profile details.",

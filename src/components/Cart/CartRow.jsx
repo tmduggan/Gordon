@@ -3,11 +3,18 @@ import MacroDisplay from '../nutrition/MacroDisplay';
 import ServingSizeEditor from '../nutrition/ServingSizeEditor';
 import { getFoodMacros } from '../../utils/dataUtils';
 import { Button } from '@/components/ui/button';
-import { XCircle, Info, ChefHat } from 'lucide-react';
+import { XCircle, Info, ChefHat, MoreVertical } from 'lucide-react';
 import ExerciseLogInputs from '../exercise/ExerciseLogInputs';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import NutritionLabel from '../nutrition/NutritionLabel';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Mobile detection (same as WorkoutSuggestions)
 function useIsMobile() {
@@ -57,10 +64,11 @@ function renderTooltipContent(exercise) {
   );
 }
 
-export default function CartRow({ item, updateCartItem, removeFromCart, logData, onLogDataChange }) {
+export default function CartRow({ item, updateCartItem, removeFromCart, logData, onLogDataChange, userWorkoutHistory }) {
   // Check if the item is a food item by looking for a unique property like 'label'.
   const isFoodItem = 'label' in item;
   const isMobile = useIsMobile();
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const InfoDialog = ({ item, isFood }) => {
     if (isFood) {
@@ -93,6 +101,12 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     );
   };
 
+  // Remove exercise with confirmation
+  const handleRemoveExercise = () => {
+    setShowConfirm(false);
+    removeFromCart(item.id);
+  };
+
   if (isFoodItem) {
     const currentUnitRef = useRef(item.units);
     useEffect(() => {
@@ -101,58 +115,112 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     const handleServingChange = useCallback(({ quantity, units, scaledNutrition }) => {
       updateCartItem(item.id, { quantity, units, ...scaledNutrition });
     }, [updateCartItem, item.id]);
+    
     return (
-      <tr className="border-b align-top">
-        <td colSpan="3" className="py-2 px-1">
-          <div className="flex flex-col gap-1">
+      <Card className="border">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            {/* Serving Size Editor */}
             <ServingSizeEditor food={item} onUpdate={handleServingChange} />
-            <div className="flex items-center gap-1">
-              <span className="font-semibold text-xs sm:text-sm">{item.label}</span>
-              {item.isRecipeItem && (
-                <Badge variant="outline" className="text-xs">
-                  <ChefHat className="h-3 w-3 mr-1" />
-                  {item.recipeName}
-                </Badge>
-              )}
-              <InfoDialog item={item} isFood={true} />
+            
+            {/* Food Info Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm">{item.label}</span>
+                {item.isRecipeItem && (
+                  <Badge variant="outline" className="text-xs">
+                    <ChefHat className="h-3 w-3 mr-1" />
+                    {item.recipeName}
+                  </Badge>
+                )}
+                <InfoDialog item={item} isFood={true} />
+              </div>
+              
+              {/* Remove Button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeFromCart(item.id)} 
+                title="Remove item"
+                className="h-8 w-8"
+              >
+                <XCircle className="h-5 w-5 text-red-500" />
+              </Button>
             </div>
           </div>
-        </td>
-        <td className="p-2 text-center align-middle">
-          <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)} title="Remove item">
-            <XCircle className="h-5 w-5 text-red-500" />
-          </Button>
-        </td>
-      </tr>
+        </CardContent>
+      </Card>
     );
   } else {
-    // Render exercise item row
+    // Render exercise item
     const { name, id } = item;
     const itemLogData = logData && logData[id] ? logData[id] : {};
     const handleLogChange = (newValues) => {
       onLogDataChange(id, newValues);
     };
+    
+    // Find last set for this exercise from userWorkoutHistory
+    let lastSetPlaceholder = null;
+    if (Array.isArray(userWorkoutHistory)) {
+      const lastLog = userWorkoutHistory.find(log => log.exerciseId === id && Array.isArray(log.sets) && log.sets.length > 0);
+      if (lastLog) {
+        const lastSet = lastLog.sets[lastLog.sets.length - 1];
+        if (lastSet) {
+          lastSetPlaceholder = { weight: lastSet.weight, reps: lastSet.reps };
+        }
+      }
+    }
+    
     return (
-      <tr className="border-b align-top">
-        <td colSpan="5" className="py-2 px-1">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1">
-              <span className="font-semibold text-sm">{name}</span>
-              <InfoDialog item={item} isFood={false} />
+      <Card className="border">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            {/* Exercise Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">{name}</span>
+                <InfoDialog item={item} isFood={false} />
+              </div>
+              
+              {/* Exercise Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowConfirm(true)} className="text-red-600">
+                    Remove Exercise
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+            
+            {/* Exercise Log Inputs */}
             <ExerciseLogInputs
               exercise={item}
               logData={itemLogData}
               onLogDataChange={handleLogChange}
+              lastSetPlaceholder={lastSetPlaceholder}
             />
           </div>
-        </td>
-        <td className="p-2 text-center align-middle">
-          <Button variant="ghost" size="icon" onClick={() => removeFromCart(id)} title="Remove item">
-            <XCircle className="h-5 w-5 text-red-500" />
-          </Button>
-        </td>
-      </tr>
+        </CardContent>
+        
+        {/* Confirmation Dialog */}
+        <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Exercise?</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4">Are you sure you want to remove this exercise and all its sets from your cart?</div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleRemoveExercise}>Remove</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </Card>
     );
   }
 } 

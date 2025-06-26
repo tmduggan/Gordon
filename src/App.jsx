@@ -21,27 +21,17 @@ if (process.env.NODE_ENV === 'development') {
   window.debugUserProfile = () => {
     const { user, userProfile, isAdmin, isPremium, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore.getState();
     
-    console.log('=== USER PROFILE DEBUG ===');
-    console.log('User:', user);
-    console.log('User Profile:', userProfile);
-    console.log('Subscription Status:', userProfile?.subscription?.status);
-    console.log('Is Admin:', isAdmin());
-    console.log('Is Premium:', isPremium());
-    console.log('========================');
-    
     return { user, userProfile, isAdmin: isAdmin(), isPremium: isPremium() };
   };
   
   window.fixUserProfile = async () => {
     const { ensureSubscriptionField, toggleSubscriptionStatus } = useAuthStore.getState();
     await ensureSubscriptionField();
-    console.log('User profile subscription field ensured');
   };
   
   window.toggleUserStatus = async () => {
     const { toggleSubscriptionStatus } = useAuthStore.getState();
     await toggleSubscriptionStatus();
-    console.log('User subscription status toggled');
   };
 }
 

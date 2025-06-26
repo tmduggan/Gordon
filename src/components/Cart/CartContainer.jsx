@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CartRow from './CartRow';
-import CartHead from './CartHead';
 import SaveCartAsRecipe from '../nutrition/SaveCartAsRecipe';
 import { getFoodMacros } from '../../utils/dataUtils';
 import { calculateWorkoutScore } from '../../services/scoringService';
@@ -291,19 +290,16 @@ export default function CartContainer({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <table className="w-full text-sm">
-          <CartHead type={type} />
-          <tbody className="divide-y">
-            {items.map((item, index) => (
-              <CartRow
-                key={item.id || `${item.label}-${item.units}-${index}`}
-                item={item}
-                type={type}
-                {...rest}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="space-y-4">
+          {items.map((item, index) => (
+            <CartRow
+              key={item.id || `${item.label}-${item.units}-${index}`}
+              item={item}
+              type={type}
+              {...rest}
+            />
+          ))}
+        </div>
       </CardContent>
       {type === 'food' && <CartMacroSummary items={items} />}
       <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4">
