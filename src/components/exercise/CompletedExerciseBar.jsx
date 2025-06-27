@@ -62,25 +62,23 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
   
   const renderTooltipContent = () => (
     <div className="max-w-xs">
-      <div className="font-semibold text-base mb-2">
-        {exercise.name}
-      </div>
-      
+      <div className="font-semibold text-base mb-2">{exercise.name}</div>
       <div className="mb-2">
         <p className="text-sm text-green-600 font-medium">
-          ✓ Completed {completedAt ? new Date(completedAt).toLocaleDateString() : 'recently'}
+          <CheckCircle className="inline h-4 w-4 mr-1" />Completed {completedAt ? new Date(completedAt).toLocaleDateString() : 'recently'}
         </p>
+        {bonus && (
+          <p className="text-sm text-green-700 font-semibold mt-1">
+            <Zap className="inline h-4 w-4 mr-1" />+{bonus} XP
+          </p>
+        )}
       </div>
-      
       {exercise.description && (
         <div className="mb-3">
           <div className="font-medium text-sm mb-1 text-blue-600">Description:</div>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {exercise.description}
-          </p>
+          <p className="text-sm text-gray-700 leading-relaxed">{exercise.description}</p>
         </div>
       )}
-      
       <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2">
         <span>Target: {target}</span>
         {equipment && <span>Equipment: {equipment}</span>}
@@ -99,49 +97,29 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
               <div className="flex-1 min-w-0 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <strong className="block text-lg text-green-800">
-                    {exercise.name}
-                  </strong>
+                  <strong className="block text-lg text-green-800">{exercise.name}</strong>
                 </div>
               </div>
-              
-              {/* Icons and Badges Row */}
-              <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-                {/* Icons Row */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {muscleIcon && (
-                    <img 
-                      src={muscleIcon} 
-                      alt={target} 
-                      className="h-6 w-6 rounded-md border border-black" 
-                    />
-                  )}
-                  {equipmentIcon && (
-                    <img 
-                      src={equipmentIcon} 
-                      alt={equipment} 
-                      className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
-                    />
-                  )}
-                </div>
-                
-                {/* Completed Badge */}
-                <div className="flex-shrink-0">
-                  <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Completed
-                  </Badge>
-                </div>
-                
-                {/* Bonus XP Badge */}
-                {bonus && (
-                  <div className="flex-shrink-0">
-                    <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
-                      <Zap className="h-4 w-4 mr-1" />
-                      +{bonus} XP
-                    </Badge>
-                  </div>
+              {/* Right-aligned icons row */}
+              <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
+                {muscleIcon && (
+                  <img 
+                    src={muscleIcon} 
+                    alt={target} 
+                    className="h-6 w-6 rounded-md border border-black" 
+                  />
                 )}
+                {equipmentIcon && (
+                  <img 
+                    src={equipmentIcon} 
+                    alt={equipment} 
+                    className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                  />
+                )}
+                {/* Completed Icon Only */}
+                <CheckCircle className="h-4 w-4 text-green-600" title="Completed" />
+                {/* Bonus XP Icon Only */}
+                {bonus && <Zap className="h-4 w-4 text-green-600" title="XP" />}
               </div>
             </div>
           </TooltipTrigger>

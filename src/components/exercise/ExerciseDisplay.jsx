@@ -123,75 +123,39 @@ export default function ExerciseDisplay({
     <div className="flex items-center justify-between">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
         {/* Exercise Name */}
-        <div className="flex-1 min-w-0 w-full sm:w-auto">
-          <strong className="block text-lg">
-            {name}
-          </strong>
-        </div>
-        {/* Icons and Badges Row */}
-        <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-          {/* Icons Row */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {muscleIcon && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <img 
-                      src={muscleIcon} 
-                      alt={target} 
-                      className="h-6 w-6 rounded-md border border-black" 
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="capitalize">{target}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {equipmentIcon && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <img 
-                      src={equipmentIcon} 
-                      alt={equipment} 
-                      className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="capitalize">{equipment}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+        <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType}>
+          <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
+            <strong className="block text-lg mr-2">{name}</strong>
+            <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
+              {muscleIcon && (
+                <img 
+                  src={muscleIcon} 
+                  alt={target} 
+                  className="h-6 w-6 rounded-md border border-black" 
+                />
+              )}
+              {equipmentIcon && (
+                <img 
+                  src={equipmentIcon} 
+                  alt={equipment} 
+                  className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                />
+              )}
+              {bonusXP !== undefined && (
+                <Zap className="h-4 w-4 text-green-600" title="XP" />
+              )}
+              {laggingType === 'neverTrained' && (
+                <Target className="h-4 w-4 text-red-500" title="Never Trained" />
+              )}
+              {laggingType === 'underTrained' && (
+                <TrendingUp className="h-4 w-4 text-orange-500" title="Under Trained" />
+              )}
+              {laggingType === 'neglected' && (
+                <Clock className="h-4 w-4 text-yellow-500" title="Neglected" />
+              )}
+            </div>
           </div>
-          {/* XP Display */}
-          {showXP && xp !== undefined && (
-            <div className="flex-shrink-0">
-              <Badge variant="secondary" className="text-sm">
-                <Zap className="h-4 w-4 mr-1" />
-                {xp} XP
-              </Badge>
-            </div>
-          )}
-          {/* Bonus XP Badge */}
-          {bonusXP !== undefined && (
-            <div className="flex-shrink-0">
-              <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
-                <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
-              </Badge>
-            </div>
-          )}
-          {/* Lagging Type Badge */}
-          {laggingType && (
-            <div className="flex-shrink-0">
-              <Badge variant="outline" className={`text-sm ${getLaggingTypeColor(laggingType)}`}>
-                {getLaggingTypeIcon(laggingType)}
-                <span className="ml-1 capitalize">{laggingType.replace(/([A-Z])/g, ' $1')}</span>
-              </Badge>
-            </div>
-          )}
-        </div>
+        </ExerciseTooltip>
       </div>
       {/* Action Buttons */}
       <div className="flex-shrink-0 ml-4 flex gap-2">
