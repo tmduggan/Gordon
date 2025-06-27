@@ -88,20 +88,15 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
   );
 
   return (
-    <Card className={`cursor-default p-4 flex flex-row items-center justify-between min-w-full relative bg-green-50 border-green-200 ${className}`}>
+    <Card className={`cursor-default py-2 px-4 flex items-center justify-between min-w-full relative bg-green-50 border-green-200 ${className}`}>
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
-              {/* Exercise Name with Check Icon */}
-              <div className="flex-1 min-w-0 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <strong className="block text-lg text-green-800">{exercise.name}</strong>
-                </div>
+            <div className="flex items-center w-full gap-2">
+              <div className="flex-1 min-w-0 w-full">
+                <strong className="block text-xs text-green-800">{exercise.name}</strong>
               </div>
-              {/* Right-aligned icons row */}
-              <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
+              <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
                 {muscleIcon && (
                   <img 
                     src={muscleIcon} 
@@ -116,9 +111,7 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
                     className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
                   />
                 )}
-                {/* Completed Icon Only */}
                 <CheckCircle className="h-4 w-4 text-green-600" title="Completed" />
-                {/* Bonus XP Icon Only */}
                 {bonus && <Zap className="h-4 w-4 text-green-600" title="XP" />}
               </div>
             </div>

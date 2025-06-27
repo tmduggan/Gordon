@@ -21,6 +21,7 @@ import {
 import useAuthStore from '../../store/useAuthStore';
 import { useToast } from '../../hooks/use-toast';
 import ExerciseDisplay from './ExerciseDisplay';
+import CompletedExerciseBar from './CompletedExerciseBar';
 
 const difficultyColorMap = {
   beginner: 'bg-sky-500',
@@ -39,6 +40,7 @@ export default function WorkoutSuggestions({
   selectedBodyweight = [],
   selectedGym = [],
   selectedCardio = [],
+  equipmentButtons = null,
 }) {
   const [suggestions, setSuggestions] = useState([]);
   const [hiddenSuggestions, setHiddenSuggestions] = useState([]);
@@ -312,12 +314,12 @@ export default function WorkoutSuggestions({
   if (loading) {
     return (
       <div className={className}>
-        <Card>
+        <Card className="w-[70%] ml-auto mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50">
+          {equipmentButtons}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Lightbulb className="h-5 w-5 text-yellow-500" />
-                Suggested Workouts
               </CardTitle>
               <div className="flex flex-col items-end gap-1 min-w-[90px]">
                 <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -383,12 +385,12 @@ export default function WorkoutSuggestions({
   
   return (
     <div className={className}>
-      <Card>
+      <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50">
+        {equipmentButtons}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-yellow-500" />
-              Suggested Workouts
             </CardTitle>
             <div className="flex flex-col items-end gap-1 min-w-[90px]">
               <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -441,19 +443,28 @@ export default function WorkoutSuggestions({
             ))}
             
             {/* Show active suggestions */}
-            {getActiveSuggestions().map((suggestion) => (
-              <ExerciseDisplay
-                key={suggestion.id}
-                exercise={suggestion.exercise}
-                showXP={true}
-                bonusXP={suggestion.bonus}
-                laggingType={suggestion.laggingMuscle?.laggingType}
-                reason={suggestion.reason}
-                showTooltip={true}
-                onClick={() => handleAddToCart(suggestion)}
-                className="mb-2"
-              />
-            ))}
+            {getActiveSuggestions().map((suggestion) => {
+              const isCompleted = isSuggestionCompleted(suggestion);
+              return (
+                <ExerciseDisplay
+                  key={suggestion.id}
+                  exercise={suggestion.exercise}
+                  bonusXP={suggestion.bonus}
+                  laggingType={suggestion.laggingMuscle?.laggingType}
+                  showPinIcon={false}
+                  showUnhideButton={false}
+                  onPinToggle={null}
+                  onUnhide={null}
+                  loading={false}
+                  className={isCompleted ? 'opacity-60 pointer-events-none' : ''}
+                  onClick={() => handleAddToCart(suggestion)}
+                  variant="row"
+                  nameClassName="text-xs"
+                >
+                  <strong className="block text-xs mr-2">{suggestion.exercise.name}</strong>
+                </ExerciseDisplay>
+              );
+            })}
             
             {/* Add placeholder cards to maintain consistent sizing */}
             {Array.from({ length: placeholderCount }, (_, index) => (

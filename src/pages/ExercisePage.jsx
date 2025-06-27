@@ -3,11 +3,10 @@ import React, { useMemo, useState } from 'react';
 // Component Imports
 import CartContainer from '../components/Cart/CartContainer';
 import Search from '../components/Search/Search';
-import { PinnedItemsGrid } from '../components/PinnedItem';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import MuscleChartDisplay from '../components/exercise/muscleData/MuscleChartDisplay';
 import LevelDisplay from '../components/gamification/LevelDisplay';
-import WorkoutSuggestions from '../components/WorkoutSuggestions';
+import WorkoutSuggestions from '../components/exercise/WorkoutSuggestions';
 import { Button } from '../components/ui/button';
 import PaywalledMuscleChart from '../components/exercise/PaywalledMuscleChart';
 
@@ -47,10 +46,6 @@ export default function ExercisePage() {
         exerciseLibrary, exerciseHistory, cart, search, dateTimePicker
     );
     
-    const pinnedItems = (userProfile?.pinnedExercises && exerciseLibrary.items)
-        ? userProfile.pinnedExercises.map(id => exerciseLibrary.items.find(e => e.id === id)).filter(Boolean)
-        : [];
-
     const exerciseFilterOptions = {
         targets: getMuscleGroupCategoryNames(),
         equipmentCategories: ['bodyweight', 'gym', 'cardio'],
@@ -75,112 +70,92 @@ export default function ExercisePage() {
 
     return (
         <div className="max-w-3xl mx-auto w-full">
-            <LevelDisplay
-                totalXP={userProfile?.totalXP || 0}
-                workoutLogs={exerciseHistory.logs}
-                accountCreationDate={accountCreationDate}
-                className="mb-4"
-            />
-            <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
-                {/* Filter buttons above suggestions */}
-                <div className="flex justify-center gap-2 mb-4">
-                    <button
-                        className={`px-4 py-2 rounded-l-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'bodyweight' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
-                        onClick={() => setSelectedFilter(selectedFilter === 'bodyweight' ? null : 'bodyweight')}
-                    >
-                        Body Weight
-                    </button>
-                    <button
-                        className={`px-4 py-2 border-t border-b border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'gym' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
-                        onClick={() => setSelectedFilter(selectedFilter === 'gym' ? null : 'gym')}
-                    >
-                        Gym Equipment
-                    </button>
-                    <button
-                        className={`px-4 py-2 rounded-r-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'cardio' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
-                        onClick={() => setSelectedFilter(selectedFilter === 'cardio' ? null : 'cardio')}
-                    >
-                        Cardio
-                    </button>
-                </div>
-                <WorkoutSuggestions
-                    muscleScores={userProfile?.muscleScores || {}}
+            <div className="flex flex-row items-start gap-6 mb-6 w-full">
+                <LevelDisplay
+                    totalXP={userProfile?.totalXP || 0}
                     workoutLogs={exerciseHistory.logs}
-                    exerciseLibrary={exerciseLibrary.items}
-                    availableEquipment={selectedEquipment}
-                    onAddToCart={handleSelect}
-                    className="mb-4"
-                    exerciseCategory={selectedFilter}
-                    selectedBodyweight={availableEquipment.bodyweight}
-                    selectedGym={availableEquipment.gym}
-                    selectedCardio={availableEquipment.cardio}
+                    accountCreationDate={accountCreationDate}
                 />
-                {/* Toggle button for pinned exercises */}
-                {pinnedItems.length > 0 && (
-                    <div className="flex justify-center">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowPinnedExercises(!showPinnedExercises)}
-                            className="text-xs"
-                        >
-                            {showPinnedExercises ? 'Hide' : 'Show'} Pinned Exercises ({pinnedItems.length})
-                        </Button>
-                    </div>
-                )}
-                {showPinnedExercises && (
-                    <PinnedItemsGrid
-                        items={pinnedItems}
-                        onSelectItem={(item) => cart.addToCart(item, 1)}
-                        onPinToggleItem={togglePinExercise}
-                        itemType="exercise"
-                    />
-                )}
-                <Search
-                    type="exercise"
-                    searchQuery={search.searchQuery}
-                    setSearchQuery={search.setSearchQuery}
-                    searchResults={search.searchResults}
-                    handleApiSearch={search.handleApiSearch}
-                    handleSelect={handleSelect}
-                    isLoading={search.searchLoading}
-                    userProfile={userProfile}
-                    togglePin={togglePinExercise}
-                    placeholder="Search for an exercise..."
-                    filters={search.filters}
-                    setFilters={search.setFilters}
-                    filterOptions={exerciseFilterOptions}
-                    exerciseCategory={selectedFilter}
-                    selectedBodyweight={availableEquipment.bodyweight}
-                    selectedGym={availableEquipment.gym}
-                    selectedCardio={availableEquipment.cardio}
-                />
-                {cart.cart.length > 0 && (
-                    <CartContainer
-                        title="Your Exercise Cart"
-                        type="exercise"
-                        items={cart.cart}
-                        icon="🏋️"
-                        footerControls={
-                            <DateTimePicker
-                                date={dateTimePicker.date}
-                                setDate={dateTimePicker.setDate}
-                                timePeriod={dateTimePicker.timePeriod}
-                                setTimePeriod={dateTimePicker.setTimePeriod}
-                                timePeriods={dateTimePicker.timePeriods}
-                            />
-                        }
-                        clearCart={cart.clearCart}
-                        updateCartItem={cart.updateCartItem}
-                        removeFromCart={cart.removeFromCart}
-                        logCart={logCart}
-                        userWorkoutHistory={exerciseHistory.logs}
+                <div className="flex-grow">
+                    <WorkoutSuggestions
+                        muscleScores={userProfile?.muscleScores || {}}
+                        workoutLogs={exerciseHistory.logs}
                         exerciseLibrary={exerciseLibrary.items}
-                        userProfile={userProfile}
-                        {...cartProps}
+                        availableEquipment={selectedEquipment}
+                        onAddToCart={handleSelect}
+                        exerciseCategory={selectedFilter}
+                        selectedBodyweight={availableEquipment.bodyweight}
+                        selectedGym={availableEquipment.gym}
+                        selectedCardio={availableEquipment.cardio}
+                        equipmentButtons={
+                            <div className="flex justify-center gap-2 mb-4">
+                                <button
+                                    className={`px-4 py-2 rounded-l-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'bodyweight' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                                    onClick={() => setSelectedFilter(selectedFilter === 'bodyweight' ? null : 'bodyweight')}
+                                >
+                                    Body Weight
+                                </button>
+                                <button
+                                    className={`px-4 py-2 border-t border-b border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'gym' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                                    onClick={() => setSelectedFilter(selectedFilter === 'gym' ? null : 'gym')}
+                                >
+                                    Gym Equipment
+                                </button>
+                                <button
+                                    className={`px-4 py-2 rounded-r-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'cardio' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                                    onClick={() => setSelectedFilter(selectedFilter === 'cardio' ? null : 'cardio')}
+                                >
+                                    Cardio
+                                </button>
+                            </div>
+                        }
                     />
-                )}
+                </div>
             </div>
+            <Search
+                type="exercise"
+                searchQuery={search.searchQuery}
+                setSearchQuery={search.setSearchQuery}
+                searchResults={search.searchResults}
+                handleApiSearch={search.handleApiSearch}
+                handleSelect={handleSelect}
+                isLoading={search.searchLoading}
+                userProfile={userProfile}
+                togglePin={togglePinExercise}
+                placeholder="Search for an exercise..."
+                filters={search.filters}
+                setFilters={search.setFilters}
+                filterOptions={exerciseFilterOptions}
+                exerciseCategory={selectedFilter}
+                selectedBodyweight={availableEquipment.bodyweight}
+                selectedGym={availableEquipment.gym}
+                selectedCardio={availableEquipment.cardio}
+            />
+            {cart.cart.length > 0 && (
+                <CartContainer
+                    title="Your Exercise Cart"
+                    type="exercise"
+                    items={cart.cart}
+                    icon="🏋️"
+                    footerControls={
+                        <DateTimePicker
+                            date={dateTimePicker.date}
+                            setDate={dateTimePicker.setDate}
+                            timePeriod={dateTimePicker.timePeriod}
+                            setTimePeriod={dateTimePicker.setTimePeriod}
+                            timePeriods={dateTimePicker.timePeriods}
+                        />
+                    }
+                    clearCart={cart.clearCart}
+                    updateCartItem={cart.updateCartItem}
+                    removeFromCart={cart.removeFromCart}
+                    logCart={logCart}
+                    userWorkoutHistory={exerciseHistory.logs}
+                    exerciseLibrary={exerciseLibrary.items}
+                    userProfile={userProfile}
+                    {...cartProps}
+                />
+            )}
             <PaywalledMuscleChart className="mt-4 px-4" />
         </div>
     );

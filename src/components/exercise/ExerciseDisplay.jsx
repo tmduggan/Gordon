@@ -27,6 +27,7 @@ import ExerciseTooltip from './ExerciseTooltip';
  *   - onClick: function
  *   - loading: bool
  *   - className: string
+ *   - nameClassName: string
  *   - children: node
  */
 export default function ExerciseDisplay({ 
@@ -47,6 +48,7 @@ export default function ExerciseDisplay({
   onClick,
   loading = false,
   className = "",
+  nameClassName = "text-lg",
   children
 }) {
   if (!exercise) return null;
@@ -125,7 +127,7 @@ export default function ExerciseDisplay({
         {/* Exercise Name */}
         <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType}>
           <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
-            <strong className="block text-lg mr-2">{name}</strong>
+            <strong className={`block mr-2 ${nameClassName}`}>{name}</strong>
             <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
               {muscleIcon && (
                 <img 
