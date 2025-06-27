@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
-import ProfileModal from './components/profile/DailyGoalsModal';
-import HiddenExercisesModal from './components/profile/HiddenExercisesModal';
-import ExerciseLibraryModal from './components/admin/ExerciseLibraryModal';
+import ProfileModal from './DailyGoalsModal';
+import HiddenExercisesModal from './HiddenExercisesModal';
+import ExerciseLibraryModal from '../admin/ExerciseLibraryModal';
 import { auth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useToast } from './hooks/use-toast';
+import { useToast } from '../../hooks/use-toast';
 import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
 
 export default function ProfileMenu() {

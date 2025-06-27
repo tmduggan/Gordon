@@ -13,6 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ensureAvailableEquipment } from '../../utils/dataUtils';
+import DebugControls from './DebugControls';
+import AdminControlsModal from './AdminControlsModal';
+import NutritionGoals from './NutritionGoals';
+import EquipmentModal from './EquipmentModal';
+import SubscriptionStatus from './SubscriptionStatus';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
@@ -277,114 +282,30 @@ export default function ProfileModal({ open, onOpenChange }) {
               accountCreationDate={user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined}
               className="mb-4"
             />
-            
-            {/* XP Debug Section */}
-            <div className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex items-center gap-2 mb-3">
-                <Bug className="w-4 h-4 text-gray-600" />
-                <h3 className="font-semibold text-sm">XP Debug</h3>
-              </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Stored XP:</span>
-                  <span className="font-mono">{userProfile?.totalXP || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Exercise Logs:</span>
-                  <span className="font-mono">{exerciseHistory.logs.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Food Logs:</span>
-                  <span className="font-mono">{foodHistory.logs.length}</span>
-                </div>
-                
-                {xpValidation && (
-                  <div className="mt-3 p-2 rounded border">
-                    <div className="flex justify-between mb-1">
-                      <span>Calculated XP:</span>
-                      <span className="font-mono">{xpValidation.calculatedXP}</span>
-                    </div>
-                    <div className="flex justify-between mb-1">
-                      <span>Discrepancy:</span>
-                      <span className={`font-mono ${xpValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                        {xpValidation.discrepancy}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {xpValidation.isValid ? '✅ XP is accurate' : '⚠️ XP discrepancy detected'}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={validateXP}
-                    disabled={exerciseHistory.loading || foodHistory.loading}
-                  >
-                    Validate XP
-                  </Button>
-                  {xpValidation && !xpValidation.isValid && (
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={handleFixXP}
-                    >
-                      Fix XP
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleSyncXP}
-                    disabled={exerciseHistory.loading || foodHistory.loading}
-                  >
-                    Sync XP
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Muscle Score Migration Section */}
-            <div className="border rounded-lg p-4 bg-blue-50 mt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="w-4 h-4 text-blue-600" />
-                <h3 className="font-semibold text-sm text-blue-800">Muscle Score Migration</h3>
-              </div>
-              
-              <div className="space-y-2 text-sm text-blue-700">
-                <p>
-                  Update your muscle scores to the new time-based format for better tracking and suggestions.
-                </p>
-                
-                <div className="flex justify-between">
-                  <span>Current Format:</span>
-                  <span className="font-mono">
-                    {userProfile?.muscleScores && 
-                     Object.values(userProfile.muscleScores).some(score => typeof score === 'number') 
-                     ? 'Legacy' : 'Time-based'}
-                  </span>
-                </div>
-                
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleMigrateMuscleScores}
-                    disabled={exerciseHistory.loading || exerciseLibrary.loading}
-                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
-                  >
-                    Update Muscle Scores
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <DebugControls
+              onValidateXP={validateXP}
+              onFixXP={handleFixXP}
+              onSyncXP={handleSyncXP}
+              onMigrateMuscleScores={handleMigrateMuscleScores}
+              xpValidation={xpValidation}
+              loading={exerciseHistory.loading || foodHistory.loading || exerciseLibrary.loading}
+              userProfile={userProfile}
+              exerciseHistory={exerciseHistory}
+              foodHistory={foodHistory}
+            />
           </TabsContent>
 
           {/* Nutrition Tab */}
           <TabsContent value="nutrition">
+            {/* New NutritionGoals component for testing */}
+            <NutritionGoals
+              goals={goals}
+              setGoals={setGoals}
+              onSave={handleSaveGoals}
+              onCancel={() => onOpenChange(false)}
+            />
+            {/* Original code below for comparison/testing */}
+            {/*
             <div className="mb-4">
               <h3 className="font-semibold mb-2">Daily Nutrition Goals</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -405,89 +326,28 @@ export default function ProfileModal({ open, onOpenChange }) {
                 <Button onClick={handleSaveGoals}>Save Nutrition Goals</Button>
               </div>
             </div>
+            */}
           </TabsContent>
 
           {/* Goliath Tab (Equipment) */}
           <TabsContent value="goliath">
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Available Equipment</h3>
-              <div className="mb-2">
-                <Tabs value={equipmentCategory} onValueChange={setEquipmentCategory} className="w-full">
-                  <TabsList className="grid grid-cols-3 gap-2 mb-4">
-                    <TabsTrigger value="bodyweight">Body Weight</TabsTrigger>
-                    <TabsTrigger value="gym">Gym Equipment</TabsTrigger>
-                    <TabsTrigger value="cardio">Cardio</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-              {/* Category-specific equipment selection */}
-              {equipmentCategory === 'bodyweight' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                  <button
-                    key="body weight"
-                    type="button"
-                    className="px-3 py-2 rounded border text-sm font-medium transition-colors bg-blue-600 text-white border-blue-600 shadow cursor-not-allowed opacity-70"
-                    disabled
-                  >
-                    body weight
-                  </button>
-                  {bodyweightOptions.filter(opt => opt !== 'body weight').map(option => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => handleBodyweightCheckboxChange(option)}
-                      className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                        ${selectedBodyweight.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {equipmentCategory === 'gym' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                  {gymOptions.map(option => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => handleGymCheckboxChange(option)}
-                      className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                        ${selectedGym.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                  {gymInvalid && (
-                    <div className="col-span-full text-red-600 text-sm mt-2">Must select at least one equipment option</div>
-                  )}
-                </div>
-              )}
-              {equipmentCategory === 'cardio' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                  {cardioOptions.map(option => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => handleCardioCheckboxChange(option)}
-                      className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                        ${selectedCardio.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                  {cardioInvalid && (
-                    <div className="col-span-full text-red-600 text-sm mt-2">Must select at least one equipment option</div>
-                  )}
-                </div>
-              )}
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button onClick={handleSaveEquipment} disabled={gymInvalid || cardioInvalid}>Save Equipment</Button>
-              </div>
-            </div>
+            {/* New EquipmentModal component for testing */}
+            <EquipmentModal
+              equipmentCategory={equipmentCategory}
+              setEquipmentCategory={setEquipmentCategory}
+              selectedBodyweight={selectedBodyweight}
+              setSelectedBodyweight={setSelectedBodyweight}
+              selectedGym={selectedGym}
+              setSelectedGym={setSelectedGym}
+              selectedCardio={selectedCardio}
+              setSelectedCardio={setSelectedCardio}
+              gymInvalid={gymInvalid}
+              cardioInvalid={cardioInvalid}
+              onSave={handleSaveEquipment}
+              onCancel={() => onOpenChange(false)}
+            />
+            {/* Original code below for comparison/testing */}
+            {/* ...original equipment selection code... */}
           </TabsContent>
 
           {/* Profile Tab */}
@@ -533,80 +393,13 @@ export default function ProfileModal({ open, onOpenChange }) {
           {/* Admin Tab */}
           {isAdminUser && (
             <TabsContent value="admin">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Crown className="h-5 w-5 text-purple-600" />
-                      User Type Management
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium">Current Status:</span>
-                        <Badge className={statusColor}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusLabel}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={handleToggleSubscription}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Toggle Subscription Status
-                        </Button>
-                        
-                        <Button 
-                          onClick={handleEnsureSubscription}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          <Shield className="h-4 w-4 mr-2" />
-                          Ensure Subscription Field
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bug className="h-5 w-5 text-orange-600" />
-                      Debug Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>User ID:</span>
-                        <span className="font-mono text-xs">{user?.uid}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Email:</span>
-                        <span className="font-mono text-xs">{user?.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Subscription Status:</span>
-                        <span className="font-mono text-xs">{userProfile?.subscription?.status || 'undefined'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Subscription Plan:</span>
-                        <span className="font-mono text-xs">{userProfile?.subscription?.plan || 'undefined'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Has Subscription Field:</span>
-                        <span className="font-mono text-xs">{userProfile?.subscription ? 'true' : 'false'}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <SubscriptionStatus status={userProfile?.subscription?.status || 'basic'} />
+              <AdminControlsModal
+                user={user}
+                userProfile={userProfile}
+                onToggleSubscription={handleToggleSubscription}
+                onEnsureSubscription={handleEnsureSubscription}
+              />
             </TabsContent>
           )}
         </Tabs>

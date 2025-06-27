@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useAuthStore from "./store/useAuthStore";
 import Auth from "./Auth";
-import ProfileMenu from "./ProfileMenu";
+import ProfileMenu from "@/components/profile/ProfileMenu";
 import MainPage from "./pages/MainPage";
 import ExercisePage from "./pages/ExercisePage";
 import FoodPage from "./pages/FoodPage";
