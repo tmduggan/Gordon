@@ -1,5 +1,5 @@
 import React from 'react';
-import { combinedMuscles } from './muscleData/combinedMuscles';
+import { combinedMuscles } from './combinedMuscles';
 
 // Helper to compute color based on score
 const getMuscleColor = (score) => {

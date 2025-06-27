@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import LevelDisplay from '../components/LevelDisplay';
+import LevelDisplay from '../components/gamification/LevelDisplay';
 
 // Component Imports
 import CartContainer from '../components/Cart/CartContainer';
 import Search from '../components/Search/Search';
 import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
-import DateTimePicker, { useDateTimePicker } from '../components/DateTimePicker.tsx';
+import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
 

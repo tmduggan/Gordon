@@ -12,10 +12,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import CartRow from './CartRow';
 import SaveCartAsRecipe from '../nutrition/SaveCartAsRecipe';
 import { getFoodMacros } from '../../utils/dataUtils';
-import { calculateWorkoutScore } from '../../services/scoringService';
-import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/suggestionService';
-import { calculateStreakBonuses } from '../../services/levelService';
-import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../services/foodScoringService';
+import { calculateWorkoutScore } from '../../services/gamification/scoringService';
+import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/gamification/suggestionService';
+import { calculateStreakBonuses } from '../../services/gamification/levelService';
+import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../services/gamification/foodScoringService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {

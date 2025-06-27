@@ -308,7 +308,7 @@ const useAuthStore = create((set, get) => ({
     }
 
     // Import the migration function
-    const { migrateMuscleScores, calculateTimeBasedMuscleScores } = await import('../services/muscleScoreService');
+    const { migrateMuscleScores, calculateTimeBasedMuscleScores } = await import('../services/gamification/muscleScoreService');
     
     console.log('Starting muscle score migration...');
     
@@ -345,7 +345,7 @@ const useAuthStore = create((set, get) => ({
     if (!userProfile) return;
     
     // Import the validation function
-    const { recalculateTotalXPFromLogs, validateUserXP } = await import('../services/levelService');
+    const { recalculateTotalXPFromLogs, validateUserXP } = await import('../services/gamification/levelService');
     
     const validation = validateUserXP(userProfile, exerciseLogs, foodLogs);
     
@@ -369,7 +369,7 @@ const useAuthStore = create((set, get) => ({
     if (!userProfile) return;
     
     // Import the recalculation function
-    const { recalculateTotalXPFromLogs } = await import('../services/levelService');
+    const { recalculateTotalXPFromLogs } = await import('../services/gamification/levelService');
     
     const calculatedXP = recalculateTotalXPFromLogs(exerciseLogs, foodLogs);
     const currentXP = userProfile.totalXP || 0;

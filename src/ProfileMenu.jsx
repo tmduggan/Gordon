@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
-import ProfileModal from './components/DailyGoalsModal';
-import HiddenExercisesModal from './components/HiddenExercisesModal';
+import ProfileModal from './components/profile/DailyGoalsModal';
+import HiddenExercisesModal from './components/profile/HiddenExercisesModal';
 import ExerciseLibraryModal from './components/admin/ExerciseLibraryModal';
 import { auth } from '@/firebase';
 import { Button } from '@/components/ui/button';

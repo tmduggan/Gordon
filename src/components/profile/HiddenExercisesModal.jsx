@@ -5,8 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Eye, EyeOff, Target, Zap } from 'lucide-react';
-import useAuthStore from '../store/useAuthStore';
-import useLibrary from '../hooks/fetchLibrary';
+import useAuthStore from '../../store/useAuthStore';
+import useLibrary from '../../hooks/fetchLibrary';
 
 // Equipment icon mapping (same as WorkoutSuggestions)
 const equipmentIconMap = {

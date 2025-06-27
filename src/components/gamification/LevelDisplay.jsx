@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Trophy, Flame, Calendar, TrendingUp } from 'lucide-react';
-import { calculateLevelFromXP, calculateStreakBonuses, getLevelInfo } from '../services/levelService';
+import { calculateLevelFromXP, calculateStreakBonuses, getLevelInfo } from '../../services/gamification/levelService';
 
 export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate, className = "" }) {
   const levelInfo = calculateLevelFromXP(totalXP, accountCreationDate);

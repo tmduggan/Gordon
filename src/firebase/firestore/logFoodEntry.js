@@ -1,6 +1,6 @@
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { calculateFoodXP } from '../../services/foodScoringService';
+import { calculateFoodXP } from '../../services/gamification/foodScoringService';
 
 /**
  * Creates a new food log entry in Firestore under the user's subcollection.

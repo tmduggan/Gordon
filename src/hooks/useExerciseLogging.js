@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
-import { calculateWorkoutScore, updatePersonalBests } from '../services/scoringService';
-import { addWorkoutToMuscleScores } from '../services/muscleScoreService';
+import { calculateWorkoutScore, updatePersonalBests } from '../services/gamification/scoringService';
+import { addWorkoutToMuscleScores } from '../services/gamification/muscleScoreService';
 import { useToast } from './use-toast';
 
 export default function useExerciseLogging(exerciseLibrary, exerciseHistory, cart, search, dateTimePicker) {

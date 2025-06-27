@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getFoodMacros } from '../../utils/dataUtils';
-import { calculateDailyFoodXP, calculateDailyTotals } from '../../services/foodScoringService';
+import { calculateDailyFoodXP, calculateDailyTotals } from '../../services/gamification/foodScoringService';
 
 const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
     // Calculate daily totals including micronutrients

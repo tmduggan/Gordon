@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { calculateWorkoutScore } from '../services/scoringService';
+import { calculateWorkoutScore } from '../services/gamification/scoringService';
 
 export default function useScoreProgress(logs, exercises, cartData = {}, userProfile = null) {
   const [expectedScores, setExpectedScores] = useState({});

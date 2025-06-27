@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Medal, Apple, Dumbbell, User, Bug, Target, Crown, Settings, RefreshCw, Shield } from 'lucide-react';
-import LevelDisplay from './gamification/LevelDisplay';
-import useAuthStore from '../store/useAuthStore';
+import LevelDisplay from '../gamification/LevelDisplay';
+import useAuthStore from '../../store/useAuthStore';
 import { Button } from '@/components/ui/button';
-import useLibrary from '../hooks/fetchLibrary';
-import useHistory from '../hooks/fetchHistory';
-import { validateUserXP } from '../services/gamification/levelService';
-import { useToast } from '../hooks/use-toast';
+import useLibrary from '../../hooks/fetchLibrary';
+import useHistory from '../../hooks/fetchHistory';
+import { validateUserXP } from '../../services/gamification/levelService';
+import { useToast } from '../../hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ensureAvailableEquipment } from '../utils/dataUtils';
+import { ensureAvailableEquipment } from '../../utils/dataUtils';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 

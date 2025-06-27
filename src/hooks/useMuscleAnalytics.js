@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import useAuthStore from '../store/useAuthStore';
-import { getMuscleScore } from '../services/muscleScoreService';
+import { getMuscleScore } from '../services/gamification/muscleScoreService';
 
 export default function useMuscleAnalytics() {
   const { userProfile } = useAuthStore();

@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Unlock, Crown } from 'lucide-react';
-import MuscleMap from './MuscleMap';
+import MuscleMap from './muscleData/MuscleMap';
 import useAuthStore from '../../store/useAuthStore';
 import { muscleMapping } from '../../utils/muscleMapping';
-import { getMuscleScore } from '../../services/muscleScoreService';
+import { getMuscleScore } from '../../services/gamification/muscleScoreService';
 
 // Your hardcoded preview muscle scores (based on your current state)
 const PREVIEW_MUSCLE_SCORES = {

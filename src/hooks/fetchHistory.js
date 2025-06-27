@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { collection, query, onSnapshot, doc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
 import useAuthStore from '../store/useAuthStore';
 import { getTimeSegment, isSameDayLocal } from '../utils/timeUtils';
-import { recalculateScoresForHistory } from '../services/scoringService';
+import { recalculateScoresForHistory } from '../services/gamification/scoringService';
 
 export default function useHistory(logType, exerciseLibrary = null) {
     const { user } = useAuthStore();

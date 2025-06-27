@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import MuscleSvg from './MuscleSvg';
-import { muscleMapping } from '../../utils/muscleMapping';
+import { muscleMapping } from '../../../utils/muscleMapping';
 
 const MuscleMap = ({ muscleScores, rawMuscleScores, onMuscleClick }) => {
   const [hovered, setHovered] = useState(null);

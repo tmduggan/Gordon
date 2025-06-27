@@ -2,7 +2,7 @@ import React from 'react';
 import MacroDisplay from './nutrition/MacroDisplay';
 import { getFoodMacros } from '../utils/dataUtils';
 import { formatSmartDate } from '../utils/timeUtils';
-import ScoreDisplay from './ScoreDisplay';
+import ScoreDisplay from './gamification/ScoreDisplay';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

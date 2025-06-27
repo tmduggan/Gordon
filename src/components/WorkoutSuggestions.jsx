@@ -17,7 +17,7 @@ import {
 import { 
   analyzeLaggingMuscles, 
   generateWorkoutSuggestions 
-} from '../services/suggestionService';
+} from '../services/gamification/suggestionService';
 import useAuthStore from '../store/useAuthStore';
 import { useToast } from '../hooks/use-toast';
 import CompletedExerciseBar from './exercise/CompletedExerciseBar';

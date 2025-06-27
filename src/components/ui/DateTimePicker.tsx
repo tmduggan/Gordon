@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatSmartDate, exerciseTimePeriods, foodTimePeriods } from '../utils/timeUtils';
+import { formatSmartDate, getTimeSegment, exerciseTimePeriods, foodTimePeriods } from '../../utils/timeUtils';
 
 // Helper to get the meal period from the current time
 const getCurrentMealPeriod = () => {

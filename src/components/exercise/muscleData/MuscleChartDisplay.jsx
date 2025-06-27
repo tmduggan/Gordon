@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import MuscleMap from './MuscleMap';
-import useAuthStore from '../../store/useAuthStore';
-import { muscleMapping } from '../../utils/muscleMapping';
-import { getMuscleScore } from '../../services/muscleScoreService';
+import useAuthStore from '../../../store/useAuthStore';
+import { muscleMapping } from '../../../utils/muscleMapping';
+import { getMuscleScore } from '../../../services/gamification/muscleScoreService';
 
 export default function MuscleChartDisplay({ className = "" }) {
   const { userProfile } = useAuthStore();

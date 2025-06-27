@@ -1,7 +1,7 @@
 // Workout suggestion service for Goliath
 // Analyzes user's muscle scores and generates personalized workout recommendations
 
-import { muscleMapping } from '../utils/muscleMapping';
+import { muscleMapping } from '../../utils/muscleMapping';
 import { getMuscleScore, hasWorkedMuscle } from './muscleScoreService';
 
 const SUGGESTION_CONFIG = {
