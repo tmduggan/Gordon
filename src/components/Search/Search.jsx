@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import MacroDisplay from '../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Filter, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
@@ -93,8 +93,9 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     );
 };
 
-const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
+const ExerciseResult = ({ item, onSelect, userProfile, togglePin, toggleFavorite }) => {
     const isPinned = item.isPinned || userProfile?.pinnedExercises?.includes(item.id);
+    const isFavorite = userProfile?.favoriteExercises?.includes(item.id);
     
     // Determine background color based on item type
     let bgColorClass = "hover:bg-accent";
@@ -110,14 +111,24 @@ const ExerciseResult = ({ item, onSelect, userProfile, togglePin }) => {
             <div className="flex items-center gap-2">
                 <span>{item.name}</span>
             </div>
-            {item.id && (
-                <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
-                    title={isPinned ? "Unpin exercise" : "Pin exercise"}
-                >
-                    {isPinned ? '📌' : '📍'}
-                </Button>
-            )}
+            <div className="flex items-center gap-2">
+                {item.id && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
+                        title={isPinned ? "Unpin exercise" : "Pin exercise"}
+                    >
+                        {isPinned ? '📌' : '📍'}
+                    </Button>
+                )}
+                {item.id && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
+                        title={isFavorite ? "Unfavorite exercise" : "Favorite exercise"}
+                    >
+                        {isFavorite ? <Star className="text-yellow-400 fill-yellow-400" /> : <StarOff />}
+                    </Button>
+                )}
+            </div>
         </div>
     );
 };

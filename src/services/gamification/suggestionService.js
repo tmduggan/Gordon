@@ -115,33 +115,42 @@ function getPriorityScore(laggingType, score, daysSinceTrained) {
  * @param {Array} selectedBodyweight - Selected equipment for bodyweight
  * @param {Array} selectedGym - Selected equipment for gym
  * @param {Array} selectedCardio - Selected equipment for cardio
+ * @param {Array} pinnedExercises - Array of pinned exercise IDs
+ * @param {Array} favoriteExercises - Array of favorite exercise IDs
  * @returns {Array} Array of workout suggestions
  */
-export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, availableEquipment = [], hiddenSuggestions = [], exerciseCategory = 'bodyweight', selectedBodyweight = [], selectedGym = [], selectedCardio = []) {
+export function generateWorkoutSuggestions(
+  laggingMuscles,
+  exerciseLibrary,
+  availableEquipment = [],
+  hiddenSuggestions = [],
+  exerciseCategory = 'bodyweight',
+  selectedBodyweight = [],
+  selectedGym = [],
+  selectedCardio = [],
+  pinnedExercises = [],
+  favoriteExercises = []
+) {
   const suggestions = [];
   const usedExerciseIds = new Set();
   const usedEquipment = new Set();
 
-  // Helper to get a random element from an array
   function getRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  // Helper to check if all required equipment is present
   function hasAllEquipment(exerciseEquipment, selectedEquipment) {
     if (!exerciseEquipment) return true;
     const required = exerciseEquipment.split(',').map(e => e.trim().toLowerCase());
     return required.every(req => selectedEquipment.map(e => e.toLowerCase()).includes(req));
   }
 
-  laggingMuscles.forEach(laggingMuscle => {
-    // Find exercises that target this muscle and use available equipment/category
+  for (const laggingMuscle of laggingMuscles) {
+    // Find all exercises for this muscle and category
     let matchingExercises = exerciseLibrary.filter(exercise => {
-      // Check if exercise targets the lagging muscle
       const targets = [exercise.target, ...(Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [exercise.secondaryMuscles])];
       const targetsMuscle = targets.some(target => target && target.toLowerCase().trim() === laggingMuscle.muscle);
       if (!targetsMuscle) return false;
-      // Category-based filtering
       if (exerciseCategory === 'cardio') {
         return (exercise.category && exercise.category.toLowerCase() === 'cardio') || (exercise.target && exercise.target.toLowerCase() === 'cardiovascular');
       } else if (exerciseCategory === 'bodyweight') {
@@ -151,37 +160,61 @@ export function generateWorkoutSuggestions(laggingMuscles, exerciseLibrary, avai
       }
       return true;
     });
-
-    // Remove exercises already suggested
+    // Remove already suggested
     matchingExercises = matchingExercises.filter(ex => !usedExerciseIds.has(ex.id));
-
-    // Prefer exercises with equipment not already used in this batch
-    let preferredExercises = matchingExercises.filter(ex => {
-      if (!ex.equipment) return true;
-      return !usedEquipment.has(ex.equipment);
-    });
-    // If not enough variety, fall back to all matching
-    if (preferredExercises.length === 0) preferredExercises = matchingExercises;
-
-    // Randomly pick one exercise from preferred list
-    if (preferredExercises.length > 0) {
-      const exercise = getRandom(preferredExercises);
-      const suggestionId = `${exercise.id}-${laggingMuscle.muscle}`;
-      // Skip if this suggestion was hidden
-      if (hiddenSuggestions.includes(suggestionId)) return;
+    // 1. Pinned
+    const pinned = matchingExercises.filter(ex => pinnedExercises.includes(ex.id));
+    for (const ex of pinned) {
+      const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
+      if (hiddenSuggestions.includes(suggestionId)) continue;
       suggestions.push({
         id: suggestionId,
-        exercise,
+        exercise: ex,
         laggingMuscle,
         reason: getSuggestionReason(laggingMuscle),
         bonus: laggingMuscle.bonus
       });
-      usedExerciseIds.add(exercise.id);
-      if (exercise.equipment) usedEquipment.add(exercise.equipment);
+      usedExerciseIds.add(ex.id);
+      if (ex.equipment) usedEquipment.add(ex.equipment);
+      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
     }
-  });
-
-  // Limit to max suggestions
+    // 2. Favorite (not pinned)
+    const favorite = matchingExercises.filter(ex => favoriteExercises.includes(ex.id) && !pinnedExercises.includes(ex.id));
+    for (const ex of favorite) {
+      const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
+      if (hiddenSuggestions.includes(suggestionId)) continue;
+      suggestions.push({
+        id: suggestionId,
+        exercise: ex,
+        laggingMuscle,
+        reason: getSuggestionReason(laggingMuscle),
+        bonus: laggingMuscle.bonus
+      });
+      usedExerciseIds.add(ex.id);
+      if (ex.equipment) usedEquipment.add(ex.equipment);
+      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
+    }
+    // 3. Random (not pinned or favorite)
+    const regular = matchingExercises.filter(ex => !pinnedExercises.includes(ex.id) && !favoriteExercises.includes(ex.id));
+    if (regular.length > 0) {
+      const ex = getRandom(regular);
+      const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
+      if (!hiddenSuggestions.includes(suggestionId)) {
+        suggestions.push({
+          id: suggestionId,
+          exercise: ex,
+          laggingMuscle,
+          reason: getSuggestionReason(laggingMuscle),
+          bonus: laggingMuscle.bonus
+        });
+        usedExerciseIds.add(ex.id);
+        if (ex.equipment) usedEquipment.add(ex.equipment);
+        if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
+      }
+    }
+    // Only move to next lagging muscle if we still need more suggestions
+    if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) break;
+  }
   return suggestions.slice(0, SUGGESTION_CONFIG.maxSuggestions);
 }
 

@@ -70,6 +70,7 @@ const useAuthStore = create((set, get) => ({
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
           pinnedExercises: [],
+          favoriteExercises: [],
           recipes: [],
           muscleScores: {}, // Initialize with empty scores
           totalXP: 0, // Initialize total XP
@@ -115,6 +116,7 @@ const useAuthStore = create((set, get) => ({
           goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
           pinnedFoods: [],
           pinnedExercises: [],
+          favoriteExercises: [],
           recipes: [],
           totalXP: 0, // Initialize total XP
           subscription: {
@@ -492,6 +494,25 @@ const useAuthStore = create((set, get) => ({
     
     console.log('Subscription field already exists');
     return userProfile;
+  },
+
+  // Toggle a favorite exercise with optimistic updates
+  toggleFavoriteExercise: async (exerciseId) => {
+    const { userProfile, saveUserProfile } = get();
+    if (!userProfile) return;
+    const currentFavorites = userProfile.favoriteExercises || [];
+    const isCurrentlyFavorite = currentFavorites.includes(exerciseId);
+    const newFavorites = isCurrentlyFavorite
+      ? currentFavorites.filter(id => id !== exerciseId)
+      : [...currentFavorites, exerciseId];
+    const optimisticProfile = { ...userProfile, favoriteExercises: newFavorites };
+    set({ userProfile: optimisticProfile });
+    try {
+      const newProfile = { ...userProfile, favoriteExercises: newFavorites };
+      await saveUserProfile(newProfile);
+    } catch (error) {
+      console.error("Error updating favorite exercises:", error);
+    }
   },
 
 }));
