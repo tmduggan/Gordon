@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
 import ProfileModal from './components/DailyGoalsModal';
 import HiddenExercisesModal from './components/HiddenExercisesModal';
+import ExerciseLibraryModal from './components/admin/ExerciseLibraryModal';
 import { auth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from './hooks/use-toast';
-import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug } from 'lucide-react';
+import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
 
 export default function ProfileMenu() {
   const { user, userProfile, isAdmin, getRemainingHides, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
@@ -20,6 +21,7 @@ export default function ProfileMenu() {
   const [showHiddenExercises, setShowHiddenExercises] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [simulatedStatus, setSimulatedStatus] = useState(null); // null = real, else 'basic' or 'premium' or 'admin'
+  const [showExerciseLibraryModal, setShowExerciseLibraryModal] = useState(false);
   const { toast } = useToast();
 
   if (!user || !userProfile) return null;
@@ -238,6 +240,17 @@ export default function ProfileMenu() {
                       <Bug className="h-4 w-4 mr-2" />
                       Debug Profile
                     </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setShowExerciseLibraryModal(true);
+                        setShowDropdown(false);
+                      }}
+                      className="w-full justify-start"
+                    >
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Exercise Library Management
+                    </Button>
                   </>
                 )}
               </div>
@@ -266,6 +279,13 @@ export default function ProfileMenu() {
         <HiddenExercisesModal
           open={showHiddenExercises}
           onOpenChange={setShowHiddenExercises}
+        />
+      )}
+      
+      {showExerciseLibraryModal && (
+        <ExerciseLibraryModal
+          open={showExerciseLibraryModal}
+          onOpenChange={setShowExerciseLibraryModal}
         />
       )}
     </>

@@ -88,4 +88,20 @@ export const getInitialScaledNutrition = (food) => {
 // Helper to slugify a string for generating consistent document IDs.
 export function slugify(str) {
     return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+}
+
+// Default equipment for each category
+export const DEFAULT_EQUIPMENT = {
+  gym: ["barbell", "dumbbell"],
+  bodyweight: ["body weight"],
+  cardio: []
+};
+
+// Ensures availableEquipment is always a valid, non-empty object
+export function ensureAvailableEquipment(equipment) {
+  return {
+    gym: Array.isArray(equipment?.gym) && equipment.gym.length > 0 ? equipment.gym : [...DEFAULT_EQUIPMENT.gym],
+    bodyweight: Array.isArray(equipment?.bodyweight) && equipment.bodyweight.length > 0 ? equipment.bodyweight : [...DEFAULT_EQUIPMENT.bodyweight],
+    cardio: Array.isArray(equipment?.cardio) && equipment.cardio.length > 0 ? equipment.cardio : [...DEFAULT_EQUIPMENT.cardio],
+  };
 } 

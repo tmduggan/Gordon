@@ -12,6 +12,7 @@ import { useToast } from '../hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ensureAvailableEquipment } from '../utils/dataUtils';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
@@ -57,7 +58,7 @@ export default function ProfileModal({ open, onOpenChange }) {
   const exerciseLibrary = useLibrary('exercise');
   const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
   const foodHistory = useHistory('food');
-  const [availableEquipment, setAvailableEquipment] = useState(userProfile?.availableEquipment || { bodyweight: [], gym: [], cardio: [] });
+  const [availableEquipment, setAvailableEquipment] = useState(ensureAvailableEquipment(userProfile?.availableEquipment));
   const [profile, setProfile] = useState({
     name: userProfile?.name || user?.displayName || '',
     email: user?.email || '',
@@ -101,11 +102,11 @@ export default function ProfileModal({ open, onOpenChange }) {
     onOpenChange(false);
   };
   const handleSaveEquipment = () => {
-    const newAvailableEquipment = {
+    const newAvailableEquipment = ensureAvailableEquipment({
       bodyweight: selectedBodyweight,
       gym: selectedGym,
       cardio: selectedCardio,
-    };
+    });
     setAvailableEquipment(newAvailableEquipment);
     saveUserProfile({ ...userProfile, availableEquipment: newAvailableEquipment });
     onOpenChange(false);

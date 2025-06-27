@@ -2,14 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { fetchInstantResults as fetchNutritionixSearch, fetchNutrients } from '../api/nutritionixAPI';
 import { generateFoodId } from '../services/foodService';
 import { useToast } from './use-toast';
+import { exerciseTargetsMuscleCategory } from '../services/svgMappingService';
 
 export default function useSearch(type, library, userProfile, options = {}) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const [nutrientsLoading, setNutrientsLoading] = useState(false);
-    const [targetFilter, setTargetFilter] = useState('');
-    const [equipmentFilter, setEquipmentFilter] = useState('');
+    const [targetCategoryFilter, setTargetCategoryFilter] = useState('');
+    const [equipmentCategoryFilter, setEquipmentCategoryFilter] = useState('');
     const { toast } = useToast();
 
     // Helper function to check if an item matches the search query
@@ -24,6 +25,36 @@ export default function useSearch(type, library, userProfile, options = {}) {
             const exerciseName = item.name || '';
             return exerciseName.toLowerCase().includes(searchTerm);
         }
+    };
+
+    // Helper function to check if exercise equipment matches the selected category
+    const exerciseMatchesEquipmentCategory = (exercise, category, userProfile) => {
+        if (!category || !userProfile?.availableEquipment) return true;
+        
+        const availableEquipment = userProfile.availableEquipment;
+        
+        switch (category) {
+            case 'bodyweight':
+                return availableEquipment.bodyweight?.some(equipment => 
+                    exercise.equipment?.toLowerCase().includes(equipment.toLowerCase())
+                ) || exercise.equipment?.toLowerCase().includes('body weight');
+            case 'gym':
+                return availableEquipment.gym?.some(equipment => 
+                    exercise.equipment?.toLowerCase().includes(equipment.toLowerCase())
+                );
+            case 'cardio':
+                return availableEquipment.cardio?.some(equipment => 
+                    exercise.equipment?.toLowerCase().includes(equipment.toLowerCase())
+                ) || exercise.category?.toLowerCase() === 'cardio';
+            default:
+                return true;
+        }
+    };
+
+    // Helper function to check if an exercise targets a specific muscle group
+    const exerciseTargetsMuscleGroup = (exercise, muscleGroup) => {
+        if (!muscleGroup) return true;
+        return exerciseTargetsMuscleCategory(exercise, muscleGroup);
     };
 
     // Get pinned items that match the query
@@ -41,9 +72,11 @@ export default function useSearch(type, library, userProfile, options = {}) {
             return library.items
                 .filter(item => pinnedExerciseIds.includes(item.id))
                 .filter(item => itemMatchesQuery(item, searchQuery))
+                .filter(item => exerciseMatchesEquipmentCategory(item, equipmentCategoryFilter, userProfile))
+                .filter(item => !targetCategoryFilter || exerciseTargetsMuscleGroup(item, targetCategoryFilter))
                 .map(item => ({ ...item, isPinned: true }));
         }
-    }, [searchQuery, userProfile, library.items, type]);
+    }, [searchQuery, userProfile, library.items, type, equipmentCategoryFilter, targetCategoryFilter]);
 
     // Get recipes that match the query (only for food type)
     const getMatchingRecipes = useMemo(() => {
@@ -71,11 +104,15 @@ export default function useSearch(type, library, userProfile, options = {}) {
             const pinnedIds = new Set(pinnedItems.map(item => item.id));
             
             let exerciseResults = library.items;
-            if (targetFilter) {
-                exerciseResults = exerciseResults.filter(item => item.target === targetFilter);
+            if (targetCategoryFilter) {
+                exerciseResults = exerciseResults.filter(item => 
+                    exerciseTargetsMuscleGroup(item, targetCategoryFilter)
+                );
             }
-            if (equipmentFilter) {
-                exerciseResults = exerciseResults.filter(item => item.equipment === equipmentFilter);
+            if (equipmentCategoryFilter) {
+                exerciseResults = exerciseResults.filter(item => 
+                    exerciseMatchesEquipmentCategory(item, equipmentCategoryFilter, userProfile)
+                );
             }
             if (searchQuery) {
                 exerciseResults = exerciseResults.filter(item =>
@@ -108,7 +145,7 @@ export default function useSearch(type, library, userProfile, options = {}) {
         const combinedResults = [...pinnedItems, ...recipes, ...results];
         
         setSearchResults(combinedResults);
-    }, [searchQuery, library.items, type, targetFilter, equipmentFilter, getMatchingPinnedItems, getMatchingRecipes]);
+    }, [searchQuery, library.items, type, targetCategoryFilter, equipmentCategoryFilter, getMatchingPinnedItems, getMatchingRecipes, userProfile]);
 
     const handleApiSearch = async () => {
         if (searchQuery.trim() === '' || type !== 'food') return;
@@ -217,8 +254,8 @@ export default function useSearch(type, library, userProfile, options = {}) {
         setSearchQuery('');
         setSearchResults([]);
         if (type === 'exercise') {
-            setTargetFilter('');
-            setEquipmentFilter('');
+            setTargetCategoryFilter('');
+            setEquipmentCategoryFilter('');
         }
     };
 
@@ -232,12 +269,12 @@ export default function useSearch(type, library, userProfile, options = {}) {
         handleNutrientsSearch,
         clearSearch,
         filters: {
-            target: targetFilter,
-            equipment: equipmentFilter
+            targetCategory: targetCategoryFilter,
+            equipmentCategory: equipmentCategoryFilter
         },
         setFilters: {
-            target: setTargetFilter,
-            equipment: setEquipmentFilter
+            targetCategory: setTargetCategoryFilter,
+            equipmentCategory: setEquipmentCategoryFilter
         },
     };
 } 

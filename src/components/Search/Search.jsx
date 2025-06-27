@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover"
 import MacroDisplay from '../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Filter, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -132,7 +133,7 @@ const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterCha
         >
             <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <span>Filter by Target / Equipment</span>
+                <span>Filter by Muscle Group / Equipment</span>
             </div>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -140,19 +141,28 @@ const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterCha
         {/* Filter Controls */}
         {isExpanded && (
             <div className="flex flex-col sm:flex-row gap-2 mt-2 p-3 border rounded-md bg-gray-50">
+                <Select
+                    value={filters.targetCategory || 'all'}
+                    onValueChange={(value) => onFilterChange('targetCategory', value === 'all' ? '' : value)}
+                >
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by Muscle Group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Muscle Groups</SelectItem>
+                        {options.targets?.map((target) => (
+                            <SelectItem key={target} value={target}>
+                                {target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 <FilterSelect
-                    placeholder="Filter by Target"
-                    value={filters.target}
-                    options={options.targets}
-                    onValueChange={(value) => onFilterChange('target', value)}
-                    onClear={() => onFilterChange('target', '')}
-                />
-                <FilterSelect
-                    placeholder="Filter by Equipment"
-                    value={filters.equipment}
-                    options={options.equipments}
-                    onValueChange={(value) => onFilterChange('equipment', value)}
-                    onClear={() => onFilterChange('equipment', '')}
+                    placeholder="Filter by Equipment Category"
+                    value={filters.equipmentCategory}
+                    options={options.equipmentCategories}
+                    onValueChange={(value) => onFilterChange('equipmentCategory', value)}
+                    onClear={() => onFilterChange('equipmentCategory', '')}
                 />
             </div>
         )}

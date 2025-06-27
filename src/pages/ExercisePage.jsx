@@ -18,6 +18,8 @@ import useLibrary from '../hooks/fetchLibrary';
 import useSearch from '../hooks/useSearch';
 import useAuthStore from "../store/useAuthStore";
 import useExerciseLogging from '../hooks/useExerciseLogging';
+import { ensureAvailableEquipment } from '../utils/dataUtils';
+import { getMuscleGroupCategoryNames } from '../services/svgMappingService';
 
 export default function ExercisePage() {
     const { user, userProfile, togglePinExercise } = useAuthStore();
@@ -50,11 +52,11 @@ export default function ExercisePage() {
         : [];
 
     const exerciseFilterOptions = {
-        targets: [...new Set(exerciseLibrary.items.map(item => item.target).filter(Boolean))].sort(),
-        equipments: [...new Set(exerciseLibrary.items.map(item => item.equipment).filter(Boolean))].sort(),
+        targets: getMuscleGroupCategoryNames(),
+        equipmentCategories: ['bodyweight', 'gym', 'cardio'],
     };
 
-    const availableEquipment = userProfile?.availableEquipment || { bodyweight: [], gym: [], cardio: [] };
+    const availableEquipment = ensureAvailableEquipment(userProfile?.availableEquipment);
     let selectedEquipment = [];
     if (selectedFilter === 'bodyweight') selectedEquipment = availableEquipment.bodyweight;
     else if (selectedFilter === 'gym') selectedEquipment = availableEquipment.gym;
