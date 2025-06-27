@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
-import ProfileModal from './DailyGoalsModal';
+import ProfileModal from './ProfileModal';
 import HiddenExercisesModal from './HiddenExercisesModal';
 import ExerciseLibraryModal from '../admin/ExerciseLibraryModal';
 import { auth } from '@/firebase';
