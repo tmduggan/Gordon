@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Lightbulb, 
@@ -22,6 +21,7 @@ import {
 import useAuthStore from '../store/useAuthStore';
 import { useToast } from '../hooks/use-toast';
 import CompletedExerciseBar from './exercise/CompletedExerciseBar';
+import ExerciseTooltip from './tooltips/ExerciseTooltip';
 
 // Equipment icon mapping (same as PinnedItem)
 const equipmentIconMap = {
@@ -321,56 +321,6 @@ export default function WorkoutSuggestions({
     }
   };
   
-  const renderTooltipContent = (suggestion) => (
-    <div className="max-w-xs">
-      <div className="font-semibold text-base mb-2">
-        {suggestion.exercise.name}
-      </div>
-      
-      {/* Description */}
-      {suggestion.exercise.description && (
-        <div className="mb-3">
-          <div className="font-medium text-sm mb-1 text-blue-600">Description:</div>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {suggestion.exercise.description}
-          </p>
-        </div>
-      )}
-      
-      {/* Instructions */}
-      {suggestion.exercise.instructions && Array.isArray(suggestion.exercise.instructions) && suggestion.exercise.instructions.length > 0 && (
-        <div className="mb-3">
-          <div className="font-medium text-sm mb-1 text-green-600">Instructions:</div>
-          <ol className="text-sm text-gray-700 space-y-1">
-            {suggestion.exercise.instructions.map((instruction, index) => (
-              <li key={index} className="leading-relaxed">
-                {index + 1}. {instruction}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-      
-      {/* Reason */}
-      <div className="mb-2">
-        <p className="text-sm text-gray-600">
-          {suggestion.reason}
-        </p>
-      </div>
-      
-      {/* Exercise Details */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2">
-        <span>Target: {suggestion.exercise.target}</span>
-        {suggestion.exercise.equipment && (
-          <span>Equipment: {suggestion.exercise.equipment}</span>
-        )}
-        {suggestion.exercise.category && (
-          <span>Type: {suggestion.exercise.category}</span>
-        )}
-      </div>
-    </div>
-  );
-
   // Check if a suggestion has been completed today
   const isSuggestionCompleted = (suggestion) => {
     const today = new Date();
@@ -503,46 +453,28 @@ export default function WorkoutSuggestions({
             </div>
             <div className="flex items-center gap-2">
               {/* Refresh Button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={clearAllSuggestions}
-                      className="h-8 px-2 text-xs"
-                      disabled={loading}
-                    >
-                      <Lightbulb className="h-3 w-3 mr-1" />
-                      {loading ? 'Refreshing...' : 'Refresh'}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Generate fresh workout suggestions</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearAllSuggestions}
+                className="h-8 px-2 text-xs"
+                disabled={loading}
+              >
+                <Lightbulb className="h-3 w-3 mr-1" />
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </Button>
               
               {/* Undo Hide Button */}
               {recentlyHidden && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleUndoHide}
-                        className="h-8 px-2 text-xs"
-                      >
-                        <Undo2 className="h-3 w-3 mr-1" />
-                        Undo Hide
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Restore recently hidden suggestion</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleUndoHide}
+                  className="h-8 px-2 text-xs"
+                >
+                  <Undo2 className="h-3 w-3 mr-1" />
+                  Undo Hide
+                </Button>
               )}
             </div>
           </div>
@@ -576,117 +508,8 @@ export default function WorkoutSuggestions({
                   role="button"
                   aria-label={suggestion.exercise.name}
                 >
-                  {/* Desktop Tooltip */}
-                  {!isMobile && (
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
-                            {/* Exercise Name */}
-                            <div className="flex-1 min-w-0 w-full sm:w-auto">
-                              <strong className="block text-lg">
-                                {suggestion.exercise.name}
-                              </strong>
-                            </div>
-                            
-                            {/* Icons and Badges Row */}
-                            <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-                              {/* Icons Row */}
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                {muscleIcon && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <img 
-                                          src={muscleIcon} 
-                                          alt={target} 
-                                          className="h-6 w-6 rounded-md border border-black" 
-                                          onClick={e => e.stopPropagation()} 
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="capitalize">{target}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                                {equipmentIcon && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <img 
-                                          src={equipmentIcon} 
-                                          alt={equipment} 
-                                          className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
-                                          onClick={e => e.stopPropagation()} 
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="capitalize">{equipment}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                                {difficultyColor && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div 
-                                          className={`h-6 w-6 rounded-md ${difficultyColor}`} 
-                                          onClick={e => e.stopPropagation()} 
-                                        />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="capitalize">{difficulty}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </div>
-                              
-                              {/* Lagging Type Badge */}
-                              <div className="flex-shrink-0">
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-sm ${getLaggingTypeColor(suggestion.laggingMuscle.laggingType)}`}
-                                >
-                                  {getLaggingTypeIcon(suggestion.laggingMuscle.laggingType)}
-                                  <span className="ml-1">
-                                    {suggestion.laggingMuscle.laggingType === 'neverTrained' && 'Never Trained'}
-                                    {suggestion.laggingMuscle.laggingType === 'underTrained' && 'Under Trained'}
-                                    {suggestion.laggingMuscle.laggingType === 'neglected' && 'Neglected'}
-                                  </span>
-                                </Badge>
-                              </div>
-                              
-                              {/* Bonus XP Badge */}
-                              <div className="flex-shrink-0">
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
-                                        <Zap className="h-4 w-4 mr-1" />
-                                        +{suggestion.bonus} XP
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Bonus XP for targeting lagging muscle group</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          {renderTooltipContent(suggestion)}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  
-                  {/* Mobile Layout */}
-                  {isMobile && (
+                  {/* Exercise Tooltip */}
+                  <ExerciseTooltip exercise={suggestion.exercise}>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
                       {/* Exercise Name */}
                       <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -700,53 +523,23 @@ export default function WorkoutSuggestions({
                         {/* Icons Row */}
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {muscleIcon && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <img 
-                                    src={muscleIcon} 
-                                    alt={target} 
-                                    className="h-6 w-6 rounded-md border border-black" 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{target}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <img 
+                              src={muscleIcon} 
+                              alt={target} 
+                              className="h-6 w-6 rounded-md border border-black" 
+                            />
                           )}
                           {equipmentIcon && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <img 
-                                    src={equipmentIcon} 
-                                    alt={equipment} 
-                                    className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{equipment}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <img 
+                              src={equipmentIcon} 
+                              alt={equipment} 
+                              className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                            />
                           )}
                           {difficultyColor && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div 
-                                    className={`h-6 w-6 rounded-md ${difficultyColor}`} 
-                                    onClick={e => e.stopPropagation()} 
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="capitalize">{difficulty}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <div 
+                              className={`h-6 w-6 rounded-md ${difficultyColor}`} 
+                            />
                           )}
                         </div>
                         
@@ -767,73 +560,85 @@ export default function WorkoutSuggestions({
                         
                         {/* Bonus XP Badge */}
                         <div className="flex-shrink-0">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
-                                  <Zap className="h-4 w-4 mr-1" />
-                                  +{suggestion.bonus} XP
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Bonus XP for targeting lagging muscle group</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Badge className="bg-green-100 text-green-800 border-green-200 text-sm">
+                            <Zap className="h-4 w-4 mr-1" />
+                            +{suggestion.bonus} XP
+                          </Badge>
                         </div>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Mobile Info Button */}
-                  {isMobile && (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute bottom-1 left-1 h-6 w-6 p-0 text-gray-400 hover:text-blue-500 z-10"
-                          onClick={e => e.stopPropagation()}
-                          tabIndex={0}
-                          aria-label="Show exercise info"
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-                        {renderTooltipContent(suggestion)}
-                      </DialogContent>
-                    </Dialog>
-                  )}
+                  </ExerciseTooltip>
                   
                   {/* Hide Button */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6 p-0 text-gray-400 hover:text-red-500 z-10"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleHideSuggestion(suggestion.id);
-                          }}
-                          tabIndex={-1}
-                          aria-label="Hide suggestion"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Hide this exercise from suggestions</p>
-                        {userProfile?.subscription?.status === 'basic' && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {getRemainingHides()} hides remaining today
-                          </p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 text-gray-400 hover:text-red-500 z-10"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleHideSuggestion(suggestion.id);
+                        }}
+                        tabIndex={-1}
+                        aria-label="Hide suggestion"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                      {/* Exercise Tooltip */}
+                      <ExerciseTooltip exercise={suggestion.exercise}>
+                        <div className="max-w-xs">
+                          <div className="font-semibold text-base mb-2">
+                            {suggestion.exercise.name}
+                          </div>
+                          
+                          {/* Description */}
+                          {suggestion.exercise.description && (
+                            <div className="mb-3">
+                              <div className="font-medium text-sm mb-1 text-blue-600">Description:</div>
+                              <p className="text-sm text-gray-700 leading-relaxed">
+                                {suggestion.exercise.description}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Instructions */}
+                          {suggestion.exercise.instructions && Array.isArray(suggestion.exercise.instructions) && suggestion.exercise.instructions.length > 0 && (
+                            <div className="mb-3">
+                              <div className="font-medium text-sm mb-1 text-green-600">Instructions:</div>
+                              <ol className="text-sm text-gray-700 space-y-1">
+                                {suggestion.exercise.instructions.map((instruction, index) => (
+                                  <li key={index} className="leading-relaxed">
+                                    {index + 1}. {instruction}
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          )}
+                          
+                          {/* Reason */}
+                          <div className="mb-2">
+                            <p className="text-sm text-gray-600">
+                              {suggestion.reason}
+                            </p>
+                          </div>
+                          
+                          {/* Exercise Details */}
+                          <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2">
+                            <span>Target: {suggestion.exercise.target}</span>
+                            {suggestion.exercise.equipment && (
+                              <span>Equipment: {suggestion.exercise.equipment}</span>
+                            )}
+                            {suggestion.exercise.category && (
+                              <span>Type: {suggestion.exercise.category}</span>
+                            )}
+                          </div>
+                        </div>
+                      </ExerciseTooltip>
+                    </DialogContent>
+                  </Dialog>
                 </Card>
               );
             })}
@@ -842,31 +647,11 @@ export default function WorkoutSuggestions({
             {Array.from({ length: placeholderCount }, (_, index) => (
               <Card
                 key={`placeholder-${index}`}
-                className="p-4 flex flex-row items-center justify-between min-w-full relative opacity-30"
-              >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
-                  <div className="flex-1 min-w-0 w-full sm:w-auto">
-                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                  <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-                    <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-              </Card>
+              ></Card>
             ))}
-          </div>
-          
-          <div className="mt-3 text-xs text-gray-500">
-            {completedSuggestions.length > 0 && (
-              <div className="mb-2 text-green-600">
-                ✓ Completed {completedSuggestions.length} suggestion{completedSuggestions.length !== 1 ? 's' : ''} today
-              </div>
-            )}
-            Suggestions are based on your muscle training history and available equipment.
           </div>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

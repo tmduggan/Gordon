@@ -10,13 +10,14 @@ import {
   PinnedItemActions, 
   PinnedItemIcons 
 } from './PinnedItem/index';
+import ExerciseTooltip from './tooltips/ExerciseTooltip';
 
 export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
   const label = item.label || item.food_name || item.name;
   
   const TooltipContentComponent = itemType === 'food' 
     ? <FoodTooltipContent item={item} />
-    : <ExerciseInfoCard exercise={item} />;
+    : null;
 
   return (
     <Card
@@ -26,20 +27,30 @@ export function PinnedItem({ item, onSelect, onPinToggle, itemType }) {
       role="button"
       aria-label={label}
     >
-      <MobileTooltip
-        content={TooltipContentComponent}
-        side="bottom"
-        delayDuration={300}
-        showInfoButton={true}
-        infoButtonPosition="top-right"
-        className="w-full h-full"
-      >
-        <PinnedItemLayout>
-          <PinnedItemTitle label={label} />
-          <PinnedItemIcons item={item} itemType={itemType} />
-          <PinnedItemActions onPinToggle={onPinToggle} itemId={item.id} />
-        </PinnedItemLayout>
-      </MobileTooltip>
+      {itemType === 'exercise' ? (
+        <ExerciseTooltip exercise={item}>
+          <PinnedItemLayout>
+            <PinnedItemTitle label={label} />
+            <PinnedItemIcons item={item} itemType={itemType} />
+            <PinnedItemActions onPinToggle={onPinToggle} itemId={item.id} />
+          </PinnedItemLayout>
+        </ExerciseTooltip>
+      ) : (
+        <MobileTooltip
+          content={TooltipContentComponent}
+          side="bottom"
+          delayDuration={300}
+          showInfoButton={true}
+          infoButtonPosition="top-right"
+          className="w-full h-full"
+        >
+          <PinnedItemLayout>
+            <PinnedItemTitle label={label} />
+            <PinnedItemIcons item={item} itemType={itemType} />
+            <PinnedItemActions onPinToggle={onPinToggle} itemId={item.id} />
+          </PinnedItemLayout>
+        </MobileTooltip>
+      )}
     </Card>
   );
 }
