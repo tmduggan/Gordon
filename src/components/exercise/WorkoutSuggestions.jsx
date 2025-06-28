@@ -176,6 +176,7 @@ export default function WorkoutSuggestions({
   const clearAllSuggestions = async () => {
     if (!userProfile) return;
     setCompletedSuggestions([]); // Clear completed suggestions on refresh
+    setSuggestions([]); // Clear all suggestions from local state immediately
     const updatedProfile = { ...userProfile };
     if (updatedProfile.workoutSuggestions) {
       updatedProfile.workoutSuggestions = {
