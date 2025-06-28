@@ -67,8 +67,8 @@ export default function ProfileMenu() {
     });
   };
 
-  // Toggle actual subscription status in Firestore
-  const handleToggleActualStatus = async () => {
+  // Only for admin: cycle actual subscription status
+  const handleCycleActualStatus = async () => {
     if (!isAdminUser) return;
     try {
       await toggleSubscriptionStatus();
@@ -146,7 +146,7 @@ export default function ProfileMenu() {
                             <button
                               type="button"
                               className={`focus:outline-none ${subscriptionInfo.color} rounded px-2 py-1 flex items-center gap-1 border`}
-                              onClick={handleToggleSimulatedStatus}
+                              onClick={handleCycleActualStatus}
                             >
                               <subscriptionInfo.icon className="h-3 w-3 mr-1" />
                               {subscriptionInfo.label}
@@ -154,7 +154,7 @@ export default function ProfileMenu() {
                             </button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <span>Click to simulate different user types</span>
+                            <span>Click to cycle your actual subscription status (Basic → Premium → Admin → Basic)</span>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -218,38 +218,11 @@ export default function ProfileMenu() {
                   <>
                     <Button
                       variant="ghost"
-                      onClick={handleToggleActualStatus}
-                      className="w-full justify-start"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Toggle Actual Subscription Status
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={handleEnsureSubscription}
-                      className="w-full justify-start"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Ensure Subscription Field
-                    </Button>
-                    <Button
-                      variant="ghost"
                       onClick={handleDebugProfile}
                       className="w-full justify-start"
                     >
                       <Bug className="h-4 w-4 mr-2" />
                       Debug Profile
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setShowExerciseLibraryModal(true);
-                        setShowDropdown(false);
-                      }}
-                      className="w-full justify-start"
-                    >
-                      <Dumbbell className="h-4 w-4 mr-2" />
-                      Exercise Library Management
                     </Button>
                   </>
                 )}
@@ -279,13 +252,6 @@ export default function ProfileMenu() {
         <HiddenExercisesModal
           open={showHiddenExercises}
           onOpenChange={setShowHiddenExercises}
-        />
-      )}
-      
-      {showExerciseLibraryModal && (
-        <ExerciseLibraryModal
-          open={showExerciseLibraryModal}
-          onOpenChange={setShowExerciseLibraryModal}
         />
       )}
     </>
