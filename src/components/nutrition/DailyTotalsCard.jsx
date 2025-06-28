@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getFoodMacros } from '../../utils/dataUtils';
-import { calculateDailyFoodXP, calculateDailyTotals } from '../../services/gamification/foodScoringService';
+import { calculateDailyFoodXP, calculateDailyTotals, MICRONUTRIENT_ATTRS } from '../../services/gamification/foodScoringService';
 
 const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
     // Calculate daily totals including micronutrients
@@ -55,6 +55,11 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
         .sort((a, b) => b[1] - a[1]) // Sort by value descending
         .slice(0, 5); // Show top 5
 
+    // Helper to get micronutrient info
+    const getMicronutrientInfo = (label) => {
+        return MICRONUTRIENT_ATTRS.find(attr => attr.label === label);
+    };
+
     return (
         <Card className="mb-4">
             <CardHeader className="pb-3">
@@ -80,12 +85,26 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
                     <div className="pt-4 border-t">
                         <h4 className="text-sm font-medium mb-3">Top Micronutrients</h4>
                         <div className="space-y-2">
-                            {micronutrientsWithValues.map(([label, value]) => (
-                                <div key={label} className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">{label}</span>
-                                    <span className="font-medium">{Math.round(value)}</span>
-                                </div>
-                            ))}
+                            {micronutrientsWithValues.map(([label, value]) => {
+                                const info = getMicronutrientInfo(label);
+                                let displayValue = value;
+                                if (info && (info.unit === 'mg' || info.unit === 'mcg' || info.unit === 'IU')) {
+                                    displayValue = value < 10 ? value.toFixed(1) : Math.round(value);
+                                }
+                                let percent = undefined;
+                                if (info && info.rdv) {
+                                    percent = Math.round((value / info.rdv) * 100);
+                                }
+                                return (
+                                    <div key={label} className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">{label}</span>
+                                        <span className="font-medium">
+                                            {displayValue}{info ? ` ${info.unit}` : ''}
+                                            {percent !== undefined ? ` (${percent}%)` : ''}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
