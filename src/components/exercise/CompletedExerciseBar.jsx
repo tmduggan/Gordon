@@ -1,3 +1,5 @@
+// This file is now deprecated. Completed suggestions are rendered using ExerciseDisplay for consistent formatting.
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

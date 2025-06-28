@@ -175,7 +175,7 @@ export default function WorkoutSuggestions({
   // Clear all saved suggestions and generate new ones
   const clearAllSuggestions = async () => {
     if (!userProfile) return;
-    
+    setCompletedSuggestions([]); // Clear completed suggestions on refresh
     const updatedProfile = { ...userProfile };
     if (updatedProfile.workoutSuggestions) {
       updatedProfile.workoutSuggestions = {
@@ -184,7 +184,6 @@ export default function WorkoutSuggestions({
         gymEquipment: [],
         cardioOnly: []
       };
-      
       try {
         await saveUserProfile(updatedProfile);
         // Generate new suggestions
@@ -494,11 +493,22 @@ export default function WorkoutSuggestions({
           <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto min-h-[180px]">
             {/* Show completed suggestions first */}
             {completedSuggestions.map((suggestion) => (
-              <CompletedExerciseBar
+              <ExerciseDisplay
                 key={`completed-${suggestion.id}`}
                 exercise={suggestion.exercise}
-                completedAt={new Date()}
-                bonus={suggestion.bonus}
+                bonusXP={suggestion.bonus}
+                laggingType={suggestion.laggingMuscle?.laggingType}
+                showPinIcon={false}
+                showUnhideButton={false}
+                showHideButton={true}
+                onHide={() => handleHideSuggestion(suggestion.id)}
+                onPinToggle={null}
+                onUnhide={null}
+                loading={false}
+                className={'opacity-60 pointer-events-none bg-green-50 border-green-200'}
+                onClick={() => handleAddToCart(suggestion)}
+                variant="row"
+                nameClassName="text-xs"
               />
             ))}
             
