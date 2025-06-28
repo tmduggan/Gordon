@@ -14,7 +14,9 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
     const handleSelect = (exercise) => {
         cart.addToCart(exercise);
         setCurrentLogData(prev => ({ ...prev, [exercise.id]: { sets: [{ weight: '', reps: '' }] } }));
-        search.clearSearch();
+        if (search && search.clearSearch) {
+            search.clearSearch();
+        }
     };
 
     const logCart = async () => {

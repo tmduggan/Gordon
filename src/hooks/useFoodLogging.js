@@ -15,7 +15,9 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
             if (savedFood) foodToLog = savedFood;
         }
         cart.addToCart(foodToLog);
-        search.clearSearch();
+        if (search && search.clearSearch) {
+            search.clearSearch();
+        }
     };
 
     const handleNutrientsAdd = async (foods) => {
