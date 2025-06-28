@@ -19,6 +19,7 @@ import useAuthStore from "../store/useAuthStore";
 import useExerciseLogging from '../hooks/useExerciseLogging';
 import { ensureAvailableEquipment } from '../utils/dataUtils';
 import { getMuscleGroupCategoryNames } from '../services/svgMappingService';
+import { analyzeLaggingMuscles } from '../services/gamification/suggestionService';
 
 export default function ExercisePage() {
     const { user, userProfile, togglePinExercise } = useAuthStore();
@@ -63,6 +64,12 @@ export default function ExercisePage() {
             ...(availableEquipment.cardio || [])
         ])
     ];
+
+    // Compute lagging muscles for search and suggestions
+    const laggingMuscles = React.useMemo(() => {
+        if (!userProfile || !exerciseHistory.logs || !exerciseLibrary.items) return [];
+        return analyzeLaggingMuscles(userProfile.muscleScores, exerciseHistory.logs, exerciseLibrary.items);
+    }, [userProfile, exerciseHistory.logs, exerciseLibrary.items]);
 
     if (exerciseLibrary.loading || exerciseHistory.loading) {
         return <div>Loading exercise data...</div>;
@@ -128,6 +135,7 @@ export default function ExercisePage() {
                 selectedBodyweight={availableEquipment.bodyweight}
                 selectedGym={availableEquipment.gym}
                 selectedCardio={availableEquipment.cardio}
+                laggingMuscles={laggingMuscles}
             />
             {cart.cart.length > 0 && (
                 <CartContainer

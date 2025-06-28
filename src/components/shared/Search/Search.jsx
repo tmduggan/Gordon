@@ -6,6 +6,7 @@ import MacroDisplay from '../../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
+import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -88,46 +89,6 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
                         </Button>
                     )}
                 </div>
-            </div>
-        </div>
-    );
-};
-
-const ExerciseResult = ({ item, onSelect, userProfile, togglePin, toggleFavorite }) => {
-    const isPinned = item.isPinned || userProfile?.pinnedExercises?.includes(item.id);
-    const isFavorite = userProfile?.favoriteExercises?.includes(item.id);
-    
-    // Determine background color based on item type
-    let bgColorClass = "hover:bg-accent";
-    if (isPinned) {
-        bgColorClass = "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-400";
-    }
-    
-    return (
-        <div
-            onClick={() => onSelect(item)}
-            className={`flex justify-between items-center p-2 cursor-pointer ${bgColorClass}`}
-        >
-            <div className="flex items-center gap-2">
-                <span>{item.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-                {item.id && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={(e) => { e.stopPropagation(); togglePin(item.id); }}
-                        title={isPinned ? "Unpin exercise" : "Pin exercise"}
-                    >
-                        {isPinned ? '📌' : '📍'}
-                    </Button>
-                )}
-                {item.id && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
-                        title={isFavorite ? "Unfavorite exercise" : "Favorite exercise"}
-                    >
-                        {isFavorite ? <Star className="text-yellow-400 fill-yellow-400" /> : <StarOff />}
-                    </Button>
-                )}
             </div>
         </div>
     );
@@ -216,7 +177,8 @@ export default function Search({
     placeholder,
     filters,
     setFilters,
-    filterOptions
+    filterOptions,
+    laggingMuscles = []
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -237,10 +199,10 @@ export default function Search({
         setIsFilterExpanded(!isFilterExpanded);
     };
 
-    const ResultComponent = type === 'food' ? FoodResult : ExerciseResult;
+    const ResultComponent = type === 'food' ? FoodResult : null; // We'll handle exercise below
 
-    // Only show up to 20 results total, and paginate 10 at a time
-    const paginatedResults = searchResults.slice(0, 20).slice(0, visibleCount);
+    // Only show up to 40 results total
+    const paginatedResults = searchResults.slice(0, 40);
     
     // Final deduplication to prevent duplicate key warnings
     const uniqueResults = paginatedResults.reduce((acc, item, index) => {
@@ -327,7 +289,7 @@ export default function Search({
                 )}
 
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                    <div style={{ maxHeight: '600px', minHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '400px', minHeight: '200px', overflowY: 'auto' }}>
                         {showLoadingInResults && (
                             <div className="p-4 text-sm text-center flex items-center justify-center gap-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -339,26 +301,62 @@ export default function Search({
                                 No results found. Try a different search term.
                             </div>
                         )}
-                        {!showLoadingInResults && uniqueResults.map((item, index) => (
-                            <ResultComponent
-                                key={type === 'food' ? (item.id || item.food_name || `food-${index}`) : (item.id || `exercise-${index}`)}
-                                item={item}
-                                onSelect={(selectedItem) => {
-                                    handleSelect(selectedItem);
-                                    setIsOpen(false);
-                                }}
-                                userProfile={userProfile}
-                                togglePin={togglePin}
-                                getFoodMacros={getFoodMacros} // Only used by FoodResult
+                        {/* Render exercise results using ExerciseDisplay with lagging/XP if applicable */}
+                        {!showLoadingInResults && type === 'exercise' && uniqueResults.map((item, index) => {
+                          // Find lagging muscle match for this exercise
+                          let laggingType, bonusXP;
+                          if (item.target) {
+                            const match = laggingMuscles.find(lag => lag.muscle && item.target.toLowerCase().includes(lag.muscle));
+                            if (match) {
+                              laggingType = match.laggingType;
+                              bonusXP = match.bonus;
+                            }
+                          }
+                          if (!laggingType && Array.isArray(item.secondaryMuscles)) {
+                            for (const sec of item.secondaryMuscles) {
+                              const match = laggingMuscles.find(lag => lag.muscle && sec.toLowerCase().includes(lag.muscle));
+                              if (match) {
+                                laggingType = match.laggingType;
+                                bonusXP = match.bonus;
+                                break;
+                              }
+                            }
+                          }
+                          return (
+                            <ExerciseDisplay
+                              key={item.id || `exercise-${index}`}
+                              exercise={item}
+                              variant="row"
+                              showPinIcon={true}
+                              showCategory={true}
+                              showBodyPart={true}
+                              showSecondaryMuscles={true}
+                              onPinToggle={() => togglePin(item.id)}
+                              onClick={() => {
+                                handleSelect(item);
+                                setIsOpen(false);
+                              }}
+                              userProfile={userProfile}
+                              className="mb-2"
+                              bonusXP={bonusXP}
+                              laggingType={laggingType}
                             />
+                          );
+                        })}
+                        {/* Render food results as before */}
+                        {!showLoadingInResults && type === 'food' && uniqueResults.map((item, index) => (
+                          <FoodResult
+                            key={item.id || item.food_name || `food-${index}`}
+                            item={item}
+                            onSelect={(selectedItem) => {
+                              handleSelect(selectedItem);
+                              setIsOpen(false);
+                            }}
+                            userProfile={userProfile}
+                            togglePin={togglePin}
+                            getFoodMacros={getFoodMacros}
+                          />
                         ))}
-                        {canShowMore && (
-                            <div className="flex justify-center py-2">
-                                <Button variant="outline" size="sm" onClick={() => setVisibleCount(visibleCount + 10)}>
-                                    Show more
-                                </Button>
-                            </div>
-                        )}
                     </div>
                 </PopoverContent>
             </Popover>
