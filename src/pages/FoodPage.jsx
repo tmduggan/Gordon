@@ -90,6 +90,7 @@ export default function FoodPage() {
                 workoutLogs={foodHistory.logs}
                 accountCreationDate={accountCreationDate}
                 className="mb-4"
+                userProfile={userProfile}
             />
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
                 <Search

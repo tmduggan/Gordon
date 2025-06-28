@@ -2,7 +2,16 @@ import React from 'react';
 import { Trophy, Flame, Calendar, TrendingUp } from 'lucide-react';
 import { getLevelInfo } from '../../services/gamification/levelService';
 
-export default function LevelTooltip({ levelInfo, streakInfo, levelDisplay, totalXP }) {
+export default function LevelTooltip({ levelInfo, streakInfo, levelDisplay, totalXP, userProfile }) {
+  // Determine if user is capped (basic and at or above level 5)
+  const isBasicCapped = (userProfile) => {
+    if (!userProfile) return false;
+    const status = userProfile.subscription?.status;
+    if (status !== 'basic') return false;
+    const level = levelInfo.level;
+    return level >= 5;
+  };
+
   return (
     <div className="w-64 p-2">
       <div className="font-bold text-lg mb-1 flex items-center gap-2">
@@ -10,7 +19,9 @@ export default function LevelTooltip({ levelInfo, streakInfo, levelDisplay, tota
         {getLevelInfo(levelInfo.level).title}
       </div>
       <div className="text-sm text-gray-700 mb-2">
-        {levelInfo.xpToNext > 0 ? (
+        {isBasicCapped(userProfile) ? (
+          <span className="text-red-600 font-semibold">XP capped at Level 5. Upgrade to continue leveling up!</span>
+        ) : levelInfo.xpToNext > 0 ? (
           <span>{levelInfo.xpToNext} XP to next level</span>
         ) : (
           <span>Max level reached!</span>

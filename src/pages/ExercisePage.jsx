@@ -82,6 +82,7 @@ export default function ExercisePage() {
                 workoutLogs={exerciseHistory.logs}
                 accountCreationDate={accountCreationDate}
                 className="mb-4 w-full"
+                userProfile={userProfile}
             />
             <WorkoutSuggestions
                 muscleScores={userProfile?.muscleScores || {}}

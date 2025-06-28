@@ -289,16 +289,24 @@ const useAuthStore = create((set, get) => ({
       // console.warn('Cannot add XP: no user profile found');
       return;
     }
-    
-    const currentXP = userProfile.totalXP || 0;
-    const newXP = currentXP + xpAmount;
-    
-    // console.log(`Adding XP: current=${currentXP}, adding=${xpAmount}, new=${newXP}`);
-    
+
+    // Cap XP for basic users at level 5
+    const isBasic = userProfile.subscription?.status === 'basic';
+    let currentXP = userProfile.totalXP || 0;
+    let newXP = currentXP + xpAmount;
+    if (isBasic) {
+      // Import calculateTotalXPForLevel dynamically to avoid circular deps
+      const { calculateTotalXPForLevel } = await import('../services/gamification/levelService');
+      const capXP = calculateTotalXPForLevel(5, userProfile.accountCreationDate ? new Date(userProfile.accountCreationDate) : new Date());
+      if (currentXP >= capXP) {
+        // Already at or above cap, do not add XP
+        return;
+      }
+      newXP = Math.min(newXP, capXP);
+    }
+
     const newProfile = { ...userProfile, totalXP: newXP };
     await get().saveUserProfile(newProfile);
-    
-    // console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
   },
 
   // Migrate muscle scores to new time-based format

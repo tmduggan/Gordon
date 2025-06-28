@@ -282,6 +282,7 @@ export default function ProfileModal({ open, onOpenChange }) {
               workoutLogs={userProfile?.workoutLogs || []}
               accountCreationDate={user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined}
               className="mb-4"
+              userProfile={userProfile}
             />
             <DebugControls
               onValidateXP={validateXP}
