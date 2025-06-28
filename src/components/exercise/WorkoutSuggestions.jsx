@@ -575,13 +575,11 @@ export default function WorkoutSuggestions({
                 showPinIcon={false}
                 showUnhideButton={false}
                 showHideButton={true}
-                showRefreshButton={true}
                 onHide={() => handleHideSuggestion(suggestion.id)}
                 onPinToggle={null}
                 onUnhide={null}
-                onRefresh={() => handleRefreshSuggestion(suggestion.id)}
                 loading={false}
-                className={'opacity-60 pointer-events-none bg-green-50 border-green-200'}
+                className={'bg-green-50 border-green-200'}
                 onClick={() => handleAddToCart(suggestion)}
                 variant="row"
                 nameClassName="text-xs"
