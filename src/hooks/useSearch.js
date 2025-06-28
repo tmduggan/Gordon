@@ -4,6 +4,24 @@ import { generateFoodId } from '../services/foodService';
 import { useToast } from './useToast';
 import { exerciseTargetsMuscleCategory } from '../services/svgMappingService';
 
+// Helper function to normalize strings for fuzzy matching
+const normalize = str => (str || '').toLowerCase().replace(/['’`]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+// Helper function to check if an item matches the search query (food)
+const itemMatchesFoodQuery = (item, query) => {
+    if (!query.trim()) return false;
+    const searchTerm = normalize(query);
+    const foodName = normalize(item.food_name || item.label || item.name || '');
+    const brandName = normalize(item.brand_name || '');
+    // Allow multi-word queries to match across both fields
+    return (
+        foodName.includes(searchTerm) ||
+        brandName.includes(searchTerm) ||
+        // Split query into words and require all to be present in either field
+        searchTerm.split(' ').every(word => foodName.includes(word) || brandName.includes(word))
+    );
+};
+
 export default function useSearch(type, library, userProfile, options = {}) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -65,7 +83,7 @@ export default function useSearch(type, library, userProfile, options = {}) {
             const pinnedFoodIds = userProfile.pinnedFoods || [];
             return library.items
                 .filter(item => pinnedFoodIds.includes(item.id))
-                .filter(item => itemMatchesQuery(item, searchQuery))
+                .filter(item => itemMatchesFoodQuery(item, searchQuery))
                 .map(item => ({ ...item, isPinned: true }));
         } else {
             const pinnedExerciseIds = userProfile.pinnedExercises || [];
@@ -83,7 +101,7 @@ export default function useSearch(type, library, userProfile, options = {}) {
         if (!searchQuery.trim() || type !== 'food' || !userProfile?.recipes) return [];
         
         return userProfile.recipes
-            .filter(recipe => itemMatchesQuery(recipe, searchQuery))
+            .filter(recipe => itemMatchesFoodQuery(recipe, searchQuery))
             .map(recipe => ({ ...recipe, isRecipe: true }));
     }, [searchQuery, userProfile, type]);
 
@@ -131,7 +149,7 @@ export default function useSearch(type, library, userProfile, options = {}) {
             
             // Filter regular results, excluding items that are already pinned
             const foodResults = library.items
-                .filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                .filter(item => itemMatchesFoodQuery(item, searchQuery))
                 .filter(item => !pinnedIds.has(item.id || item.food_name)); // Remove items already in pinned
             
             results = foodResults;
