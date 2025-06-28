@@ -51,9 +51,13 @@ export default function MuscleChart({ className = "", onMuscleClick }) {
         score3day += muscleData['3day'] || 0;
         score7day += muscleData['7day'] || 0;
       });
-      
-      // Weighted score: today (1.0), 3day (0.25), 7day (0.1)
-      const weightedScore = todayScore * 1.0 + score3day * 0.25 + score7day * 0.1;
+      // New weights: today (1.0), 3day (0.5), 7day (0.1)
+      // Cap each component: today max 60 reps, 3day max 120 reps, 7day max 500 reps (but only up to 50% shading)
+      const todayPct = Math.min(todayScore, 60) / 60; // 60 reps = 100%
+      const threeDayPct = Math.min(score3day, 120) / 120 * 0.5; // 120 reps = 50%
+      const sevenDayPct = Math.min(score7day, 500) / 500 * 0.1; // 500 reps = 10%
+      let weightedScore = todayPct + threeDayPct + sevenDayPct;
+      weightedScore = Math.min(weightedScore, 1.0); // Cap at 100%
       svgScores[svgMuscle] = weightedScore;
       svg3DayScores[svgMuscle] = score3day;
       svg7DayScores[svgMuscle] = score7day;
