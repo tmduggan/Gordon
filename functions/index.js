@@ -16,6 +16,8 @@ const axios = require('axios');
 const cors = require('cors')({origin: true});
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || functions.config().stripe.secret);
+const admin = require('firebase-admin');
+const fetch = require('node-fetch');
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -42,8 +44,6 @@ functions.setGlobalOptions({ maxInstances: 10 });
 const { NUTRITIONIX_APP_ID, NUTRITIONIX_API_KEY } = process.env;
 
 const NUTRITIONIX_BASE_URL = 'https://trackapi.nutritionix.com/v2';
-
-functions.setGlobalOptions({ maxInstances: 10 });
 
 exports.nutritionixInstantSearch = onRequest((req, res) => {
     cors(req, res, async () => {
@@ -201,3 +201,106 @@ paymentApp.post('/api/cancel-subscription', async (req, res) => {
 
 // Export the Express app as a Firebase Function
 exports.api = functions.https.onRequest(paymentApp);
+
+admin.initializeApp();
+
+// Updated refreshExerciseDbGifs with pagination, batching, and name-matching
+exports.refreshExerciseDbGifs = functions.https.onRequest(async (req, res) => {
+  try {
+    console.log('Function started: Fetching all exercises from ExerciseDB');
+    // 1. Fetch all exercises from ExerciseDB using pagination
+    let allExercises = [];
+    let offset = 0;
+    const limit = 100;
+    while (true) {
+      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?offset=${offset}&limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
+          'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+        }
+      });
+      const exercises = await response.json();
+      if (!Array.isArray(exercises) || exercises.length === 0) break;
+      allExercises = allExercises.concat(exercises);
+      offset += exercises.length;
+      if (exercises.length < limit) break; // last page
+    }
+    console.log(`Fetched ${allExercises.length} exercises from ExerciseDB`);
+
+    // 2. Fetch all Firestore exerciseLibrary docs
+    const exerciseLibraryRef = admin.firestore().collection('exerciseLibrary');
+    const snapshot = await exerciseLibraryRef.get();
+    const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // 3. Prepare updates: match by 'id' field (string or number)
+    const updates = [];
+    let unmatched = [];
+    for (const ex of allExercises) {
+      // ExerciseDB id is a string, Firestore id may be string or number
+      const exId = ex.id ? String(ex.id) : undefined;
+      const match = allDocs.find(doc => doc.id && String(doc.id) === exId);
+      if (match && ex.gifUrl) {
+        updates.push({ docRef: exerciseLibraryRef.doc(match.id), data: { gifUrl: ex.gifUrl } });
+      } else {
+        unmatched.push(exId);
+      }
+    }
+    console.log(`Prepared ${updates.length} updates for Firestore`);
+    if (unmatched.length > 0) {
+      console.log(`No match for these ExerciseDB ids:`, unmatched.slice(0, 20)); // log first 20 unmatched for brevity
+    }
+
+    // 4. Batch updates in chunks of 500
+    const batchSize = 500;
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = admin.firestore().batch();
+      const chunk = updates.slice(i, i + batchSize);
+      chunk.forEach(({ docRef, data }) => batch.set(docRef, data, { merge: true }));
+      await batch.commit();
+      console.log(`Committed batch ${i / batchSize + 1}`);
+    }
+
+    res.status(200).send(`ExerciseDB GIF URLs refreshed! Updated ${updates.length} exercises.`);
+  } catch (err) {
+    console.error('Function error:', err);
+    res.status(500).send('Failed to refresh ExerciseDB GIF URLs');
+  }
+});
+
+// On-demand trigger: only allows refresh if not run in last 1 hour
+exports.triggerGifRefresh = functions.https.onRequest(async (req, res) => {
+  const docRef = admin.firestore().collection('admin').doc('gifRefresh');
+  const doc = await docRef.get();
+  const now = Date.now();
+  const lastRefresh = doc.exists ? doc.data().lastGifRefreshTimestamp : 0;
+  // Only allow if more than 1 hour since last refresh
+  if (now - lastRefresh < 60 * 60 * 1000) {
+    return res.status(200).send('Refresh already run recently.');
+  }
+  await docRef.set({ lastGifRefreshTimestamp: now });
+  // Run the refresh logic
+  try {
+    const response = await fetch('https://exercisedb.p.rapidapi.com/exercises', {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
+        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+      }
+    });
+    const exercises = await response.json();
+    const batch = admin.firestore().batch();
+    exercises.forEach(ex => {
+      const docRef = admin.firestore().collection('exercises').doc(ex.id || ex._id || ex.name);
+      batch.set(docRef, {
+        ...ex,
+        gifUrl: ex.gifUrl
+      }, { merge: true });
+    });
+    await batch.commit();
+    res.status(200).send('ExerciseDB GIF URLs refreshed!');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to refresh ExerciseDB GIF URLs');
+  }
+});

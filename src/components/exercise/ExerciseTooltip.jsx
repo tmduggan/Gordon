@@ -1,8 +1,10 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function ExerciseTooltip({ exercise, children, bonusXP, laggingType }) {
   if (!exercise) return children;
+
+  const [gifError, setGifError] = useState(false);
 
   return (
     <TooltipProvider>
@@ -12,6 +14,21 @@ export default function ExerciseTooltip({ exercise, children, bonusXP, laggingTy
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <div className="max-w-xs">
+            {/* GIF at the top */}
+            {exercise.gifUrl && !gifError && (
+              <img
+                src={exercise.gifUrl}
+                alt={exercise.name + ' demo'}
+                className="w-full h-36 object-contain rounded mb-2 border border-gray-200 bg-gray-50"
+                onError={() => setGifError(true)}
+              />
+            )}
+            {/* Fallback if GIF fails */}
+            {exercise.gifUrl && gifError && (
+              <div className="w-full h-36 flex items-center justify-center bg-gray-100 text-xs text-gray-500 rounded mb-2 border border-gray-200">
+                GIF unavailable
+              </div>
+            )}
             <div className="font-semibold text-base mb-2">{exercise.name}</div>
             {exercise.description && (
               <div className="mb-3">
