@@ -544,8 +544,9 @@ export default function WorkoutSuggestions({
                 className="h-8 px-2 text-xs flex items-center gap-1"
                 disabled={loading || (!isAdmin && !isPremium && remainingRefreshes <= 0)}
               >
-                {[...Array(3)].map((_, i) => <RefreshCw key={i} className="h-3 w-3" />)}
-                {loading ? 'Refreshing...' : 'Refresh All'}
+                <span className="font-bold">3X</span>
+                <RefreshCw className="h-4 w-4" />
+                {loading && <span className="ml-2">Refreshing...</span>}
               </Button>
               
               {/* Undo Hide Button */}
