@@ -349,7 +349,11 @@ export default function WorkoutSuggestions({
     return (
       <div className={className}>
         <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
-          {equipmentButtons}
+          {(isAdmin || isPremium) ? equipmentButtons : (
+            <div className="mb-2 text-xs text-blue-700 font-medium">
+              Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
+            </div>
+          )}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -420,7 +424,11 @@ export default function WorkoutSuggestions({
   return (
     <div className={className}>
       <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
-        {equipmentButtons}
+        {(isAdmin || isPremium) ? equipmentButtons : (
+          <div className="mb-2 text-xs text-blue-700 font-medium">
+            Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
+          </div>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
