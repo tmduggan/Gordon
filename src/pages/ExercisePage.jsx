@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import CartContainer from '../components/Cart/CartContainer';
 import Search from '../components/Search/Search';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
-import MuscleChartDisplay from '../components/exercise/muscleData/MuscleChartDisplay';
+import MuscleChart from '../components/exercise/muscleData/MuscleChart';
 import LevelDisplay from '../components/gamification/LevelDisplay';
 import WorkoutSuggestions from '../components/exercise/WorkoutSuggestions';
 import { Button } from '../components/ui/button';

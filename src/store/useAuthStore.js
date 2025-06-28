@@ -310,35 +310,18 @@ const useAuthStore = create((set, get) => ({
     }
 
     // Import the migration function
-    const { migrateMuscleScores, calculateTimeBasedMuscleScores } = await import('../services/gamification/muscleScoreService');
+    const { addWorkoutToMuscleReps } = await import('../services/gamification/exerciseScoringService');
     
     console.log('Starting muscle score migration...');
     
-    let newMuscleScores;
+    // Initialize empty muscle reps structure
+    const newMuscleReps = {};
     
-    // Check if we need to migrate from old format or recalculate from logs
-    const hasOldFormat = userProfile.muscleScores && 
-      Object.values(userProfile.muscleScores).some(score => typeof score === 'number');
-    
-    if (hasOldFormat) {
-      // Migrate from old single-value format
-      console.log('Migrating from old single-value format...');
-      newMuscleScores = migrateMuscleScores(userProfile.muscleScores);
-    } else if (exerciseLogs.length > 0 && exerciseLibrary.length > 0) {
-      // Recalculate from historical logs
-      console.log('Recalculating from historical logs...');
-      newMuscleScores = calculateTimeBasedMuscleScores(exerciseLogs, exerciseLibrary);
-    } else {
-      // Initialize empty structure
-      console.log('Initializing empty muscle score structure...');
-      newMuscleScores = {};
-    }
-    
-    const updatedProfile = { ...userProfile, muscleScores: newMuscleScores };
+    const updatedProfile = { ...userProfile, muscleReps: newMuscleReps };
     await get().saveUserProfile(updatedProfile);
     
     console.log('Muscle score migration completed');
-    return newMuscleScores;
+    return newMuscleReps;
   },
 
   // Fix XP discrepancies by recalculating from all logs

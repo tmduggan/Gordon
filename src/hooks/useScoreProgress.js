@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { calculateWorkoutScore } from '../services/gamification/scoringService';
 
 export default function useScoreProgress(logs, exercises, cartData = {}, userProfile = null) {
   const [expectedScores, setExpectedScores] = useState({});
@@ -40,42 +39,10 @@ export default function useScoreProgress(logs, exercises, cartData = {}, userPro
       return;
     }
 
-    const [year, month, day] = cartData.datePart?.split('-').map(Number) || [];
-    const [hour, minute] = cartData.timePart?.split(':').map(Number) || [];
-    
-    if (!year || !month || !day) {
-      setExpectedScores({});
-      return;
-    }
-
-    const logTimestamp = new Date(year, month - 1, day, hour, minute);
+    // TODO: Implement XP scoring separately from muscle scores
     const newScores = {};
-
     for (const exerciseInCart of cartData.exerciseCart) {
-      const setData = cartData.currentLogData?.[exerciseInCart.id] || {};
-
-      const validSet = {
-        weight: Number(setData.weight) || null,
-        reps: Number(setData.reps) || null,
-        duration: Number(setData.duration) || null,
-      };
-
-      if (!validSet.weight && !validSet.reps && !validSet.duration) {
-        newScores[exerciseInCart.id] = 0;
-        continue;
-      }
-
-      const exerciseDetails = exercises.find(ex => ex.id === exerciseInCart.id);
-      const isDurationBased = validSet.duration && !validSet.weight && !validSet.reps;
-
-      const workoutToScore = {
-        timestamp: logTimestamp,
-        sets: !isDurationBased ? [{ weight: validSet.weight, reps: validSet.reps }] : null,
-        duration: isDurationBased ? validSet.duration : null,
-      };
-      
-      const score = calculateWorkoutScore(workoutToScore, logs, exerciseDetails, userProfile);
-      newScores[exerciseInCart.id] = score;
+      newScores[exerciseInCart.id] = 0; // Placeholder until XP scoring is implemented
     }
 
     setExpectedScores(newScores);

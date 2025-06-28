@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
-import { calculateWorkoutScore, updatePersonalBests } from '../services/gamification/scoringService';
-import { addWorkoutToMuscleScores } from '../services/gamification/muscleScoreService';
+import { addWorkoutToMuscleReps } from '../services/gamification/exerciseScoringService';
+import { updatePersonalBests } from '../services/gamification/exerciseBestsService';
 import { useToast } from './use-toast';
 
 export default function useExerciseLogging(exerciseLibrary, exerciseHistory, cart, search, dateTimePicker) {
@@ -20,7 +20,7 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
         const timestamp = dateTimePicker.getLogTimestamp();
         const userWorkoutHistory = exerciseHistory.logs; // All past logs
         let updatedProfile = { ...userProfile };
-        let profileScores = updatedProfile.muscleScores || {};
+        let profileReps = updatedProfile.muscleReps || {};
         let totalXP = 0;
 
         for (const item of cart.cart) {
@@ -33,23 +33,18 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
                 timestamp,
             };
 
-            const score = calculateWorkoutScore(
-                workoutToScore, 
-                userWorkoutHistory, 
-                exerciseDetailsFromLib,
-                userProfile
-            );
+            // Calculate XP (this will need to be implemented separately)
+            const score = 0; // TODO: Implement XP scoring
 
             totalXP += score;
 
-            // --- Update Time-Based Muscle Scores ---
-            profileScores = addWorkoutToMuscleScores(
-                profileScores,
+            // --- Update Muscle Reps ---
+            profileReps = addWorkoutToMuscleReps(
+                workoutToScore,
                 exerciseDetailsFromLib,
-                score,
-                timestamp
+                profileReps
             );
-            // --- End Score Update ---
+            // --- End Reps Update ---
 
             // Update personal bests if this workout has sets
             if (workoutToScore.sets && workoutToScore.sets.length > 0) {
@@ -93,7 +88,7 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
         }
         
         // Save updated profile with new personal bests and muscle scores
-        updatedProfile.muscleScores = profileScores;
+        updatedProfile.muscleReps = profileReps;
         await saveUserProfile(updatedProfile);
         
         cart.clearCart();

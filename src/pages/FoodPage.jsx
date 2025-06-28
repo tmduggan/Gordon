@@ -5,7 +5,6 @@ import LevelDisplay from '../components/gamification/LevelDisplay';
 // Component Imports
 import CartContainer from '../components/Cart/CartContainer';
 import Search from '../components/Search/Search';
-import { PinnedItemsGrid } from '../components/PinnedItem';
 import HistoryView from '../components/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
@@ -106,14 +105,6 @@ export default function FoodPage() {
                             {showPinnedFoods ? 'Hide' : 'Show'} Pinned Foods ({pinnedItems.length})
                         </Button>
                     </div>
-                )}
-                {showPinnedFoods && (
-                    <PinnedItemsGrid
-                        items={pinnedItems}
-                        onSelectItem={(item) => cart.addToCart(item, 1)}
-                        onPinToggleItem={togglePinFood}
-                        itemType="food"
-                    />
                 )}
                 
                 <Search

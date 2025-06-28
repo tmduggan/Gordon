@@ -3,10 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Unlock, Crown } from 'lucide-react';
-import MuscleMap from './muscleData/MuscleMap';
+import MuscleChart from './muscleData/MuscleChart';
 import useAuthStore from '../../store/useAuthStore';
-import { muscleMapping } from '../../utils/muscleMapping';
-import { getMuscleScore } from '../../services/gamification/muscleScoreService';
 
 // Your hardcoded preview muscle scores (based on your current state)
 const PREVIEW_MUSCLE_SCORES = {
@@ -27,52 +25,12 @@ const PREVIEW_MUSCLE_SCORES = {
 export default function PaywalledMuscleChart({ className = "" }) {
   const { userProfile, isPremium, isAdmin } = useAuthStore();
 
-  const { normalizedScores, rawScores, isPreview } = useMemo(() => {
-    if (isPremium()) {
-      // Use real user data for premium users
-      const libraryScores = userProfile?.muscleScores || {};
-      
-      // Map library muscle scores to SVG muscle scores
-      const svgScores = {};
-      
-      Object.entries(muscleMapping).forEach(([svgMuscle, libraryMuscles]) => {
-        let totalScore = 0;
-        libraryMuscles.forEach(libraryMuscle => {
-          const score = getMuscleScore(libraryScores, libraryMuscle, 'lifetime');
-          if (score > 0) {
-            totalScore += score;
-          }
-        });
-        if (totalScore > 0) {
-          svgScores[svgMuscle] = totalScore;
-        }
-      });
-
-      const normalized = { ...svgScores };
-      const maxScore = Math.max(...Object.values(normalized).filter(v => typeof v === 'number'), 1);
-      
-      if (maxScore > 0) {
-        for (const muscle in normalized) {
-          normalized[muscle] = (normalized[muscle] || 0) / maxScore;
-        }
-      }
-
-      return { normalizedScores: normalized, rawScores: svgScores, isPreview: false };
-    } else {
-      // Use preview data for free users
-      return { 
-        normalizedScores: PREVIEW_MUSCLE_SCORES, 
-        rawScores: PREVIEW_MUSCLE_SCORES, 
-        isPreview: true 
-      };
-    }
-  }, [userProfile, isPremium]);
+  const subscriptionStatus = userProfile?.subscription?.status || 'basic';
+  const isPreview = !isPremium();
 
   const handleUpgrade = () => {
     // TODO: Implement Stripe checkout
   };
-
-  const subscriptionStatus = userProfile?.subscription?.status || 'basic';
 
   return (
     <Card className={className}>
@@ -111,10 +69,7 @@ export default function PaywalledMuscleChart({ className = "" }) {
       <CardContent className="pt-0">
         <div className="relative">
           <div className={`w-full aspect-[5/3] ${isPreview ? 'opacity-90' : ''}`}>
-            <MuscleMap 
-              muscleScores={normalizedScores}
-              rawMuscleScores={rawScores}
-            />
+            <MuscleChart />
           </div>
           
           {isPreview && (

@@ -1,22 +1,22 @@
 // Workout suggestion service for Goliath
-// Analyzes user's muscle scores and generates personalized workout recommendations
+// Analyzes user's muscle reps and generates personalized workout recommendations
 
 import { muscleMapping } from '../../utils/muscleMapping';
-import { getMuscleScore, hasWorkedMuscle } from './muscleScoreService';
+import { getMuscleRepsForPeriod } from './exerciseScoringService';
 
 const SUGGESTION_CONFIG = {
   // Bonus XP for working lagging muscle groups
   laggingMuscleBonus: {
     neverTrained: 100,    // +100 XP for muscles never trained
-    underTrained: 50,     // +50 XP for muscles with low scores
+    underTrained: 50,     // +50 XP for muscles with low reps
     neglected: 25         // +25 XP for muscles not trained recently
   },
   
-  // Thresholds for determining lagging muscles
+  // Thresholds for determining lagging muscles (in reps)
   thresholds: {
-    neverTrained: 0,      // No XP in this muscle
-    underTrained: 100,    // Less than 100 XP
-    neglected: 500        // Less than 500 XP
+    neverTrained: 0,      // No reps in this muscle
+    underTrained: 100,    // Less than 100 reps
+    neglected: 500        // Less than 500 reps
   },
   
   // How many days without training to consider "neglected"
@@ -27,13 +27,13 @@ const SUGGESTION_CONFIG = {
 };
 
 /**
- * Analyze user's muscle scores to find lagging muscle groups
- * @param {object} muscleScores - User's current muscle scores
- * @param {Array} workoutLogs - User's workout history (deprecated, kept for compatibility)
+ * Analyze user's muscle reps to find lagging muscle groups
+ * @param {object} muscleReps - User's current muscle reps
+ * @param {Array} workoutLogs - User's workout history
  * @param {Array} exerciseLibrary - Available exercises
  * @returns {Array} Array of lagging muscle objects
  */
-export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerciseLibrary = []) {
+export function analyzeLaggingMuscles(muscleReps = {}, workoutLogs = [], exerciseLibrary = []) {
   const laggingMuscles = [];
   
   // Get all possible muscle groups from the library
@@ -51,20 +51,20 @@ export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerc
     }
   });
   
-  // Analyze each muscle group using time-based scores
+  // Analyze each muscle group using time-based reps
   allMuscles.forEach(muscle => {
-    const lifetimeScore = getMuscleScore(muscleScores, muscle, 'lifetime');
-    const hasWorkedToday = hasWorkedMuscle(muscleScores, muscle, 'today');
-    const hasWorkedThisWeek = hasWorkedMuscle(muscleScores, muscle, '7day');
-    const hasWorkedRecently = hasWorkedMuscle(muscleScores, muscle, '14day');
+    const lifetimeReps = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, 'lifetime');
+    const hasWorkedToday = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, 'today') > 0;
+    const hasWorkedThisWeek = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '7day') > 0;
+    const hasWorkedRecently = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '14day') > 0;
     
     let laggingType = null;
     let bonus = 0;
     
-    if (lifetimeScore === 0) {
+    if (lifetimeReps === 0) {
       laggingType = 'neverTrained';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.neverTrained;
-    } else if (lifetimeScore < SUGGESTION_CONFIG.thresholds.underTrained) {
+    } else if (lifetimeReps < SUGGESTION_CONFIG.thresholds.underTrained) {
       laggingType = 'underTrained';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.underTrained;
     } else if (!hasWorkedRecently) {
@@ -75,11 +75,11 @@ export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerc
     if (laggingType) {
       laggingMuscles.push({
         muscle,
-        score: lifetimeScore,
+        reps: lifetimeReps,
         laggingType,
         bonus,
         daysSinceTrained: hasWorkedRecently ? 0 : 14, // Simplified for now
-        priority: getPriorityScore(laggingType, lifetimeScore, hasWorkedRecently ? 0 : 14)
+        priority: getPriorityScore(laggingType, lifetimeReps, hasWorkedRecently ? 0 : 14)
       });
     }
   });
@@ -91,11 +91,11 @@ export function analyzeLaggingMuscles(muscleScores = {}, workoutLogs = [], exerc
 /**
  * Calculate priority score for sorting lagging muscles
  * @param {string} laggingType - Type of lagging (neverTrained, underTrained, neglected)
- * @param {number} score - Current muscle score
+ * @param {number} reps - Current muscle reps
  * @param {number} daysSinceTrained - Days since last trained
  * @returns {number} Priority score
  */
-function getPriorityScore(laggingType, score, daysSinceTrained) {
+function getPriorityScore(laggingType, reps, daysSinceTrained) {
   const baseScores = {
     neverTrained: 1000,
     underTrained: 500,

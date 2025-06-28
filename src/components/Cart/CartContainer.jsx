@@ -12,7 +12,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import CartRow from './CartRow';
 import SaveCartAsRecipe from '../nutrition/SaveCartAsRecipe';
 import { getFoodMacros } from '../../utils/dataUtils';
-import { calculateWorkoutScore } from '../../services/gamification/scoringService';
 import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/gamification/suggestionService';
 import { calculateStreakBonuses } from '../../services/gamification/levelService';
 import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../services/gamification/foodScoringService';
@@ -120,18 +119,8 @@ const CartFoodSummary = ({ items }) => {
 };
 
 const CartExerciseSummary = ({ items, logData, history, library, userProfile }) => {
-    const totalScore = items.reduce((acc, item) => {
-        const workoutData = logData[item.id] || {};
-        const exerciseDetails = library.find(e => e.id === item.id) || {};
-        
-        const score = calculateWorkoutScore(
-            { ...workoutData, timestamp: new Date() }, // Pass a dummy timestamp
-            history,
-            exerciseDetails,
-            userProfile
-        );
-        return acc + score;
-    }, 0);
+    // TODO: Implement XP scoring separately from muscle scores
+    const totalScore = 0; // Placeholder until XP scoring is implemented
 
     // Calculate breakdown for tooltip
     const scoreBreakdown = items.map(item => {
@@ -153,48 +142,19 @@ const CartExerciseSummary = ({ items, logData, history, library, userProfile }) 
             };
         }
 
-        // XP line objects: {xp, label}
+        // TODO: Implement XP calculation here
+        // For now, just show basic info
         let xpLines = [];
-        // Base XP calculation
         if (workoutData.sets && workoutData.sets.length > 0) {
             workoutData.sets.forEach((set, idx) => {
                 const weight = set.weight || 0;
                 const reps = set.reps || 0;
                 if (weight || reps) {
-                    const setXP = Math.round((weight * 0.1) + reps);
-                    let label = [];
-                    if (weight) label.push(`${weight} lbs`);
-                    if (reps) label.push(`${reps} reps`);
-                    xpLines.push({ xp: setXP, label: label.join(' ') });
+                    xpLines.push({ xp: 0, label: `${weight} lbs × ${reps} reps` });
                 }
             });
         } else if (workoutData.duration) {
-            const durXP = Math.round(workoutData.duration * 10);
-            xpLines.push({ xp: durXP, label: `${workoutData.duration} min` });
-        }
-
-        // Lagging muscle bonus
-        if (userProfile?.muscleScores) {
-            const laggingMuscles = analyzeLaggingMuscles(userProfile.muscleScores, history, [exerciseDetails]);
-            const laggingBonus = calculateLaggingMuscleBonus(workoutData, exerciseDetails, laggingMuscles);
-            if (laggingBonus > 0) xpLines.push({ xp: laggingBonus, label: 'Lagging muscle bonus' });
-        }
-
-        // Streak bonuses
-        if (history && history.length > 0) {
-            const streaks = calculateStreakBonuses(history);
-            if (streaks.dailyBonus > 0) {
-                xpLines.push({ xp: streaks.dailyBonus, label: 'First workout of day' });
-            }
-            if (streaks.weeklyBonus > 0) {
-                xpLines.push({ xp: streaks.weeklyBonus, label: 'First workout of week' });
-            }
-        }
-
-        // Novelty bonuses
-        if (exerciseDetails.target) {
-            xpLines.push({ xp: 40, label: 'First of day' });
-            xpLines.push({ xp: 75, label: 'First of week' });
+            xpLines.push({ xp: 0, label: `${workoutData.duration} min` });
         }
 
         return {
