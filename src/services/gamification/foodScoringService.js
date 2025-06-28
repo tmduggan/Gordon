@@ -17,7 +17,7 @@ const FOOD_GROUP_MULTIPLIERS = {
 };
 
 // Micronutrient tracking - FDA Daily Values for adults/children 4+
-const MICRONUTRIENT_ATTRS = [
+export const MICRONUTRIENT_ATTRS = [
   { attr_id: 301, label: 'Calcium', unit: 'mg', rdv: 1300 },
   { attr_id: 303, label: 'Iron', unit: 'mg', rdv: 18 },
   { attr_id: 306, label: 'Potassium', unit: 'mg', rdv: 4700 },
