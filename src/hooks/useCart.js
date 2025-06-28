@@ -47,7 +47,8 @@ const useCartStore = create((set) => ({
           fiber: scaledMacros.fiber,
           isRecipeItem: true,
           recipeName: item.name,
-          recipeId: item.id
+          recipeId: item.id,
+          originalFoodId: recipeItem.id
         };
       });
 

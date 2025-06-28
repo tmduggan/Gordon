@@ -50,7 +50,13 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
         let totalXP = 0;
         
         for (const item of cart.cart) {
-            let food = foodLibrary.items.find(f => f.id === item.id);
+            let food = null;
+            if (item.originalFoodId) {
+                food = foodLibrary.items.find(f => f.id === item.originalFoodId);
+            }
+            if (!food) {
+                food = foodLibrary.items.find(f => f.id === item.id);
+            }
             if (!food) {
                 const newFoodId = await foodLibrary.fetchAndSave(item);
                 if (newFoodId) food = { ...item, id: newFoodId };
