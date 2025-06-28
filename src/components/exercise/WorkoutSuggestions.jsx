@@ -349,10 +349,19 @@ export default function WorkoutSuggestions({
     return (
       <div className={className}>
         <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
-          {(isAdmin || isPremium) ? equipmentButtons : (
-            <div className="mb-2 text-xs text-blue-700 font-medium">
-              Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
-            </div>
+          {equipmentButtons && (
+            isAdmin || isPremium ? (
+              equipmentButtons
+            ) : (
+              <div className="relative opacity-50 pointer-events-none select-none mb-2">
+                {equipmentButtons}
+                <div className="absolute inset-0 flex items-center justify-center z-10">
+                  <span className="text-xs text-blue-700 font-medium bg-white bg-opacity-80 px-2 py-1 rounded shadow">
+                    Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
+                  </span>
+                </div>
+              </div>
+            )
           )}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -424,10 +433,19 @@ export default function WorkoutSuggestions({
   return (
     <div className={className}>
       <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
-        {(isAdmin || isPremium) ? equipmentButtons : (
-          <div className="mb-2 text-xs text-blue-700 font-medium">
-            Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
-          </div>
+        {equipmentButtons && (
+          isAdmin || isPremium ? (
+            equipmentButtons
+          ) : (
+            <div className="relative opacity-50 pointer-events-none select-none mb-2">
+              {equipmentButtons}
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <span className="text-xs text-blue-700 font-medium bg-white bg-opacity-80 px-2 py-1 rounded shadow">
+                  Equipment selection is a Premium feature. Upgrade to unlock gym and cardio suggestions!
+                </span>
+              </div>
+            </div>
+          )
         )}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
