@@ -15,8 +15,8 @@ export default function Auth() {
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="text-center">
-        <img src="/exercise-favicon.png" alt="Goliath Logo" className="mx-auto mb-6 w-16 h-16" />
-        <h1 className="text-4xl font-bold mb-8 tracking-tight">GOLIATH</h1>
+        <img src="/exercise-favicon.png" alt="Goliath Logo" className="mx-auto mb-6 w-28 h-28" />
+        <h1 className="text-5xl font-extrabold mb-8 tracking-widest" style={{ fontFamily: 'Bebas Neue, Impact, sans-serif' }}>GOLIATH</h1>
         <Button onClick={handleGoogleSignIn} size="lg">
           <Chrome className="mr-2 h-4 w-4" /> Login with Google
         </Button>

@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Eye, EyeOff, Target, Zap, Pin, PinOff, Clock, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, Target, Zap, Pin, PinOff, Clock, TrendingUp, RefreshCw } from 'lucide-react';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import ExerciseTooltip from './ExerciseTooltip';
 
@@ -31,6 +31,8 @@ import ExerciseTooltip from './ExerciseTooltip';
  *   - children: node
  *   - showHideButton: bool
  *   - onHide: function
+ *   - showRefreshButton: bool
+ *   - onRefresh: function
  */
 export default function ExerciseDisplay({ 
   exercise, 
@@ -53,7 +55,9 @@ export default function ExerciseDisplay({
   nameClassName = "text-lg",
   children,
   showHideButton = false,
-  onHide
+  onHide,
+  showRefreshButton = false,
+  onRefresh
 }) {
   if (!exercise) return null;
 
@@ -246,6 +250,27 @@ export default function ExerciseDisplay({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Hide this exercise from suggestions and search</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {/* Per-suggestion Refresh Button */}
+        {showRefreshButton && onRefresh && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRefresh}
+                  disabled={loading}
+                  className="h-8 px-3"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh this suggestion</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

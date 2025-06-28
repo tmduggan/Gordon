@@ -12,7 +12,8 @@ import {
   Clock,
   TrendingUp,
   Info,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  RefreshCw
 } from 'lucide-react';
 import { 
   analyzeLaggingMuscles, 
@@ -62,18 +63,18 @@ export default function WorkoutSuggestions({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Helper: get remaining refreshes for today
+  // Helper: get remaining refreshes for today (basic: 3 per day)
   const getRemainingRefreshes = () => {
     if (!userProfile) return 0;
     const today = new Date().toISOString().split('T')[0];
     const refreshCount = userProfile.refreshCount || { date: today, count: 0 };
     if (refreshCount.date !== today) {
-      return isAdmin || isPremium ? Infinity : 1;
+      return isAdmin || isPremium ? Infinity : 3;
     }
-    return isAdmin || isPremium ? Infinity : Math.max(0, 1 - refreshCount.count);
+    return isAdmin || isPremium ? Infinity : Math.max(0, 3 - refreshCount.count);
   };
 
-  // Helper: increment refresh count in profile
+  // Increment refresh count in profile (shared for all/per-suggestion)
   const incrementRefreshCount = async () => {
     if (!userProfile) return;
     const today = new Date().toISOString().split('T')[0];
@@ -187,7 +188,39 @@ export default function WorkoutSuggestions({
       };
       try {
         await saveUserProfile(updatedProfile);
-        // Generate new suggestions
+        // Generate new suggestions, ensuring no repeats from previous set
+        const usedIds = new Set(suggestions.map(s => s.exercise.id));
+        const allExercises = exerciseLibrary.filter(e => !usedIds.has(e.id));
+        let newSuggestions = [];
+        // If not enough alternatives, allow reuse
+        if (allExercises.length < suggestions.length) {
+          newSuggestions = generateWorkoutSuggestions(
+            analyzeLaggingMuscles(muscleScores, workoutLogs, exerciseLibrary),
+            exerciseLibrary,
+            availableEquipment,
+            hiddenSuggestions,
+            exerciseCategory,
+            selectedBodyweight,
+            selectedGym,
+            selectedCardio,
+            userProfile?.pinnedExercises || [],
+            userProfile?.favoriteExercises || []
+          );
+        } else {
+          // Pick new unique exercises
+          for (let i = 0; i < suggestions.length; i++) {
+            const idx = Math.floor(Math.random() * allExercises.length);
+            const exercise = allExercises.splice(idx, 1)[0];
+            newSuggestions.push({
+              ...suggestions[i],
+              id: `${exercise.id}-${Date.now()}-${i}`,
+              exercise,
+            });
+          }
+        }
+        setSuggestions(newSuggestions);
+        await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
+        if (!isAdmin && !isPremium) await incrementRefreshCount();
         refreshSuggestions();
       } catch (error) {
         console.error('Error clearing suggestions:', error);
@@ -345,6 +378,46 @@ export default function WorkoutSuggestions({
   const refreshCount = isAdmin || isPremium ? '∞' : 1;
   const hideCount = isAdmin ? '∞' : isPremium ? '∞' : remainingHides;
 
+  // Per-suggestion refresh handler
+  const handleRefreshSuggestion = async (suggestionId) => {
+    if (!isAdmin && !isPremium && getRemainingRefreshes() <= 0) {
+      toast({
+        title: "Daily Refresh Limit Reached",
+        description: "You can only refresh 3 suggestions per day as a Basic user. Upgrade to Premium for unlimited refreshes.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const idx = suggestions.findIndex(s => s.id === suggestionId);
+    if (idx === -1) return;
+    // Exclude current suggestions from pool
+    const usedIds = new Set(suggestions.map(s => s.exercise.id));
+    // Find all possible alternatives for this slot
+    const allAlternatives = exerciseLibrary.filter(e => !usedIds.has(e.id) || e.id === suggestions[idx].exercise.id);
+    // Exclude the current exercise
+    const alternatives = allAlternatives.filter(e => e.id !== suggestions[idx].exercise.id);
+    if (alternatives.length === 0) {
+      toast({
+        title: "No Alternative Exercise",
+        description: "No other available exercise for this slot.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Pick a random alternative
+    const newExercise = alternatives[Math.floor(Math.random() * alternatives.length)];
+    const newSuggestion = {
+      ...suggestions[idx],
+      id: `${newExercise.id}-${Date.now()}`,
+      exercise: newExercise,
+    };
+    const newSuggestions = [...suggestions];
+    newSuggestions[idx] = newSuggestion;
+    setSuggestions(newSuggestions);
+    await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
+    if (!isAdmin && !isPremium) await incrementRefreshCount();
+  };
+
   if (loading) {
     return (
       <div className={className}>
@@ -468,11 +541,11 @@ export default function WorkoutSuggestions({
                 variant="outline" 
                 size="sm" 
                 onClick={clearAllSuggestions}
-                className="h-8 px-2 text-xs"
+                className="h-8 px-2 text-xs flex items-center gap-1"
                 disabled={loading || (!isAdmin && !isPremium && remainingRefreshes <= 0)}
               >
-                <Lightbulb className="h-3 w-3 mr-1" />
-                {loading ? 'Refreshing...' : 'Refresh'}
+                {[...Array(3)].map((_, i) => <RefreshCw key={i} className="h-3 w-3" />)}
+                {loading ? 'Refreshing...' : 'Refresh All'}
               </Button>
               
               {/* Undo Hide Button */}
@@ -502,9 +575,11 @@ export default function WorkoutSuggestions({
                 showPinIcon={false}
                 showUnhideButton={false}
                 showHideButton={true}
+                showRefreshButton={true}
                 onHide={() => handleHideSuggestion(suggestion.id)}
                 onPinToggle={null}
                 onUnhide={null}
+                onRefresh={() => handleRefreshSuggestion(suggestion.id)}
                 loading={false}
                 className={'opacity-60 pointer-events-none bg-green-50 border-green-200'}
                 onClick={() => handleAddToCart(suggestion)}
@@ -525,9 +600,11 @@ export default function WorkoutSuggestions({
                   showPinIcon={false}
                   showUnhideButton={false}
                   showHideButton={true}
+                  showRefreshButton={true}
                   onHide={() => handleHideSuggestion(suggestion.id)}
                   onPinToggle={null}
                   onUnhide={null}
+                  onRefresh={() => handleRefreshSuggestion(suggestion.id)}
                   loading={false}
                   className={isCompleted ? 'opacity-60 pointer-events-none' : ''}
                   onClick={() => handleAddToCart(suggestion)}
