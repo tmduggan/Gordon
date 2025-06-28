@@ -18,6 +18,7 @@ import AdminControlsModal from './AdminControlsModal';
 import NutritionGoals from './NutritionGoals';
 import EquipmentModal from './EquipmentModal';
 import SubscriptionStatus from './SubscriptionStatus';
+import SubscriptionManagement from '../payment/SubscriptionManagement';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
@@ -327,41 +328,47 @@ export default function ProfileModal({ open, onOpenChange }) {
 
           {/* Profile Tab */}
           <TabsContent value="profile">
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Profile Info</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2">
-                  <label className="w-20">Name</label>
-                  <input
-                    type="text"
-                    value={profile.name}
-                    onChange={e => setProfile({ ...profile, name: e.target.value })}
-                    className="border rounded px-2 py-1 w-40"
-                  />
+            <div className="space-y-6">
+              {/* Profile Info */}
+              <div>
+                <h3 className="font-semibold mb-2">Profile Info</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="w-20">Name</label>
+                    <input
+                      type="text"
+                      value={profile.name}
+                      onChange={e => setProfile({ ...profile, name: e.target.value })}
+                      className="border rounded px-2 py-1 w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="w-20">Email</label>
+                    <input
+                      type="email"
+                      value={profile.email}
+                      disabled
+                      className="border rounded px-2 py-1 w-40 bg-gray-100"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="w-20">Time Zone</label>
+                    <input
+                      type="text"
+                      value={profile.timeZone}
+                      onChange={e => setProfile({ ...profile, timeZone: e.target.value })}
+                      className="border rounded px-2 py-1 w-40"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="w-20">Email</label>
-                  <input
-                    type="email"
-                    value={profile.email}
-                    disabled
-                    className="border rounded px-2 py-1 w-40 bg-gray-100"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="w-20">Time Zone</label>
-                  <input
-                    type="text"
-                    value={profile.timeZone}
-                    onChange={e => setProfile({ ...profile, timeZone: e.target.value })}
-                    className="border rounded px-2 py-1 w-40"
-                  />
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button onClick={handleSaveProfile}>Save Profile</Button>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button onClick={handleSaveProfile}>Save Profile</Button>
-              </div>
+
+              {/* Subscription Management */}
+              <SubscriptionManagement />
             </div>
           </TabsContent>
 

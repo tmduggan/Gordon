@@ -5,6 +5,8 @@ import ProfileMenu from "@/components/profile/ProfileMenu";
 import MainPage from "./pages/MainPage";
 import ExercisePage from "./pages/ExercisePage";
 import FoodPage from "./pages/FoodPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentCancelPage from "./pages/PaymentCancelPage";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -41,7 +43,21 @@ export default function App() {
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('exercise');
   const [theme, setTheme] = useState('theme-exercise');
+  const [paymentStatus, setPaymentStatus] = useState(null);
   
+  // Check for payment result URLs
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    const paymentResult = urlParams.get('payment_result');
+    
+    if (sessionId) {
+      setPaymentStatus('success');
+    } else if (paymentResult === 'cancel') {
+      setPaymentStatus('cancel');
+    }
+  }, []);
+
   useEffect(() => {
     const favicon = document.getElementById('favicon');
     if (!favicon) return;
@@ -70,6 +86,15 @@ export default function App() {
 
   if (!user) {
     return <Auth />;
+  }
+
+  // Show payment result pages if needed
+  if (paymentStatus === 'success') {
+    return <PaymentSuccessPage />;
+  }
+
+  if (paymentStatus === 'cancel') {
+    return <PaymentCancelPage />;
   }
 
   const Navigation = () => (

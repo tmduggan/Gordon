@@ -32,6 +32,6 @@ export async function logFoodEntry(item, user, serving, timestamp) {
     const subcollectionRef = collection(db, 'users', user.uid, 'foodLog');
     const docRef = await addDoc(subcollectionRef, newLog);
     
-    console.log("Food entry logged with new ID: ", docRef.id, "XP: ", xp);
+    // console.log("Food entry logged with new ID: ", docRef.id, "XP: ", xp);
     return { id: docRef.id, ...newLog };
 } 

@@ -62,8 +62,44 @@ export default function WorkoutSuggestions({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Generate suggestions when dependencies change
+  // Helper: get remaining refreshes for today
+  const getRemainingRefreshes = () => {
+    if (!userProfile) return 0;
+    const today = new Date().toISOString().split('T')[0];
+    const refreshCount = userProfile.refreshCount || { date: today, count: 0 };
+    if (refreshCount.date !== today) {
+      return isAdmin || isPremium ? Infinity : 1;
+    }
+    return isAdmin || isPremium ? Infinity : Math.max(0, 1 - refreshCount.count);
+  };
+
+  // Helper: increment refresh count in profile
+  const incrementRefreshCount = async () => {
+    if (!userProfile) return;
+    const today = new Date().toISOString().split('T')[0];
+    let refreshCount = userProfile.refreshCount || { date: today, count: 0 };
+    if (refreshCount.date !== today) {
+      refreshCount = { date: today, count: 0 };
+    }
+    const newRefreshCount = { date: today, count: refreshCount.count + 1 };
+    const newProfile = { ...userProfile, refreshCount: newRefreshCount };
+    await saveUserProfile(newProfile);
+  };
+
+  // Modified refreshSuggestions to enforce limit
   const refreshSuggestions = async () => {
+    if (!isAdmin && !isPremium) {
+      const remaining = getRemainingRefreshes();
+      if (remaining <= 0) {
+        toast({
+          title: "Daily Refresh Limit Reached",
+          description: "You can only refresh suggestions once per day as a Basic user. Upgrade to Premium for unlimited refreshes.",
+          variant: "destructive",
+        });
+        return;
+      }
+      await incrementRefreshCount();
+    }
     setLoading(true);
     setTimeout(async () => {
       const laggingMuscles = analyzeLaggingMuscles(muscleScores, workoutLogs, exerciseLibrary);
@@ -84,12 +120,9 @@ export default function WorkoutSuggestions({
         userProfile?.favoriteExercises || []
       );
       setSuggestions(newSuggestions);
-      
-      // Save suggestions to user profile
       await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
-      
       setLoading(false);
-    }, 800); // 800ms for a brief loading animation
+    }, 800);
   };
 
   // Save suggestions to user profile
@@ -229,7 +262,7 @@ export default function WorkoutSuggestions({
       const remainingHides = getRemainingHides();
       toast({
         title: "Daily Hide Limit Reached",
-        description: `You can only hide ${userProfile.subscription?.status === 'basic' ? '2' : 'unlimited'} exercises per day. Upgrade to Premium for unlimited hides.`,
+        description: `You can only hide ${userProfile.subscription?.status === 'basic' ? '1' : 'unlimited'} exercises per day. Upgrade to Premium for unlimited hides.`,
         variant: "destructive",
       });
     }
@@ -307,14 +340,15 @@ export default function WorkoutSuggestions({
   const isPremium = userProfile?.subscription?.status === 'premium';
   const isBasic = userProfile?.subscription?.status === 'basic' || (!isAdmin && !isPremium);
   const remainingHides = getRemainingHides();
-  // For now, assume unlimited refreshes for all, but you can add logic if you want to limit refreshes for basic
-  const refreshCount = isAdmin || isPremium ? '∞' : '∞'; // Placeholder for future logic
+  const remainingRefreshes = getRemainingRefreshes();
+  // Limit basic users to 1 refresh per day
+  const refreshCount = isAdmin || isPremium ? '∞' : 1;
   const hideCount = isAdmin ? '∞' : isPremium ? '∞' : remainingHides;
 
   if (loading) {
     return (
       <div className={className}>
-        <Card className="w-[70%] ml-auto mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50">
+        <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
           {equipmentButtons}
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -324,7 +358,7 @@ export default function WorkoutSuggestions({
               <div className="flex flex-col items-end gap-1 min-w-[90px]">
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <span className="font-medium">Refreshes:</span>
-                  {refreshCount === '∞' ? <InfinityIcon className="h-4 w-4" /> : refreshCount}
+                  {isAdmin || isPremium ? <InfinityIcon className="h-4 w-4" /> : remainingRefreshes}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <span className="font-medium">Hides:</span>
@@ -334,12 +368,12 @@ export default function WorkoutSuggestions({
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto min-h-[180px]">
               {/* Show 3 loading placeholder cards to maintain consistent height */}
               {Array.from({ length: 3 }, (_, index) => (
                 <Card
                   key={`loading-${index}`}
-                  className="p-4 flex flex-row items-center justify-between min-w-full relative"
+                  className="p-4 flex flex-row items-center justify-between min-w-full relative min-h-[56px]"
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
                     <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -385,7 +419,7 @@ export default function WorkoutSuggestions({
   
   return (
     <div className={className}>
-      <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50">
+      <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
         {equipmentButtons}
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -395,7 +429,7 @@ export default function WorkoutSuggestions({
             <div className="flex flex-col items-end gap-1 min-w-[90px]">
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <span className="font-medium">Refreshes:</span>
-                {refreshCount === '∞' ? <InfinityIcon className="h-4 w-4" /> : refreshCount}
+                {isAdmin || isPremium ? <InfinityIcon className="h-4 w-4" /> : remainingRefreshes}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-600">
                 <span className="font-medium">Hides:</span>
@@ -409,7 +443,7 @@ export default function WorkoutSuggestions({
                 size="sm" 
                 onClick={clearAllSuggestions}
                 className="h-8 px-2 text-xs"
-                disabled={loading}
+                disabled={loading || (!isAdmin && !isPremium && remainingRefreshes <= 0)}
               >
                 <Lightbulb className="h-3 w-3 mr-1" />
                 {loading ? 'Refreshing...' : 'Refresh'}
@@ -431,7 +465,7 @@ export default function WorkoutSuggestions({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto min-h-[180px]">
             {/* Show completed suggestions first */}
             {completedSuggestions.map((suggestion) => (
               <CompletedExerciseBar
@@ -453,6 +487,8 @@ export default function WorkoutSuggestions({
                   laggingType={suggestion.laggingMuscle?.laggingType}
                   showPinIcon={false}
                   showUnhideButton={false}
+                  showHideButton={true}
+                  onHide={() => handleHideSuggestion(suggestion.id)}
                   onPinToggle={null}
                   onUnhide={null}
                   loading={false}
@@ -470,6 +506,7 @@ export default function WorkoutSuggestions({
             {Array.from({ length: placeholderCount }, (_, index) => (
               <Card
                 key={`placeholder-${index}`}
+                className="min-h-[56px]"
               ></Card>
             ))}
           </div>

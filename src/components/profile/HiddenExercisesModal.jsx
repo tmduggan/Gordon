@@ -119,7 +119,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                 </div>
                 {isBasic && (
                   <div className="mt-2 text-blue-600 font-medium">
-                    Remaining hides today: {remainingHides}/2
+                    Remaining hides today: {remainingHides}/1
                   </div>
                 )}
               </div>

@@ -1,8 +1,8 @@
 {
   "functions": [
     {
-      "source": "julia",
-      "codebase": "julia",
+      "source": "functions",
+      "codebase": "functions",
       "ignore": [
         "node_modules",
         ".git",

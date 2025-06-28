@@ -51,7 +51,7 @@ export default function HiddenExercisesContainer() {
         <h3 className="font-semibold text-sm">Hidden Exercises</h3>
         {isBasic && (
           <span className="text-xs text-gray-500 ml-auto">
-            Remaining hides today: {remainingHides}/2
+            Remaining hides today: {remainingHides}/1
           </span>
         )}
       </div>

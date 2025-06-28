@@ -34,13 +34,13 @@ const useAuthStore = create((set, get) => ({
     const unsubscribe = onSnapshot(userDocRef, async (snap) => {
       if (snap.exists()) {
         // --- DEBUGGING ---
-        console.log("Auth store received profile update:", snap.data());
+        // console.log("Auth store received profile update:", snap.data());
         // --- END DEBUGGING ---
         const profileData = snap.data();
         
         // Ensure subscription field exists
         if (!profileData.subscription) {
-          console.log('Subscription field missing in loaded profile, creating it...');
+          // console.log('Subscription field missing in loaded profile, creating it...');
           const currentUser = get().user;
           const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
           
@@ -60,7 +60,7 @@ const useAuthStore = create((set, get) => ({
           set({ userProfile: profileData, loading: false });
         }
       } else {
-        console.log("No user profile found, creating a default one.");
+        // console.log("No user profile found, creating a default one.");
         
         // Get current user to check if it's the admin
         const currentUser = get().user;
@@ -106,7 +106,7 @@ const useAuthStore = create((set, get) => ({
         set({ userProfile: snap.data(), loading: false });
       } else {
         // Handle case where user exists but has no profile yet
-        console.log("No user profile found, creating a default one.");
+        // console.log("No user profile found, creating a default one.");
         
         // Get current user to check if it's the admin
         const currentUser = get().user;
@@ -149,7 +149,7 @@ const useAuthStore = create((set, get) => ({
       // The listener will automatically pick up this change.
       // We no longer need to manually set the state here.
       await setDoc(userDocRef, profile, { merge: true });
-      console.log("User profile saved successfully.");
+      // console.log("User profile saved successfully.");
     } catch (error) {
       console.error("Error saving user profile:", error);
     }
@@ -201,7 +201,7 @@ const useAuthStore = create((set, get) => ({
     };
     
     await get().saveUserProfile(newProfile);
-    console.log(`Subscription status changed to: ${newStatus}`);
+    // console.log(`Subscription status changed to: ${newStatus}`);
   },
 
   // Hide an exercise from suggestions
@@ -219,12 +219,12 @@ const useAuthStore = create((set, get) => ({
       hideCount.count = 0;
     }
     
-    // Check limit for basic users (2 hides per day)
+    // Check limit for basic users (1 hide per day)
     const isBasic = userProfile.subscription?.status === 'basic';
-    const maxHides = isBasic ? 2 : Infinity;
+    const maxHides = isBasic ? 1 : Infinity;
     
     if (hideCount.count >= maxHides) {
-      console.log(`Daily hide limit reached (${maxHides} hides per day)`);
+      // console.log(`Daily hide limit reached (${maxHides} hides per day)`);
       return false; // Indicate failure
     }
     
@@ -241,7 +241,7 @@ const useAuthStore = create((set, get) => ({
       };
       
       await get().saveUserProfile(newProfile);
-      console.log(`Exercise ${exerciseId} hidden. Hides today: ${newHideCount.count}/${maxHides}`);
+      // console.log(`Exercise ${exerciseId} hidden. Hides today: ${newHideCount.count}/${maxHides}`);
       return true; // Indicate success
     }
     
@@ -262,7 +262,7 @@ const useAuthStore = create((set, get) => ({
     };
     
     await get().saveUserProfile(newProfile);
-    console.log(`Exercise ${exerciseId} unhidden`);
+    // console.log(`Exercise ${exerciseId} unhidden`);
   },
 
   // Get remaining hides for today
@@ -275,10 +275,10 @@ const useAuthStore = create((set, get) => ({
     
     // Reset count if it's a new day
     if (hideCount.date !== today) {
-      return userProfile.subscription?.status === 'basic' ? 2 : Infinity;
+      return userProfile.subscription?.status === 'basic' ? 1 : Infinity;
     }
     
-    const maxHides = userProfile.subscription?.status === 'basic' ? 2 : Infinity;
+    const maxHides = userProfile.subscription?.status === 'basic' ? 1 : Infinity;
     return Math.max(0, maxHides - hideCount.count);
   },
 
@@ -286,33 +286,33 @@ const useAuthStore = create((set, get) => ({
   addXP: async (xpAmount) => {
     const { userProfile } = get();
     if (!userProfile) {
-      console.warn('Cannot add XP: no user profile found');
+      // console.warn('Cannot add XP: no user profile found');
       return;
     }
     
     const currentXP = userProfile.totalXP || 0;
     const newXP = currentXP + xpAmount;
     
-    console.log(`Adding XP: current=${currentXP}, adding=${xpAmount}, new=${newXP}`);
+    // console.log(`Adding XP: current=${currentXP}, adding=${xpAmount}, new=${newXP}`);
     
     const newProfile = { ...userProfile, totalXP: newXP };
     await get().saveUserProfile(newProfile);
     
-    console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
+    // console.log(`Added ${xpAmount} XP. New total: ${newXP}`);
   },
 
   // Migrate muscle scores to new time-based format
   migrateMuscleScores: async (exerciseLogs = [], exerciseLibrary = []) => {
     const { userProfile } = get();
     if (!userProfile) {
-      console.warn('Cannot migrate muscle scores: no user profile found');
+      // console.warn('Cannot migrate muscle scores: no user profile found');
       return;
     }
 
     // Import the migration function
     const { addWorkoutToMuscleReps } = await import('../services/gamification/exerciseScoringService');
     
-    console.log('Starting muscle score migration...');
+    // console.log('Starting muscle score migration...');
     
     // Initialize empty muscle reps structure
     const newMuscleReps = {};
@@ -320,7 +320,7 @@ const useAuthStore = create((set, get) => ({
     const updatedProfile = { ...userProfile, muscleReps: newMuscleReps };
     await get().saveUserProfile(updatedProfile);
     
-    console.log('Muscle score migration completed');
+    // console.log('Muscle score migration completed');
     return newMuscleReps;
   },
 
@@ -335,16 +335,16 @@ const useAuthStore = create((set, get) => ({
     const validation = validateUserXP(userProfile, exerciseLogs, foodLogs);
     
     if (!validation.isValid) {
-      console.log(`XP discrepancy detected: stored=${validation.storedXP}, calculated=${validation.calculatedXP}, difference=${validation.discrepancy}`);
+      // console.log(`XP discrepancy detected: stored=${validation.storedXP}, calculated=${validation.calculatedXP}, difference=${validation.discrepancy}`);
       
       const correctedProfile = { ...userProfile, totalXP: validation.calculatedXP };
       await get().saveUserProfile(correctedProfile);
       
-      console.log(`Fixed XP discrepancy. New total: ${validation.calculatedXP}`);
+      // console.log(`Fixed XP discrepancy. New total: ${validation.calculatedXP}`);
       return validation.calculatedXP;
     }
     
-    console.log('XP validation passed - no discrepancy found');
+    // console.log('XP validation passed - no discrepancy found');
     return validation.storedXP;
   },
 
@@ -359,17 +359,17 @@ const useAuthStore = create((set, get) => ({
     const calculatedXP = recalculateTotalXPFromLogs(exerciseLogs, foodLogs);
     const currentXP = userProfile.totalXP || 0;
     
-    console.log(`Recalculating XP: current=${currentXP}, calculated=${calculatedXP}`);
+    // console.log(`Recalculating XP: current=${currentXP}, calculated=${calculatedXP}`);
     
     if (calculatedXP !== currentXP) {
       const correctedProfile = { ...userProfile, totalXP: calculatedXP };
       await get().saveUserProfile(correctedProfile);
       
-      console.log(`Synced XP to calculated total: ${calculatedXP}`);
+      // console.log(`Synced XP to calculated total: ${calculatedXP}`);
       return calculatedXP;
     }
     
-    console.log('XP already in sync');
+    // console.log('XP already in sync');
     return currentXP;
   },
 
@@ -393,7 +393,7 @@ const useAuthStore = create((set, get) => ({
       const newProfile = { ...userProfile, pinnedFoods: newPinned };
       await get().saveUserProfile(newProfile);
     } catch (error) {
-      console.error("Error updating pinned foods:", error);
+      // console.error("Error updating pinned foods:", error);
       // Revert optimistic update on error
       set({ userProfile });
     }
@@ -419,7 +419,7 @@ const useAuthStore = create((set, get) => ({
       const newProfile = { ...userProfile, pinnedExercises: newPinned };
       await get().saveUserProfile(newProfile);
     } catch (error) {
-      console.error("Error updating pinned exercises:", error);
+      // console.error("Error updating pinned exercises:", error);
       // Revert optimistic update on error
       set({ userProfile });
     }
@@ -456,7 +456,7 @@ const useAuthStore = create((set, get) => ({
     
     // Check if subscription field exists
     if (!userProfile.subscription) {
-      console.log('Subscription field missing, creating it...');
+      // console.log('Subscription field missing, creating it...');
       const currentUser = get().user;
       const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
       
@@ -471,11 +471,11 @@ const useAuthStore = create((set, get) => ({
       };
       
       await get().saveUserProfile(newProfile);
-      console.log('Subscription field created successfully');
+      // console.log('Subscription field created successfully');
       return newProfile;
     }
     
-    console.log('Subscription field already exists');
+    // console.log('Subscription field already exists');
     return userProfile;
   },
 
@@ -494,7 +494,7 @@ const useAuthStore = create((set, get) => ({
       const newProfile = { ...userProfile, favoriteExercises: newFavorites };
       await saveUserProfile(newProfile);
     } catch (error) {
-      console.error("Error updating favorite exercises:", error);
+      // console.error("Error updating favorite exercises:", error);
     }
   },
 

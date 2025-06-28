@@ -9,14 +9,7 @@ const useCartStore = create((set) => ({
 
   addToCart: (type, item, quantity = 1) => set((state) => {
     // Debug: Log relevant fields when adding to cart
-    console.log('[Cart Add]', {
-      id: item.id,
-      label: item.label || item.food_name || item.name,
-      serving_qty: item.serving_qty,
-      serving_unit: item.serving_unit,
-      serving_weight_grams: item.serving_weight_grams,
-      alt_measures: item.alt_measures
-    });
+    // console.log('[Cart Add]', {...});
     const newCarts = { ...state.carts };
     const cart = [...newCarts[type]];
 

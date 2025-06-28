@@ -23,6 +23,7 @@ export const saveWorkoutLog = async (logObject) => {
 
     const docRef = await addDoc(subcollectionRef, logData);
 
-    console.log('Workout entry saved with new ID: ', docRef.id);
+    // Optionally, just log:
+    console.log('Workout entry saved successfully.');
     return docRef.id;
 }; 

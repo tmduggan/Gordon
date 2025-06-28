@@ -29,6 +29,8 @@ import ExerciseTooltip from './ExerciseTooltip';
  *   - className: string
  *   - nameClassName: string
  *   - children: node
+ *   - showHideButton: bool
+ *   - onHide: function
  */
 export default function ExerciseDisplay({ 
   exercise, 
@@ -49,7 +51,9 @@ export default function ExerciseDisplay({
   loading = false,
   className = "",
   nameClassName = "text-lg",
-  children
+  children,
+  showHideButton = false,
+  onHide
 }) {
   if (!exercise) return null;
 
@@ -83,12 +87,17 @@ export default function ExerciseDisplay({
     }
   };
 
+  // Utility: Convert string to Title Case (capitalize first letter of each word, leave numbers/symbols as-is)
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1));
+  }
+
   // Layout selection
   if (variant === 'detailed') {
     return (
       <Card className={`p-4 ${className}`}>
         <div className="flex flex-col gap-2">
-          <strong className="block text-lg">{name}</strong>
+          <strong className="block text-lg">{toTitleCase(name)}</strong>
           <div className="flex flex-row items-center gap-2">
             {muscleIcon && <img src={muscleIcon} alt={target} className="h-6 w-6 rounded-md border border-black" />}
             {equipmentIcon && <img src={equipmentIcon} alt={equipment} className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" />}
@@ -127,7 +136,7 @@ export default function ExerciseDisplay({
         {/* Exercise Name */}
         <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType}>
           <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
-            <strong className={`block mr-2 ${nameClassName}`}>{name}</strong>
+            <strong className={`block mr-2 ${nameClassName}`}>{toTitleCase(name)}</strong>
             <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
               {muscleIcon && (
                 <img 
@@ -212,6 +221,31 @@ export default function ExerciseDisplay({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Show this exercise in suggestions again</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {/* Hide Button */}
+        {showHideButton && onHide && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onHide(id)}
+                  disabled={loading}
+                  className="h-8 px-3"
+                >
+                  {loading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 mr-1" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Hide this exercise from suggestions and search</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
