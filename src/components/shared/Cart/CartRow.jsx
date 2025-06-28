@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import MacroDisplay from '../nutrition/MacroDisplay';
-import ServingSizeEditor from '../nutrition/ServingSizeEditor';
-import { getFoodMacros } from '../../utils/dataUtils';
+import MacroDisplay from '../../nutrition/MacroDisplay';
+import ServingSizeEditor from '../../nutrition/ServingSizeEditor';
+import { getFoodMacros } from '../../../utils/dataUtils';
 import { Button } from '@/components/ui/button';
 import { XCircle, Info, ChefHat, MoreVertical } from 'lucide-react';
-import ExerciseLogInputs from '../exercise/ExerciseLogInputs';
+import ExerciseLogInputs from '../../exercise/ExerciseLogInputs';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import NutritionLabel from '../nutrition/NutritionLabel';
+import NutritionLabel from '../../nutrition/NutritionLabel';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,

@@ -10,11 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CartRow from './CartRow';
-import SaveCartAsRecipe from '../nutrition/SaveCartAsRecipe';
-import { getFoodMacros } from '../../utils/dataUtils';
-import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../services/gamification/suggestionService';
-import { calculateStreakBonuses } from '../../services/gamification/levelService';
-import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../services/gamification/foodScoringService';
+import SaveCartAsRecipe from '../../nutrition/SaveCartAsRecipe';
+import { getFoodMacros } from '../../../utils/dataUtils';
+import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../../services/gamification/suggestionService';
+import { calculateStreakBonuses } from '../../../services/gamification/levelService';
+import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../../services/gamification/foodScoringService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {

@@ -21,8 +21,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { useToast } from '../../hooks/use-toast';
-import useLibrary from '../../hooks/fetchLibrary';
+import { useToast } from '../../hooks/useToast';
+import useLibrary from '../../hooks/useLibrary';
 import useAuthStore from '../../store/useAuthStore';
 import { 
   autoAssignSvgMappings, 

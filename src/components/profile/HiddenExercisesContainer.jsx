@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { EyeOff } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
-import useLibrary from '../../hooks/fetchLibrary';
+import useLibrary from '../../hooks/useLibrary';
 import ExerciseDisplay from '../exercise/ExerciseDisplay';
 
 export default function HiddenExercisesContainer() {

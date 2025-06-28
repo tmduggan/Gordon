@@ -19,7 +19,7 @@ import {
   generateWorkoutSuggestions 
 } from '../../services/gamification/suggestionService';
 import useAuthStore from '../../store/useAuthStore';
-import { useToast } from '../../hooks/use-toast';
+import { useToast } from '../../hooks/useToast';
 import ExerciseDisplay from './ExerciseDisplay';
 import CompletedExerciseBar from './CompletedExerciseBar';
 

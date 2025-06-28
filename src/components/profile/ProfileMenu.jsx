@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useToast } from '../../hooks/use-toast';
+import { useToast } from '../../hooks/useToast';
 import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
 
 export default function ProfileMenu() {

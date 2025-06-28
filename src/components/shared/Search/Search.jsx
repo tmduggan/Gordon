@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
-import MacroDisplay from '../nutrition/MacroDisplay';
+import MacroDisplay from '../../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff } from 'lucide-react';
-import { useToast } from '../../hooks/use-toast';
+import { useToast } from '../../../hooks/useToast';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label

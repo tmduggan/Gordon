@@ -1,5 +1,5 @@
 import React from 'react';
-import useHistory from '../../hooks/fetchHistory';
+import useHistory from '../../hooks/useHistory';
 import useAuthStore from '../../store/useAuthStore';
 import { foodTimePeriods } from '../../utils/timeUtils';
 import { getFoodMacros } from '../../utils/dataUtils';

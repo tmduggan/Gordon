@@ -1,14 +1,16 @@
 import React from 'react';
-import MacroDisplay from './nutrition/MacroDisplay';
-import { getFoodMacros } from '../utils/dataUtils';
-import { formatSmartDate } from '../utils/timeUtils';
-import ScoreDisplay from './gamification/ScoreDisplay';
+import MacroDisplay from '../nutrition/MacroDisplay';
+import { getFoodMacros } from '../../utils/dataUtils';
+import { formatSmartDate } from '../../utils/timeUtils';
+import ScoreDisplay from '../gamification/ScoreDisplay';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { X } from 'lucide-react';
-import NutritionLabel from './nutrition/NutritionLabel';
+import NutritionLabel from '../nutrition/NutritionLabel';
+import { calculateDailyTotals, groupLogsByDate } from '../../services/nutrition/dailyTotalsService';
+import { getExerciseName } from '../../services/exercise/exerciseService';
 
 // Helper for rendering progress bars in the food summary
 const renderFoodProgressBar = (label, value, goal) => {
@@ -29,25 +31,6 @@ const renderFoodProgressBar = (label, value, goal) => {
             </div>
         </div>
     );
-};
-
-// Helper to calculate daily totals for food logs
-const calculateDailyTotals = (logsArr, getFoodById) => {
-    const totals = { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
-    const allLogs = Object.values(logsArr).flat();
-
-    allLogs.forEach(log => {
-        const food = getFoodById(log.foodId);
-        if (food) {
-            const foodMacros = getFoodMacros(food);
-            totals.calories += (foodMacros.calories || 0) * log.serving;
-            totals.fat += (foodMacros.fat || 0) * log.serving;
-            totals.carbs += (foodMacros.carbs || 0) * log.serving;
-            totals.protein += (foodMacros.protein || 0) * log.serving;
-            totals.fiber += (foodMacros.fiber || 0) * log.serving;
-        }
-    });
-    return totals;
 };
 
 const FoodLogRow = ({ log, food, updateLog, deleteLog }) => (
@@ -102,21 +85,10 @@ const ExerciseLogRow = ({ log, getExerciseName, deleteLog }) => (
     </tr>
 );
 
-const groupLogsByDate = (logs) => {
-    return logs.reduce((acc, log) => {
-        const dateKey = formatSmartDate(new Date(log.timestamp));
-        if (!acc[dateKey]) {
-            acc[dateKey] = [];
-        }
-        acc[dateKey].push(log);
-        return acc;
-    }, {});
-};
-
 export default function HistoryView({ type, logs, ...props }) {
     if (type === 'food') {
         const { getFoodById, updateLog, deleteLog } = props;
-        const groupedLogs = groupLogsByDate(logs);
+        const groupedLogs = groupLogsByDate(logs, formatSmartDate);
 
         if (logs.length === 0) {
             return (
@@ -159,5 +131,46 @@ export default function HistoryView({ type, logs, ...props }) {
         );
     }
 
-    // ... (rest of the component for exercise logs remains the same) ...
+    // Exercise history view
+    const { exerciseLibrary, deleteLog } = props;
+    const groupedLogs = groupLogsByDate(logs, formatSmartDate);
+
+    if (logs.length === 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                <p>No exercises logged for today.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {Object.entries(groupedLogs).map(([date, dateLogs]) => (
+                <div key={date}>
+                    <h2 className="font-bold text-lg mb-2">{date}</h2>
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="text-left py-2 px-1 font-semibold">Exercise</th>
+                                <th className="text-left py-2 px-1 font-semibold">Category</th>
+                                <th className="text-left py-2 px-1 font-semibold">Details</th>
+                                <th className="text-left py-2 px-1 font-semibold">Score</th>
+                                <th className="py-2 px-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dateLogs.map((log) => (
+                                <ExerciseLogRow 
+                                    key={log.id} 
+                                    log={log} 
+                                    getExerciseName={(id) => getExerciseName(id, exerciseLibrary?.items || [])}
+                                    deleteLog={deleteLog} 
+                                />
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ))}
+        </div>
+    );
 } 

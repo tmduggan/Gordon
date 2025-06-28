@@ -5,10 +5,10 @@ import { Medal, Apple, Dumbbell, User, Bug, Target, Crown, Settings, RefreshCw, 
 import LevelDisplay from '../gamification/LevelDisplay';
 import useAuthStore from '../../store/useAuthStore';
 import { Button } from '@/components/ui/button';
-import useLibrary from '../../hooks/fetchLibrary';
-import useHistory from '../../hooks/fetchHistory';
+import useLibrary from '../../hooks/useLibrary';
+import useHistory from '../../hooks/useHistory';
 import { validateUserXP } from '../../services/gamification/levelService';
-import { useToast } from '../../hooks/use-toast';
+import { useToast } from '../../hooks/useToast';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

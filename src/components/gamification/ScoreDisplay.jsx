@@ -1,9 +1,9 @@
 import React from 'react';
 import useScoreProgress from '../../hooks/useScoreProgress';
 import useAuthStore from '../../store/useAuthStore';
-import useLibrary from '../../hooks/fetchLibrary';
+import useLibrary from '../../hooks/useLibrary';
 import useCart from '../../hooks/useCart';
-import useHistory from '../../hooks/fetchHistory';
+import useHistory from '../../hooks/useHistory';
 
 export default function ScoreDisplay({ type, className = "" }) {
   const { user, userProfile } = useAuthStore();

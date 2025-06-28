@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 
 export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker) {
     const { user, addXP } = useAuthStore();

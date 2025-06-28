@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Save, ChefHat } from 'lucide-react';
-import Search from '../Search/Search';
-import useLibrary from '../../hooks/fetchLibrary';
+import Search from '../shared/Search/Search';
+import useLibrary from '../../hooks/useLibrary';
 import useSearch from '../../hooks/useSearch';
 import { getFoodMacros } from '../../utils/dataUtils';
 

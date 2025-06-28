@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { fetchInstantResults as fetchNutritionixSearch, fetchNutrients } from '../api/nutritionixAPI';
 import { generateFoodId } from '../services/foodService';
-import { useToast } from './use-toast';
+import { useToast } from './useToast';
 import { exerciseTargetsMuscleCategory } from '../services/svgMappingService';
 
 export default function useSearch(type, library, userProfile, options = {}) {

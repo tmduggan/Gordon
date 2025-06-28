@@ -3,7 +3,8 @@ import useAuthStore from '../store/useAuthStore';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
 import { addWorkoutToMuscleReps } from '../services/gamification/exerciseScoringService';
 import { updatePersonalBests } from '../services/gamification/exerciseBestsService';
-import { useToast } from './use-toast';
+import { calculateExerciseScore } from '../services/exercise/exerciseService';
+import { useToast } from './useToast';
 
 export default function useExerciseLogging(exerciseLibrary, exerciseHistory, cart, search, dateTimePicker) {
     const { user, userProfile, saveUserProfile, addXP } = useAuthStore();
@@ -33,9 +34,8 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
                 timestamp,
             };
 
-            // Calculate XP (this will need to be implemented separately)
-            const score = 0; // TODO: Implement XP scoring
-
+            // Calculate XP using the service
+            const score = calculateExerciseScore(workoutToScore, exerciseDetailsFromLib);
             totalXP += score;
 
             // --- Update Muscle Reps ---

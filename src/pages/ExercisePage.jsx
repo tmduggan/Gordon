@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 
 // Component Imports
-import CartContainer from '../components/Cart/CartContainer';
-import Search from '../components/Search/Search';
+import CartContainer from '../components/shared/Cart/CartContainer';
+import Search from '../components/shared/Search/Search';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import MuscleChart from '../components/exercise/muscleData/MuscleChart';
 import LevelDisplay from '../components/gamification/LevelDisplay';
@@ -12,8 +12,8 @@ import PaywalledMuscleChart from '../components/exercise/PaywalledMuscleChart';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
-import useHistory from "../hooks/fetchHistory";
-import useLibrary from '../hooks/fetchLibrary';
+import useHistory from "../hooks/useHistory";
+import useLibrary from '../hooks/useLibrary';
 import useSearch from '../hooks/useSearch';
 import useAuthStore from "../store/useAuthStore";
 import useExerciseLogging from '../hooks/useExerciseLogging';
