@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import MuscleSvg from './MuscleSvg';
 import { muscleMapping } from '../../../utils/muscleMapping';
+import MuscleTooltip from './MuscleTooltip';
 
-const MuscleMap = ({ muscleScores, rawMuscleScores, onMuscleClick }) => {
+const MuscleMap = ({ muscleScores, rawMuscleScores, extraScores, onMuscleClick }) => {
   const [hovered, setHovered] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -49,28 +50,14 @@ const MuscleMap = ({ muscleScores, rawMuscleScores, onMuscleClick }) => {
         onClick={(id) => onMuscleClick?.(id)}
       />
 
-      {hovered && (
-        <div
-          className="px-3 py-2 bg-black text-white text-xs rounded shadow-lg max-w-xs"
-          style={getTooltipStyle()}
-        >
-          <div className="font-semibold capitalize mb-1">
-            {hovered.replace(/_/g, ' ')}
-          </div>
-          {rawMuscleScores && rawMuscleScores[hovered] && (
-            <div className="mb-1">
-              Score: {Math.round(rawMuscleScores[hovered])}
-            </div>
-          )}
-          <div className="text-xs text-gray-300">
-            {getContributingMuscles(hovered).length > 0 && (
-              <div>
-                Includes: {getContributingMuscles(hovered).join(', ')}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <MuscleTooltip
+        hovered={hovered}
+        mousePos={mousePos}
+        rawMuscleScores={rawMuscleScores}
+        extraScores={extraScores}
+        getContributingMuscles={getContributingMuscles}
+        getTooltipStyle={getTooltipStyle}
+      />
     </div>
   );
 };
