@@ -16,7 +16,8 @@ service cloud.firestore {
     // Public libraries are readable by any authenticated user.
     match /exerciseLibrary/{docId} {
       allow read: if request.auth != null;
-      allow write: if false; 
+      // Allow admin to write (approve submissions)
+      allow write: if request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'timdug4@gmail.com');
     }
     match /foods/{docId} {
       allow read, write: if request.auth != null;
@@ -36,10 +37,8 @@ service cloud.firestore {
     match /exerciseSubmissions/{submissionId} {
       allow create: if request.auth != null && request.resource.data.submittedBy == request.auth.uid;
       allow read: if request.auth != null && resource.data.submittedBy == request.auth.uid;
-      // Optionally, allow admin to read all submissions
-      allow read: if request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'timdug4@gmail.com');
-      // Only admin can update/delete
-      allow update, delete: if request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'timdug4@gmail.com');
+      // Allow admin to read/update/delete all submissions
+      allow read, update, delete: if request.auth != null && (request.auth.token.admin == true || request.auth.token.email == 'timdug4@gmail.com');
     }
   }
 }
