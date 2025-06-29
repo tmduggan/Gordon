@@ -584,6 +584,7 @@ export default function WorkoutSuggestions({
                 onClick={() => handleAddToCart(suggestion)}
                 variant="row"
                 nameClassName="text-xs"
+                userProfile={userProfile}
               />
             ))}
             
@@ -609,6 +610,7 @@ export default function WorkoutSuggestions({
                   onClick={() => handleAddToCart(suggestion)}
                   variant="row"
                   nameClassName="text-xs"
+                  userProfile={userProfile}
                 >
                   <strong className="block text-xs mr-2">{suggestion.exercise.name}</strong>
                 </ExerciseDisplay>

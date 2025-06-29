@@ -33,6 +33,7 @@ import ExerciseTooltip from './ExerciseTooltip';
  *   - onHide: function
  *   - showRefreshButton: bool
  *   - onRefresh: function
+ *   - userProfile: object
  */
 export default function ExerciseDisplay({ 
   exercise, 
@@ -57,7 +58,8 @@ export default function ExerciseDisplay({
   showHideButton = false,
   onHide,
   showRefreshButton = false,
-  onRefresh
+  onRefresh,
+  userProfile = undefined
 }) {
   if (!exercise) return null;
 
@@ -138,7 +140,7 @@ export default function ExerciseDisplay({
     <div className="flex items-center justify-between">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
         {/* Exercise Name */}
-        <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType}>
+        <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType} userProfile={userProfile}>
           <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
             <strong className={`block mr-2 ${nameClassName}`}>{toTitleCase(name)}</strong>
             <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
