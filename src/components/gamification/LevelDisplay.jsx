@@ -14,6 +14,37 @@ import {
   getPrestigeMilestoneProgress
 } from '../../utils/dataUtils';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
+import { Tooltip as ShadTooltip, TooltipContent as ShadTooltipContent, TooltipProvider as ShadTooltipProvider, TooltipTrigger as ShadTooltipTrigger } from '@/components/ui/tooltip';
+
+// Helper for tier tooltip content
+function TierTooltip({ repProgress, cardioProgress }) {
+  // Helper to build tier progress string
+  const buildTierString = (progress, label) => {
+    let completed = [];
+    if (progress.prestigeIndex > 0) {
+      completed.push('Base');
+      for (let i = 0; i < progress.prestigeIndex - 1; i++) {
+        completed.push(String.fromCharCode(945 + i)); // α, β, γ, ...
+      }
+    }
+    return (
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="font-semibold text-xs text-gray-700 mb-1">{label} Tier Progress</div>
+        <div className="text-xs text-gray-600">
+          Completed: {completed.length > 0 ? completed.join(', ') : 'Base'}<br />
+          Current: <b>{progress.displayTier}</b><br />
+          Progress to next: {Math.round(progress.progress)}%
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="mt-2">
+      {buildTierString(repProgress, 'Strength')}
+      {buildTierString(cardioProgress, 'Cardio')}
+    </div>
+  );
+}
 
 export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate, className = "", userProfile }) {
   const levelInfo = calculateLevelFromXP(totalXP, accountCreationDate);
@@ -44,7 +75,6 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
     return { name, reps };
   });
   const totalStrengthReps = strengthSummary.reduce((sum, s) => sum + (isNaN(s.reps) ? 0 : s.reps), 0);
-  console.log(`Strength reps: total valid entries: ${strengthSummary.length}, total reps: ${totalStrengthReps}`);
 
   // --- DEBUG OUTPUT FOR CARDIO MINUTES ---
   const cardioLogs = logs.filter(l => l.duration && (!l.sets || l.sets.length === 0));
@@ -54,7 +84,6 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
     return { name, mins: isNaN(mins) ? 0 : mins };
   });
   const totalCardioMins = cardioSummary.reduce((sum, c) => sum + (isNaN(c.mins) ? 0 : c.mins), 0);
-  console.log(`Cardio minutes: total valid entries: ${cardioSummary.length}, total mins: ${totalCardioMins}`);
 
   const weeklyReps = getWeeklyStrengthReps(logs);
   const weeklyCardio = getWeeklyCardioMinutes(logs);
@@ -122,7 +151,11 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
               totalXP={totalXP}
               userProfile={userProfile}
               workoutLogs={workoutLogs}
+              repProgress={repProgress}
+              cardioProgress={cardioProgress}
             />
+            {/* --- Tier Structure Tooltip --- */}
+            <TierTooltip repProgress={repProgress} cardioProgress={cardioProgress} />
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
