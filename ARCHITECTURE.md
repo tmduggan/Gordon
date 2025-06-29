@@ -1,6 +1,66 @@
 # Gordon App Architecture
 
-This document outlines the architecture and organization of the Gordon fitness app codebase.
+## Firestore Database Structure
+
+This section documents the canonical Firestore structure for user logs. **Always reference this section for any code that reads or writes logs.**
+
+### User Document Path
+- Collection: `users`
+- Document: `[userId]` (auto-generated or Firebase Auth UID)
+
+### Exercise Logs
+- **Path:** `users/[userId]/workoutLog/[logId]`
+- **Each log document fields:**
+  - `duration`: number | null
+  - `exerciseId`: string
+  - `recordedTime`: timestamp (when the log was created)
+  - `score`: number
+  - `sets`: array | null (for strength exercises)
+  - `timestamp`: timestamp (when the exercise was performed)
+  - `userId`: string (redundant, but present)
+
+#### Example (workoutLog document):
+```
+users
+  └── [userId]
+      └── workoutLog
+          └── [logId]
+              ├── duration: null
+              ├── exerciseId: "0212"
+              ├── recordedTime: June 21, 2025 at 9:21:37 PM UTC-4
+              ├── score: 0
+              ├── sets: null
+              ├── timestamp: June 22, 2025 at 9:21:00 PM UTC-4
+              └── userId: "GLsdSrRYnK16UnViF2KoCPViTs2"
+```
+
+### Food Logs (for reference)
+- **Path:** `users/[userId]/foodLog/[logId]`
+- **Each log document fields:**
+  - `foodId`: string
+  - `recordedTime`: timestamp
+  - `serving`: number
+  - `timestamp`: timestamp
+  - `units`: string
+  - `userId`: string
+  - `xp`: number
+
+#### Example (foodLog document):
+```
+users
+  └── [userId]
+      └── foodLog
+          └── [logId]
+              ├── foodId: "usda_1001598"
+              ├── recordedTime: June 27, 2025 at 7:16:36 PM UTC-4
+              ├── serving: 1
+              ├── timestamp: June 27, 2025 at 8:00:00 PM UTC-4
+              ├── units: "cup"
+              ├── userId: "GLsdSrRYnK16UnViF2KoCPViTs2"
+              └── xp: 129
+```
+
+---
 
 ## Directory Structure
 
