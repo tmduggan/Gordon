@@ -104,4 +104,17 @@ export function ensureAvailableEquipment(equipment) {
     bodyweight: Array.isArray(equipment?.bodyweight) && equipment.bodyweight.length > 0 ? equipment.bodyweight : [...DEFAULT_EQUIPMENT.bodyweight],
     cardio: Array.isArray(equipment?.cardio) && equipment.cardio.length > 0 ? equipment.cardio : [...DEFAULT_EQUIPMENT.cardio],
   };
+}
+
+// Returns the most recent log timestamp for a given exerciseId, or null if none exist
+export function getLastTrainedDate(logs, exerciseId) {
+  if (!Array.isArray(logs) || !exerciseId) return null;
+  const filtered = logs.filter(l => String(l.exerciseId) === String(exerciseId));
+  if (filtered.length === 0) return null;
+  return filtered.reduce((latest, l) => {
+    const lTime = l.timestamp?.seconds ? l.timestamp.seconds : new Date(l.timestamp).getTime() / 1000;
+    if (!latest) return l;
+    const latestTime = latest.timestamp?.seconds ? latest.timestamp.seconds : new Date(latest.timestamp).getTime() / 1000;
+    return lTime > latestTime ? l : latest;
+  }, null)?.timestamp || null;
 } 

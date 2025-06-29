@@ -1,6 +1,8 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import React, { useState, useMemo } from 'react';
+import { getLastTrainedDate } from '@/utils/dataUtils';
+import { formatSmartDate } from '@/utils/timeUtils';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -21,9 +23,22 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
   const [gifError, setGifError] = useState(false);
   if (!exercise) return null;
 
-  // Find logs for this exercise (coerce both to string for comparison)
+  // Debug logging
   const logs = useMemo(() => workoutLog.filter(l => String(l.exerciseId) === String(exercise.id)), [workoutLog, exercise.id]);
   const hasLogs = logs.length > 0;
+  const lastTrainedTimestamp = getLastTrainedDate(workoutLog, exercise.id);
+  const lastTrainedDate = lastTrainedTimestamp
+    ? (lastTrainedTimestamp.seconds
+        ? new Date(lastTrainedTimestamp.seconds * 1000)
+        : new Date(lastTrainedTimestamp))
+    : null;
+  console.log('[ExerciseTooltipContent]', {
+    workoutLog,
+    logs,
+    lastTrainedDate,
+    laggingType,
+    hasLogs
+  });
 
   // Find the most recent log (by timestamp)
   const lastLog = hasLogs ? logs.reduce((latest, l) => {
@@ -175,26 +190,31 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
         <div className="mb-2 text-sm text-purple-700">{exercise.laggingMessage}</div>
       )}
       {/* XP and Lagging Type */}
-      {(bonusXP !== undefined || laggingType) && (
+      {(bonusXP !== undefined || (laggingType && laggingType !== 'neverTrained')) && (
         <div className="mb-2 flex items-center gap-3">
           {bonusXP !== undefined && (
             <span className="flex items-center text-green-700 font-semibold text-sm">
               <span className="mr-1">⚡</span>+{bonusXP} XP
             </span>
           )}
-          {laggingType && (
+          {laggingType && laggingType !== 'neverTrained' && (
             <span className="flex items-center text-red-600 font-semibold text-sm">
               <span className="mr-1">🌀</span>
-              {laggingType === 'neverTrained' ? 'Never Trained' : laggingType.replace(/([A-Z])/g, ' $1')}
+              {laggingType.replace(/([A-Z])/g, ' $1')}
             </span>
           )}
         </div>
       )}
-      {/* Only show Never Trained (red with icon) if no personal bests/1RM */}
-      {(!bests || !bests.allTime || bests.allTime.value === null || bests.allTime.value === undefined) && statusText && (
+      {/* Only show Never Trained if truly never trained and not already shown by laggingType */}
+      {!hasLogs && statusText && laggingType !== 'neverTrained' && (
         <div className="flex items-center text-red-600 font-semibold text-sm mb-1">
           <span className="mr-1">🌀</span>
           {statusText}
+        </div>
+      )}
+      {hasLogs && lastTrainedDate && (
+        <div className="text-xs text-gray-700 mb-1">
+          <strong>Last Trained:</strong> {formatSmartDate(lastTrainedDate)} at {lastTrainedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       )}
       {hasLogs && lastLog && (

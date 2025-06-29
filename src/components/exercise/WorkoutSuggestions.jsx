@@ -585,6 +585,7 @@ export default function WorkoutSuggestions({
                 variant="row"
                 nameClassName="text-xs"
                 userProfile={userProfile}
+                workoutLog={workoutLogs}
               />
             ))}
             
@@ -611,6 +612,7 @@ export default function WorkoutSuggestions({
                   variant="row"
                   nameClassName="text-xs"
                   userProfile={userProfile}
+                  workoutLog={workoutLogs}
                 >
                   <strong className="block text-xs mr-2">{suggestion.exercise.name}</strong>
                 </ExerciseDisplay>

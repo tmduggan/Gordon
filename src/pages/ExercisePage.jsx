@@ -117,6 +117,7 @@ export default function ExercisePage() {
                     </div>
                 }
                 className="mb-6 w-full"
+                userProfile={userProfile}
             />
             <Search
                 type="exercise"
