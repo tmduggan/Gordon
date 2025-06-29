@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import MacroDisplay from '../../nutrition/MacroDisplay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff } from 'lucide-react';
+import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff, Lightbulb } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
+import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -183,6 +184,7 @@ export default function Search({
     const [isOpen, setIsOpen] = useState(false);
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
+    const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
 
     useEffect(() => {
         setIsOpen(searchQuery.length > 0 && searchResults.length > 0);
@@ -223,6 +225,11 @@ export default function Search({
 
     return (
         <div className="relative">
+            <ExerciseLibraryAdditionModal
+                open={showAddExerciseModal}
+                onOpenChange={setShowAddExerciseModal}
+                searchQuery={searchQuery}
+            />
             <Popover open={isOpen} onOpenChange={setIsOpen}>
                 <PopoverAnchor asChild>
                     <div className="flex items-center space-x-2">
@@ -241,6 +248,17 @@ export default function Search({
                                 </div>
                             )}
                         </div>
+                        {type === 'exercise' && (
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowAddExerciseModal(true)}
+                                title="Add Exercise to Library"
+                                className="ml-1"
+                            >
+                                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                            </Button>
+                        )}
                         {type === 'food' && (
                             <>
                                 <Button 

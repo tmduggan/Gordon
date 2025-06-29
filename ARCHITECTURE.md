@@ -305,4 +305,43 @@ When adding new features:
 - **Services**: Test business logic with unit tests
 - **Utils**: Test pure functions with unit tests
 
-This architecture ensures maintainability, testability, and scalability as the application grows. 
+This architecture ensures maintainability, testability, and scalability as the application grows.
+
+---
+
+## Commit, Build, and Deploy Instructions (Firebase)
+
+### Standard Workflow
+1. **Commit your changes:**
+   ```sh
+   git add <changed files>
+   git commit -m "<your commit message>"
+   ```
+2. **Build the project:**
+   ```sh
+   npm run build
+   ```
+3. **Deploy to Firebase:**
+   - **Frontend only (hosting):**
+     ```sh
+     firebase deploy --only hosting
+     ```
+     Use this if you only changed frontend code (React, UI, static assets).
+   - **Cloud Functions only:**
+     ```sh
+     firebase deploy --only functions
+     ```
+     Use this if you only changed backend Cloud Functions (in the `functions/` directory).
+   - **Both frontend and functions:**
+     ```sh
+     firebase deploy
+     ```
+     Use this if you changed both frontend and backend code.
+
+### Notes
+- Always run `npm run build` before deploying hosting to ensure the latest code is in `dist/`.
+- For most UI/React changes, `firebase deploy --only hosting` is sufficient and fastest.
+- For backend/Cloud Function changes, deploy functions as well.
+- You can always check the Firebase docs for more details: https://firebase.google.com/docs/cli
+
+This section is the single source of truth for commit, build, and deploy for this project. Cursor and all developers should reference this for deployment best practices. 

@@ -84,6 +84,10 @@ const useAuthStore = create((set, get) => ({
           hideCount: {
             date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
             count: 0 // Reset daily
+          },
+          exerciseSubmissions: {
+            submitted: [], // Array of submission IDs
+            rejected: [] // Array of rejected submission IDs
           }
         };
         await setDoc(userDocRef, defaultProfile);
@@ -129,6 +133,10 @@ const useAuthStore = create((set, get) => ({
           hideCount: {
             date: new Date().toISOString().split('T')[0],
             count: 0
+          },
+          exerciseSubmissions: {
+            submitted: [], // Array of submission IDs
+            rejected: [] // Array of rejected submission IDs
           }
         };
         await setDoc(userDocRef, defaultProfile); // Create the profile
@@ -504,6 +512,66 @@ const useAuthStore = create((set, get) => ({
     } catch (error) {
       // console.error("Error updating favorite exercises:", error);
     }
+  },
+
+  // Add exercise submission to user's profile
+  addExerciseSubmission: async (submissionId) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentSubmissions = userProfile.exerciseSubmissions?.submitted || [];
+    if (!currentSubmissions.includes(submissionId)) {
+      const newSubmissions = [...currentSubmissions, submissionId];
+      const newProfile = {
+        ...userProfile,
+        exerciseSubmissions: {
+          ...userProfile.exerciseSubmissions,
+          submitted: newSubmissions
+        }
+      };
+      
+      await get().saveUserProfile(newProfile);
+      return true;
+    }
+    return false;
+  },
+
+  // Mark exercise submission as rejected
+  markExerciseSubmissionRejected: async (submissionId) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentSubmitted = userProfile.exerciseSubmissions?.submitted || [];
+    const currentRejected = userProfile.exerciseSubmissions?.rejected || [];
+    
+    // Remove from submitted and add to rejected
+    const newSubmitted = currentSubmitted.filter(id => id !== submissionId);
+    const newRejected = currentRejected.includes(submissionId) ? currentRejected : [...currentRejected, submissionId];
+    
+    const newProfile = {
+      ...userProfile,
+      exerciseSubmissions: {
+        submitted: newSubmitted,
+        rejected: newRejected
+      }
+    };
+    
+    await get().saveUserProfile(newProfile);
+  },
+
+  // Get user's exercise submission count
+  getExerciseSubmissionCount: () => {
+    const { userProfile } = get();
+    if (!userProfile) return 0;
+    return userProfile.exerciseSubmissions?.submitted?.length || 0;
+  },
+
+  // Check if user can submit more exercises (limit of 3)
+  canSubmitExercise: () => {
+    const { userProfile } = get();
+    if (!userProfile) return false;
+    const submittedCount = userProfile.exerciseSubmissions?.submitted?.length || 0;
+    return submittedCount < 3;
   },
 
 }));

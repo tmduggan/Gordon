@@ -126,20 +126,58 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
               <Progress value={levelInfo.progress} className="h-3 w-full" />
               {/* Weekly Progress Bars */}
               <div className="w-full mt-4 flex flex-col gap-2">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Strength Reps This Week</span>
-                    <span>Tier {repProgress.displayTier}: {displayReps} / {displayRepNext} reps</span>
-                  </div>
-                  <Progress value={repProgress.progress} className="h-2 w-full bg-gray-200" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Cardio Minutes This Week</span>
-                    <span>Tier {cardioProgress.displayTier}: {displayCardio} / {displayCardioNext} min</span>
-                  </div>
-                  <Progress value={cardioProgress.progress} className="h-2 w-full bg-gray-200" />
-                </div>
+                {/* Strength Progress Bar with Tooltip */}
+                <ShadTooltipProvider>
+                  <ShadTooltip>
+                    <ShadTooltipTrigger asChild>
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Strength Reps This Week</span>
+                          <span>Tier {repProgress.displayTier}: {displayReps} / {displayRepNext} reps</span>
+                        </div>
+                        <Progress value={repProgress.progress} className="h-2 w-full bg-gray-200" />
+                      </div>
+                    </ShadTooltipTrigger>
+                    <ShadTooltipContent side="top" align="center">
+                      <LevelTooltip
+                        levelInfo={levelInfo}
+                        streakInfo={streakInfo}
+                        levelDisplay={levelDisplay}
+                        totalXP={totalXP}
+                        userProfile={userProfile}
+                        workoutLogs={workoutLogs}
+                        repProgress={repProgress}
+                        cardioProgress={cardioProgress}
+                      />
+                    </ShadTooltipContent>
+                  </ShadTooltip>
+                </ShadTooltipProvider>
+                {/* Cardio Progress Bar with Tooltip */}
+                <ShadTooltipProvider>
+                  <ShadTooltip>
+                    <ShadTooltipTrigger asChild>
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Cardio Minutes This Week</span>
+                          <span>Tier {cardioProgress.displayTier}: {displayCardio} / {displayCardioNext} min</span>
+                        </div>
+                        <Progress value={cardioProgress.progress} className="h-2 w-full bg-gray-200" />
+                      </div>
+                    </ShadTooltipTrigger>
+                    <ShadTooltipContent side="top" align="center">
+                      <LevelTooltip
+                        levelInfo={levelInfo}
+                        streakInfo={streakInfo}
+                        levelDisplay={levelDisplay}
+                        totalXP={totalXP}
+                        userProfile={userProfile}
+                        workoutLogs={workoutLogs}
+                        repProgress={repProgress}
+                        cardioProgress={cardioProgress}
+                      />
+                    </ShadTooltipContent>
+                  </ShadTooltip>
+                </ShadTooltipProvider>
               </div>
             </div>
           </TooltipTrigger>
