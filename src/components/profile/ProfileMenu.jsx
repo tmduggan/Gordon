@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip"
 import { useToast } from '../../hooks/useToast';
 import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
+import { getPendingSubmissions, approveExerciseSubmission, rejectExerciseSubmission } from '../../services/exercise/exerciseSubmissionService';
 
 export default function ProfileMenu() {
   const { user, userProfile, isAdmin, getRemainingHides, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
@@ -23,6 +24,10 @@ export default function ProfileMenu() {
   const [simulatedStatus, setSimulatedStatus] = useState(null); // null = real, else 'basic' or 'premium' or 'admin'
   const [showExerciseLibraryModal, setShowExerciseLibraryModal] = useState(false);
   const { toast } = useToast();
+  const [showAdminSubmissionsModal, setShowAdminSubmissionsModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
 
   if (!user || !userProfile) return null;
 
@@ -51,6 +56,15 @@ export default function ProfileMenu() {
   const subscriptionInfo = getSubscriptionStatus();
   const remainingHides = simulatedStatus === 'basic' ? 2 : simulatedStatus === 'premium' ? '∞' : getRemainingHides();
   const isAdminUser = isAdmin();
+
+  React.useEffect(() => {
+    if (isAdminUser) {
+      getPendingSubmissions().then(subs => {
+        setPendingSubmissions(subs);
+        setPendingCount(subs.length);
+      }).catch(() => setPendingCount(0));
+    }
+  }, [isAdminUser]);
 
   // Only for admin: cycle simulated view
   const handleToggleSimulatedStatus = () => {
@@ -109,6 +123,68 @@ export default function ProfileMenu() {
       });
     }
   };
+
+  const handleOpenAdminSubmissions = async () => {
+    try {
+      const submissions = await getPendingSubmissions();
+      setPendingSubmissions(submissions);
+      setCurrentSubmissionIndex(0);
+      setShowAdminSubmissionsModal(true);
+      setShowDropdown(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load submissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleApprove = async (submission) => {
+    try {
+      await approveExerciseSubmission(submission.id, user.uid);
+      toast({
+        title: "Approved",
+        description: `Exercise "${submission.name}" has been approved and added to the library.`,
+      });
+      // Remove from pending list
+      setPendingSubmissions(prev => prev.filter(s => s.id !== submission.id));
+      setPendingCount(prev => prev - 1);
+      if (currentSubmissionIndex >= pendingSubmissions.length - 1) {
+        setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve submission.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReject = async (submission) => {
+    try {
+      await rejectExerciseSubmission(submission.id, user.uid);
+      toast({
+        title: "Rejected",
+        description: `Exercise "${submission.name}" has been rejected.`,
+      });
+      // Remove from pending list
+      setPendingSubmissions(prev => prev.filter(s => s.id !== submission.id));
+      setPendingCount(prev => prev - 1);
+      if (currentSubmissionIndex >= pendingSubmissions.length - 1) {
+        setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject submission.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const currentSubmission = pendingSubmissions[currentSubmissionIndex];
 
   return (
     <>
@@ -224,6 +300,15 @@ export default function ProfileMenu() {
                       <Bug className="h-4 w-4 mr-2" />
                       Debug Profile
                     </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleOpenAdminSubmissions}
+                      className="w-full justify-start"
+                    >
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      View Submissions
+                      <Badge variant="secondary" className="ml-auto text-xs">{pendingCount}</Badge>
+                    </Button>
                   </>
                 )}
               </div>
@@ -253,6 +338,139 @@ export default function ProfileMenu() {
           open={showHiddenExercises}
           onOpenChange={setShowHiddenExercises}
         />
+      )}
+
+      {/* Admin Submissions Modal */}
+      {showAdminSubmissionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Exercise Submissions Review</h2>
+              <Button variant="ghost" onClick={() => setShowAdminSubmissionsModal(false)}>×</Button>
+            </div>
+
+            {pendingSubmissions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No pending submissions to review.</p>
+                <Button onClick={() => setShowAdminSubmissionsModal(false)} className="mt-4">Close</Button>
+              </div>
+            ) : currentSubmission ? (
+              <div>
+                {/* Navigation */}
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-sm text-gray-600">
+                    Submission {currentSubmissionIndex + 1} of {pendingSubmissions.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1))}
+                      disabled={currentSubmissionIndex === 0}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentSubmissionIndex(Math.min(pendingSubmissions.length - 1, currentSubmissionIndex + 1))}
+                      disabled={currentSubmissionIndex === pendingSubmissions.length - 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Submission Details */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Exercise Name</label>
+                    <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.name}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Target Muscle</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.target}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Body Part</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.bodyPart}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Category</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.category}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Difficulty</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.difficulty}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Equipment</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.equipment}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">ID</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.id}</p>
+                    </div>
+                  </div>
+
+                  {currentSubmission.description && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.description}</p>
+                    </div>
+                  )}
+
+                  {currentSubmission.instructions && currentSubmission.instructions.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Instructions</label>
+                      <ol className="mt-1 space-y-1">
+                        {currentSubmission.instructions.map((instruction, index) => (
+                          <li key={index} className="p-2 bg-gray-50 rounded">
+                            {index + 1}. {instruction}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {currentSubmission.secondaryMuscles && currentSubmission.secondaryMuscles.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Secondary Muscles</label>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {currentSubmission.secondaryMuscles.map((muscle, index) => (
+                          <Badge key={index} variant="outline">{muscle}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-gray-500">
+                    <p>Submitted by: {currentSubmission.submittedBy}</p>
+                    <p>Submitted at: {new Date(currentSubmission.submittedAt).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleReject(currentSubmission)}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => handleApprove(currentSubmission)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Approve
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       )}
     </>
   );
