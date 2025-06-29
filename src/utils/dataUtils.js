@@ -136,15 +136,21 @@ export function getStartOfWeek(date = new Date()) {
 // Get total strength reps for the current week
 export function getWeeklyStrengthReps(logs) {
   const startOfWeek = getStartOfWeek();
-  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && l.sets)
-    .reduce((sum, l) => sum + l.sets.reduce((s, set) => s + (set.reps || 0), 0), 0);
+  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && Array.isArray(l.sets) && l.sets.length > 0)
+    .reduce((sum, l) => sum + l.sets.reduce((s, set) => {
+      const r = parseInt(set.reps);
+      return s + (isNaN(r) ? 0 : r);
+    }, 0), 0);
 }
 
 // Get total cardio minutes for the current week
 export function getWeeklyCardioMinutes(logs) {
   const startOfWeek = getStartOfWeek();
-  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && l.duration)
-    .reduce((sum, l) => sum + (l.duration || 0), 0);
+  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && l.duration && (!l.sets || l.sets.length === 0))
+    .reduce((sum, l) => {
+      const mins = parseInt(l.duration);
+      return sum + (isNaN(mins) ? 0 : mins);
+    }, 0);
 }
 
 // Get current milestone tier and progress for a value and milestone array
@@ -157,42 +163,54 @@ export function getMilestoneProgress(value, milestones) {
   return { tier, prev, next, progress };
 }
 
-// Greek symbols for prestige tiers
-export const GREEK_SYMBOLS = [
+// Greek prestige symbols (lowercase)
+const GREEK_LETTERS = [
   'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'
 ];
 
-// Dynamic milestone logic for reps
-export function getRepMilestone(tier) {
-  const base = [10, 20, 30, 50, 70, 90];
-  if (tier <= base.length) return base[tier - 1];
-  return base[base.length - 1] + 30 * (tier - base.length);
-}
-// Dynamic milestone logic for cardio
-export function getCardioMilestone(tier) {
-  const base = [5, 10, 15, 20, 40, 60];
-  if (tier <= base.length) return base[tier - 1];
-  return base[base.length - 1] + 20 * (tier - base.length);
-}
+/**
+ * Returns prestige tier info for milestone progress with Greek symbols.
+ * @param {number} value - The current value (reps or minutes)
+ * @param {number[]} milestones - The base milestone array
+ * @param {number} baseIncrement - The increment after the last milestone
+ * @returns {object} { prestigeSymbol, prestigeIndex, baseTier, prev, next, progress, tier, displayTier }
+ */
+export function getPrestigeMilestoneProgress(value, milestones, baseIncrement) {
+  let tier = 0;
+  while (tier < milestones.length && value >= milestones[tier]) tier++;
 
-// Get current milestone tier and progress for a value and dynamic milestone function
-export function getDynamicMilestoneProgress(value, getMilestone) {
-  let tier = 1;
-  let next = getMilestone(tier);
-  while (value >= next) {
-    tier++;
-    next = getMilestone(tier);
+  // After base milestones, use consistent increment
+  let prestigeIndex = 0;
+  let baseTier = tier + 1; // 1-based for display
+  let prev, next;
+
+  if (tier < milestones.length) {
+    prev = tier === 0 ? 0 : milestones[tier - 1];
+    next = milestones[tier];
+    prestigeIndex = 0;
+    baseTier = tier + 1;
+  } else {
+    // Calculate prestige tier
+    const extra = value - milestones[milestones.length - 1];
+    const extraTier = Math.floor(extra / baseIncrement) + 1;
+    prestigeIndex = Math.floor((extraTier - 1) / 10) + 1; // 1-based prestige
+    baseTier = ((extraTier - 1) % 10) + 1;
+    prev = milestones[milestones.length - 1] + (extraTier - 1) * baseIncrement;
+    next = prev + baseIncrement;
   }
-  const prev = getMilestone(tier - 1) || 0;
-  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
-  return { tier, prev, next, progress };
-}
 
-// Get prestige tier label
-export function getPrestigeTierLabel(tier) {
-  if (tier <= 10) return `Tier ${tier}`;
-  const greekIndex = Math.floor((tier - 11) / 10) % GREEK_SYMBOLS.length;
-  const greek = GREEK_SYMBOLS[greekIndex];
-  const subTier = ((tier - 1) % 10) + 1;
-  return `${greek} Tier ${subTier}`;
+  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
+  const prestigeSymbol = prestigeIndex > 0 ? GREEK_LETTERS[(prestigeIndex - 1) % GREEK_LETTERS.length] : '';
+  const displayTier = prestigeIndex > 0 ? `${prestigeSymbol}-${baseTier}` : `${baseTier}`;
+
+  return {
+    prestigeSymbol,
+    prestigeIndex,
+    baseTier,
+    prev,
+    next,
+    progress,
+    tier,
+    displayTier
+  };
 } 

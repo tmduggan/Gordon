@@ -8,12 +8,10 @@ import LevelTooltip from './LevelTooltip';
 import {
   getWeeklyStrengthReps,
   getWeeklyCardioMinutes,
-  getDynamicMilestoneProgress,
-  getRepMilestone,
-  getCardioMilestone,
-  getPrestigeTierLabel,
+  getMilestoneProgress,
   STRENGTH_REP_MILESTONES,
-  CARDIO_MIN_MILESTONES
+  CARDIO_MIN_MILESTONES,
+  getPrestigeMilestoneProgress
 } from '../../utils/dataUtils';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 
@@ -34,12 +32,34 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
   // Get weekly progress from global logs
   const { logs: workoutLogsGlobal } = useExerciseLogStore();
   const logs = workoutLogs && workoutLogs.length > 0 ? workoutLogs : workoutLogsGlobal;
+
+  // --- DEBUG OUTPUT FOR STRENGTH REPS ---
+  const strengthLogs = logs.filter(l => Array.isArray(l.sets) && l.sets.length > 0);
+  const strengthSummary = strengthLogs.map(l => {
+    const name = l.name || l.exerciseName || l.exerciseId;
+    const reps = l.sets.reduce((sum, set) => {
+      const r = parseInt(set.reps);
+      return sum + (isNaN(r) ? 0 : r);
+    }, 0);
+    return { name, reps };
+  });
+  const totalStrengthReps = strengthSummary.reduce((sum, s) => sum + (isNaN(s.reps) ? 0 : s.reps), 0);
+  console.log(`Strength reps: total valid entries: ${strengthSummary.length}, total reps: ${totalStrengthReps}`);
+
+  // --- DEBUG OUTPUT FOR CARDIO MINUTES ---
+  const cardioLogs = logs.filter(l => l.duration && (!l.sets || l.sets.length === 0));
+  const cardioSummary = cardioLogs.map(l => {
+    const name = l.name || l.exerciseName || l.exerciseId;
+    const mins = parseInt(l.duration);
+    return { name, mins: isNaN(mins) ? 0 : mins };
+  });
+  const totalCardioMins = cardioSummary.reduce((sum, c) => sum + (isNaN(c.mins) ? 0 : c.mins), 0);
+  console.log(`Cardio minutes: total valid entries: ${cardioSummary.length}, total mins: ${totalCardioMins}`);
+
   const weeklyReps = getWeeklyStrengthReps(logs);
   const weeklyCardio = getWeeklyCardioMinutes(logs);
-  const repProgress = getDynamicMilestoneProgress(weeklyReps, getRepMilestone);
-  const cardioProgress = getDynamicMilestoneProgress(weeklyCardio, getCardioMilestone);
-  const repTierLabel = getPrestigeTierLabel(repProgress.tier);
-  const cardioTierLabel = getPrestigeTierLabel(cardioProgress.tier);
+  const repProgress = getPrestigeMilestoneProgress(weeklyReps, STRENGTH_REP_MILESTONES, 30);
+  const cardioProgress = getPrestigeMilestoneProgress(weeklyCardio, CARDIO_MIN_MILESTONES, 20);
 
   // Cap and round numbers for display
   const safeInt = (n) => Math.min(999, Math.round(n || 0));
@@ -80,14 +100,14 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span>Strength Reps This Week</span>
-                    <span>{repTierLabel}: {displayReps} reps</span>
+                    <span>Tier {repProgress.displayTier}: {displayReps} / {displayRepNext} reps</span>
                   </div>
                   <Progress value={repProgress.progress} className="h-2 w-full bg-gray-200" />
                 </div>
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span>Cardio Minutes This Week</span>
-                    <span>{cardioTierLabel}: {displayCardio} min</span>
+                    <span>Tier {cardioProgress.displayTier}: {displayCardio} / {displayCardioNext} min</span>
                   </div>
                   <Progress value={cardioProgress.progress} className="h-2 w-full bg-gray-200" />
                 </div>
