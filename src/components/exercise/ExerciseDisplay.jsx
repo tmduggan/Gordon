@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Eye, EyeOff, Target, Zap, Pin, PinOff, Clock, TrendingUp, RefreshCw } from 'lucide-react';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import ExerciseTooltip from './ExerciseTooltip';
+import useExerciseLogStore from '../../store/useExerciseLogStore';
 
 /**
  * ExerciseDisplay - unified component for rendering an exercise in any context (pinned, suggestion, detailed, etc.)
@@ -34,7 +35,6 @@ import ExerciseTooltip from './ExerciseTooltip';
  *   - showRefreshButton: bool
  *   - onRefresh: function
  *   - userProfile: object
- *   - workoutLog: array
  */
 export default function ExerciseDisplay({ 
   exercise, 
@@ -60,14 +60,15 @@ export default function ExerciseDisplay({
   onHide,
   showRefreshButton = false,
   onRefresh,
-  userProfile = undefined,
-  workoutLog = []
+  userProfile = undefined
 }) {
   if (!exercise) return null;
 
   const { id, name, target, equipment, difficulty, xp, secondaryMuscles, bodyPart, category } = exercise;
   const equipmentIcon = getEquipmentIcon(equipment);
   const muscleIcon = getMuscleIcon(target);
+
+  const { logs: workoutLog } = useExerciseLogStore();
 
   // Lagging type badge/icon logic
   const getLaggingTypeIcon = (type) => {

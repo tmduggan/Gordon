@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import React, { useState, useMemo } from 'react';
 import { getLastTrainedDate } from '@/utils/dataUtils';
 import { formatSmartDate } from '@/utils/timeUtils';
+import useExerciseLogStore from '../../store/useExerciseLogStore';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -19,8 +20,9 @@ function useIsMobile() {
   return isMobile;
 }
 
-export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userProfile, workoutLog = [] }) {
+export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userProfile }) {
   const [gifError, setGifError] = useState(false);
+  const { logs: workoutLog } = useExerciseLogStore();
   if (!exercise) return null;
 
   // Debug logging
@@ -117,6 +119,19 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
       bestStrength = `1RM: ${Math.round(best1RM.oneRepMax)} lbs (${best1RM.weight} x ${best1RM.reps}) ${formatAgo(best1RM.timestamp)}`;
     }
   }
+
+  // Find the most recent log for any exercise
+  const lastWorkoutLog = workoutLog.length > 0 ? workoutLog.reduce((latest, l) => {
+    const lTime = l.timestamp?.seconds ? l.timestamp.seconds : new Date(l.timestamp).getTime() / 1000;
+    if (!latest) return l;
+    const latestTime = latest.timestamp?.seconds ? latest.timestamp.seconds : new Date(latest.timestamp).getTime() / 1000;
+    return lTime > latestTime ? l : latest;
+  }, null) : null;
+  const lastWorkoutDate = lastWorkoutLog
+    ? (lastWorkoutLog.timestamp?.seconds
+        ? new Date(lastWorkoutLog.timestamp.seconds * 1000)
+        : new Date(lastWorkoutLog.timestamp))
+    : null;
 
   return (
     <div className="max-w-xs">
@@ -234,6 +249,12 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
           <strong>1RM:</strong> {best1RM.oneRepMax} lbs {timeAgo(best1RM.timestamp)}
         </div>
       )}
+      {/* Show last workout date for any exercise */}
+      {lastWorkoutDate && (
+        <div className="text-xs text-gray-700 mb-1">
+          <strong>Last Workout:</strong> {formatSmartDate(lastWorkoutDate)} at {lastWorkoutDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      )}
       <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2 mt-2">
         <span>Target: {exercise.target}</span>
         {exercise.equipment && <span>Equipment: {exercise.equipment}</span>}
@@ -243,7 +264,7 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
   );
 }
 
-export default function ExerciseTooltip({ exercise, children, bonusXP, laggingType, userProfile, workoutLog }) {
+export default function ExerciseTooltip({ exercise, children, bonusXP, laggingType, userProfile }) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   if (!exercise) return children;
@@ -271,7 +292,6 @@ export default function ExerciseTooltip({ exercise, children, bonusXP, laggingTy
                 bonusXP={bonusXP}
                 laggingType={laggingType}
                 userProfile={userProfile}
-                workoutLog={workoutLog}
               />
             </div>
           </DialogContent>
@@ -291,7 +311,6 @@ export default function ExerciseTooltip({ exercise, children, bonusXP, laggingTy
             bonusXP={bonusXP}
             laggingType={laggingType}
             userProfile={userProfile}
-            workoutLog={workoutLog}
           />
         </TooltipContent>
       </Tooltip>

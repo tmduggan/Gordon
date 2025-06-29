@@ -23,6 +23,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { useToast } from '../../hooks/useToast';
 import ExerciseDisplay from './ExerciseDisplay';
 import CompletedExerciseBar from './CompletedExerciseBar';
+import useExerciseLogStore from '../../store/useExerciseLogStore';
 
 const difficultyColorMap = {
   beginner: 'bg-sky-500',
@@ -32,7 +33,6 @@ const difficultyColorMap = {
 
 export default function WorkoutSuggestions({ 
   muscleScores = {}, 
-  workoutLogs = [], 
   exerciseLibrary = [], 
   availableEquipment = [],
   onAddToCart,
@@ -42,15 +42,17 @@ export default function WorkoutSuggestions({
   selectedGym = [],
   selectedCardio = [],
   equipmentButtons = null,
+  userProfile
 }) {
   const [suggestions, setSuggestions] = useState([]);
   const [hiddenSuggestions, setHiddenSuggestions] = useState([]);
   const [recentlyHidden, setRecentlyHidden] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { userProfile, saveUserProfile, hideExercise, getRemainingHides } = useAuthStore();
+  const { userProfile: authUserProfile, saveUserProfile, hideExercise, getRemainingHides } = useAuthStore();
   const { toast } = useToast();
   const [completedSuggestions, setCompletedSuggestions] = useState([]);
+  const { logs: workoutLogs } = useExerciseLogStore();
   
   // Check if device is mobile
   useEffect(() => {
@@ -65,31 +67,31 @@ export default function WorkoutSuggestions({
   
   // Helper: get remaining refreshes for today (basic: 3 per day)
   const getRemainingRefreshes = () => {
-    if (!userProfile) return 0;
+    if (!authUserProfile) return 0;
     const today = new Date().toISOString().split('T')[0];
-    const refreshCount = userProfile.refreshCount || { date: today, count: 0 };
+    const refreshCount = authUserProfile.refreshCount || { date: today, count: 0 };
     if (refreshCount.date !== today) {
-      return isAdmin || isPremium ? Infinity : 3;
+      return authUserProfile.subscription?.status === 'admin' || authUserProfile.subscription?.status === 'premium' ? Infinity : 3;
     }
-    return isAdmin || isPremium ? Infinity : Math.max(0, 3 - refreshCount.count);
+    return authUserProfile.subscription?.status === 'admin' || authUserProfile.subscription?.status === 'premium' ? Infinity : Math.max(0, 3 - refreshCount.count);
   };
 
   // Increment refresh count in profile (shared for all/per-suggestion)
   const incrementRefreshCount = async () => {
-    if (!userProfile) return;
+    if (!authUserProfile) return;
     const today = new Date().toISOString().split('T')[0];
-    let refreshCount = userProfile.refreshCount || { date: today, count: 0 };
+    let refreshCount = authUserProfile.refreshCount || { date: today, count: 0 };
     if (refreshCount.date !== today) {
       refreshCount = { date: today, count: 0 };
     }
     const newRefreshCount = { date: today, count: refreshCount.count + 1 };
-    const newProfile = { ...userProfile, refreshCount: newRefreshCount };
+    const newProfile = { ...authUserProfile, refreshCount: newRefreshCount };
     await saveUserProfile(newProfile);
   };
 
   // Modified refreshSuggestions to enforce limit
   const refreshSuggestions = async () => {
-    if (!isAdmin && !isPremium) {
+    if (!authUserProfile.subscription?.status === 'admin' && !authUserProfile.subscription?.status === 'premium') {
       const remaining = getRemainingRefreshes();
       if (remaining <= 0) {
         toast({
@@ -117,8 +119,8 @@ export default function WorkoutSuggestions({
         selectedBodyweight,
         selectedGym,
         selectedCardio,
-        userProfile?.pinnedExercises || [],
-        userProfile?.favoriteExercises || []
+        authUserProfile?.pinnedExercises || [],
+        authUserProfile?.favoriteExercises || []
       );
       setSuggestions(newSuggestions);
       await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
@@ -128,9 +130,9 @@ export default function WorkoutSuggestions({
 
   // Save suggestions to user profile
   const saveSuggestionsToProfile = async (newSuggestions, category) => {
-    if (!userProfile) return;
+    if (!authUserProfile) return;
     
-    const updatedProfile = { ...userProfile };
+    const updatedProfile = { ...authUserProfile };
     
     // Initialize workoutSuggestions if it doesn't exist
     if (!updatedProfile.workoutSuggestions) {
@@ -175,10 +177,10 @@ export default function WorkoutSuggestions({
 
   // Clear all saved suggestions and generate new ones
   const clearAllSuggestions = async () => {
-    if (!userProfile) return;
+    if (!authUserProfile) return;
     setCompletedSuggestions([]); // Clear completed suggestions on refresh
     setSuggestions([]); // Clear all suggestions from local state immediately
-    const updatedProfile = { ...userProfile };
+    const updatedProfile = { ...authUserProfile };
     if (updatedProfile.workoutSuggestions) {
       updatedProfile.workoutSuggestions = {
         allExercises: [],
@@ -203,8 +205,8 @@ export default function WorkoutSuggestions({
             selectedBodyweight,
             selectedGym,
             selectedCardio,
-            userProfile?.pinnedExercises || [],
-            userProfile?.favoriteExercises || []
+            authUserProfile?.pinnedExercises || [],
+            authUserProfile?.favoriteExercises || []
           );
         } else {
           // Pick new unique exercises
@@ -220,7 +222,7 @@ export default function WorkoutSuggestions({
         }
         setSuggestions(newSuggestions);
         await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
-        if (!isAdmin && !isPremium) await incrementRefreshCount();
+        if (!authUserProfile.subscription?.status === 'admin' && !authUserProfile.subscription?.status === 'premium') await incrementRefreshCount();
         refreshSuggestions();
       } catch (error) {
         console.error('Error clearing suggestions:', error);
@@ -230,12 +232,12 @@ export default function WorkoutSuggestions({
 
   // Load suggestions from profile on mount
   useEffect(() => {
-    if (userProfile?.workoutSuggestions && exerciseLibrary.length > 0) {
+    if (authUserProfile?.workoutSuggestions && exerciseLibrary.length > 0) {
       const categoryKey = exerciseCategory === 'bodyweight' ? 'bodyweightOnly' : 
                          exerciseCategory === 'gym' ? 'gymEquipment' : 
                          exerciseCategory === 'cardio' ? 'cardioOnly' : 'allExercises';
       
-      const savedSuggestions = userProfile.workoutSuggestions[categoryKey] || [];
+      const savedSuggestions = authUserProfile.workoutSuggestions[categoryKey] || [];
       
       if (savedSuggestions.length > 0) {
         // Clear stale suggestions
@@ -271,7 +273,7 @@ export default function WorkoutSuggestions({
     
     // If no saved suggestions or they're invalid, generate new ones
     refreshSuggestions();
-  }, [muscleScores, workoutLogs, exerciseLibrary, availableEquipment, hiddenSuggestions, exerciseCategory, selectedBodyweight, selectedGym, selectedCardio, userProfile]);
+  }, [muscleScores, workoutLogs, exerciseLibrary, availableEquipment, hiddenSuggestions, exerciseCategory, selectedBodyweight, selectedGym, selectedCardio, authUserProfile]);
   
   const handleHideSuggestion = async (suggestionId) => {
     const exerciseId = suggestions.find(s => s.id === suggestionId)?.exercise.id;
@@ -295,7 +297,7 @@ export default function WorkoutSuggestions({
       const remainingHides = getRemainingHides();
       toast({
         title: "Daily Hide Limit Reached",
-        description: `You can only hide ${userProfile.subscription?.status === 'basic' ? '1' : 'unlimited'} exercises per day. Upgrade to Premium for unlimited hides.`,
+        description: `You can only hide ${authUserProfile.subscription?.status === 'basic' ? '1' : 'unlimited'} exercises per day. Upgrade to Premium for unlimited hides.`,
         variant: "destructive",
       });
     }
@@ -369,9 +371,9 @@ export default function WorkoutSuggestions({
   }, [workoutLogs, suggestions]);
 
   // Determine refresh/hide counts
-  const isAdmin = userProfile?.subscription?.status === 'admin';
-  const isPremium = userProfile?.subscription?.status === 'premium';
-  const isBasic = userProfile?.subscription?.status === 'basic' || (!isAdmin && !isPremium);
+  const isAdmin = authUserProfile?.subscription?.status === 'admin';
+  const isPremium = authUserProfile?.subscription?.status === 'premium';
+  const isBasic = authUserProfile?.subscription?.status === 'basic' || (!isAdmin && !isPremium);
   const remainingHides = getRemainingHides();
   const remainingRefreshes = getRemainingRefreshes();
   // Limit basic users to 1 refresh per day
@@ -584,7 +586,7 @@ export default function WorkoutSuggestions({
                 onClick={() => handleAddToCart(suggestion)}
                 variant="row"
                 nameClassName="text-xs"
-                userProfile={userProfile}
+                userProfile={authUserProfile}
                 workoutLog={workoutLogs}
               />
             ))}
@@ -611,7 +613,7 @@ export default function WorkoutSuggestions({
                   onClick={() => handleAddToCart(suggestion)}
                   variant="row"
                   nameClassName="text-xs"
-                  userProfile={userProfile}
+                  userProfile={authUserProfile}
                   workoutLog={workoutLogs}
                 >
                   <strong className="block text-xs mr-2">{suggestion.exercise.name}</strong>

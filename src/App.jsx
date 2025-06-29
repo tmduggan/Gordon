@@ -64,7 +64,7 @@ export default function App() {
     if (activeTab === 'nutrition') {
       setTheme('theme-nutrition');
       favicon.href = '/nutrition-favicon.png';
-    } else {
+        } else {
       setTheme('theme-exercise');
       favicon.href = '/exercise-favicon.png';
     }
@@ -84,7 +84,7 @@ export default function App() {
     );
   }
 
-  if (!user) {
+    if (!user) {
     return <Auth />;
   }
 
@@ -123,10 +123,10 @@ export default function App() {
           className="h-7 w-7"
         />
       </Button>
-    </div>
+          </div>
   );
 
-  return (
+                              return (
     <div className={`min-h-screen ${theme}`}>
       <header className="bg-card shadow-md relative">
         <div className="container mx-auto px-4 py-2 flex justify-center items-center">
@@ -134,7 +134,7 @@ export default function App() {
           <div className="absolute top-2 right-4">
             <ProfileMenu />
           </div>
-        </div>
+                  </div>
       </header>
       <main className="container mx-auto p-4">
         {activeTab === 'exercise' && <ExercisePage />}
