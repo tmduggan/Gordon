@@ -1,5 +1,21 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import React, { useState, useMemo } from 'react';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  );
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+}
 
 export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userProfile, workoutLog = [] }) {
   const [gifError, setGifError] = useState(false);
@@ -128,22 +144,22 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
           <div className="font-medium text-sm text-purple-700">Personal Best:</div>
           {bests.allTime && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>All Time:</strong> {bests.allTime.value} {bests.allTime.unit} ({bests.allTime.type}) on {bests.allTime.date ? (bests.allTime.date.seconds ? new Date(bests.allTime.date.seconds * 1000).toLocaleDateString() : new Date(bests.allTime.date).toLocaleDateString()) : ''}
+              <strong>All Time:</strong> {bests.allTime.value !== undefined ? Number(bests.allTime.value).toFixed(1) : ''} {bests.allTime.unit} ({bests.allTime.type}) on {bests.allTime.date ? (bests.allTime.date.seconds ? new Date(bests.allTime.date.seconds * 1000).toLocaleDateString() : new Date(bests.allTime.date).toLocaleDateString()) : ''}
             </div>
           )}
           {bests.current && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Current:</strong> {bests.current.value} {bests.current.unit} ({bests.current.type}) on {bests.current.date ? (bests.current.date.seconds ? new Date(bests.current.date.seconds * 1000).toLocaleDateString() : new Date(bests.current.date).toLocaleDateString()) : ''}
+              <strong>Current:</strong> {bests.current.value !== undefined ? Number(bests.current.value).toFixed(1) : ''} {bests.current.unit} ({bests.current.type}) on {bests.current.date ? (bests.current.date.seconds ? new Date(bests.current.date.seconds * 1000).toLocaleDateString() : new Date(bests.current.date).toLocaleDateString()) : ''}
             </div>
           )}
           {bests.quarter && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Quarter:</strong> {bests.quarter.value} {bests.quarter.unit} ({bests.quarter.type}) on {bests.quarter.date ? (bests.quarter.date.seconds ? new Date(bests.quarter.date.seconds * 1000).toLocaleDateString() : new Date(bests.quarter.date).toLocaleDateString()) : ''}
+              <strong>Quarter:</strong> {bests.quarter.value !== undefined ? Number(bests.quarter.value).toFixed(1) : ''} {bests.quarter.unit} ({bests.quarter.type}) on {bests.quarter.date ? (bests.quarter.date.seconds ? new Date(bests.quarter.date.seconds * 1000).toLocaleDateString() : new Date(bests.quarter.date).toLocaleDateString()) : ''}
             </div>
           )}
           {bests.year && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Year:</strong> {bests.year.value} {bests.year.unit} ({bests.year.type}) on {bests.year.date ? (bests.year.date.seconds ? new Date(bests.year.date.seconds * 1000).toLocaleDateString() : new Date(bests.year.date).toLocaleDateString()) : ''}
+              <strong>Year:</strong> {bests.year.value !== undefined ? Number(bests.year.value).toFixed(1) : ''} {bests.year.unit} ({bests.year.type}) on {bests.year.date ? (bests.year.date.seconds ? new Date(bests.year.date.seconds * 1000).toLocaleDateString() : new Date(bests.year.date).toLocaleDateString()) : ''}
             </div>
           )}
         </div>
@@ -174,8 +190,12 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
           )}
         </div>
       )}
-      {statusText && (
-        <div className="text-xs text-yellow-600 font-semibold mb-1">{statusText}</div>
+      {/* Only show Never Trained (red with icon) if no personal bests/1RM */}
+      {(!bests || !bests.allTime || bests.allTime.value === null || bests.allTime.value === undefined) && statusText && (
+        <div className="flex items-center text-red-600 font-semibold text-sm mb-1">
+          <span className="mr-1">🌀</span>
+          {statusText}
+        </div>
       )}
       {hasLogs && lastLog && (
         <div className="text-xs text-gray-700 mb-1">
@@ -204,15 +224,55 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
 }
 
 export default function ExerciseTooltip({ exercise, children, bonusXP, laggingType, userProfile, workoutLog }) {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
   if (!exercise) return children;
+
+  if (isMobile) {
+    return (
+      <>
+        <span onClick={() => setOpen(true)} style={{ display: 'inline-block', width: '100%' }}>
+          {children}
+        </span>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-xs w-full p-0 bg-white rounded-lg shadow-lg">
+            <DialogTitle className="sr-only">{exercise?.name || 'Exercise Details'}</DialogTitle>
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 z-10 bg-gray-100 rounded-full p-1 hover:bg-gray-200"
+              aria-label="Close"
+              type="button"
+            >
+              ×
+            </button>
+            <div className="p-4 pt-6">
+              <ExerciseTooltipContent
+                exercise={exercise}
+                bonusXP={bonusXP}
+                laggingType={laggingType}
+                userProfile={userProfile}
+                workoutLog={workoutLog}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Desktop: Tooltip
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent side="bottom">
-          <ExerciseTooltipContent exercise={exercise} bonusXP={bonusXP} laggingType={laggingType} userProfile={userProfile} workoutLog={workoutLog} />
+          <ExerciseTooltipContent
+            exercise={exercise}
+            bonusXP={bonusXP}
+            laggingType={laggingType}
+            userProfile={userProfile}
+            workoutLog={workoutLog}
+          />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
 
 // Mobile detection (same as WorkoutSuggestions)
 function useIsMobile() {
@@ -86,19 +87,21 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
       );
     }
     // Only show on mobile for exercises
-    if (!isMobile) return null;
-    return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6">
-            <Info className="h-4 w-4 text-muted-foreground" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="w-auto max-w-sm p-0">
-          {renderTooltipContent(item)}
-        </DialogContent>
-      </Dialog>
-    );
+    if (!isFood && isMobile) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="w-auto max-w-sm p-0">
+            <ExerciseTooltipContent exercise={item} />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    return null;
   };
 
   // Remove exercise with confirmation
@@ -155,7 +158,7 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     // Render exercise item
     const { name, id } = item;
     const itemLogData = logData && logData[id] ? logData[id] : {};
-    const handleLogChange = (newValues) => {
+    const handleLogChange = (id, newValues) => {
       onLogDataChange(id, newValues);
     };
     

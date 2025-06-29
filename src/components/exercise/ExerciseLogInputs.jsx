@@ -18,7 +18,8 @@ function useIsMobile() {
 }
 
 const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlaceholder }) => {
-  const isStrength = !exercise.category || exercise.category.toLowerCase() !== 'cardio';
+  const isCardio = exercise.category && exercise.category.toLowerCase() === 'cardio';
+  const isStrength = !isCardio;
   const isBodyweight = exercise.equipment === 'body weight';
   const isMobile = useIsMobile();
   
@@ -32,7 +33,7 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
   // When sets change, update the parent component's state.
   useEffect(() => {
     if (isStrength) {
-      onLogDataChange({ ...logData, sets });
+      onLogDataChange(exercise.id, { ...logData, sets });
     }
   }, [sets, isStrength]);
 
@@ -60,10 +61,11 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
   };
 
   const handleDurationChange = (e) => {
-    onLogDataChange({ ...logData, duration: e.target.value });
+    const prevValue = logData?.duration;
+    onLogDataChange(exercise.id, { ...logData, duration: e.target.value });
   };
 
-  if (!isStrength) {
+  if (isCardio) {
     return (
       <div className="flex flex-col">
         <label className="text-xs text-gray-500">Duration (min)</label>

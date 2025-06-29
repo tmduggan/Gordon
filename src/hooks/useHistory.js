@@ -26,7 +26,20 @@ export default function useHistory(logType, exerciseLibrary = null) {
             user.uid,
             logType,
             (fetchedLogs) => {
-                setLogs(fetchedLogs);
+                // Attach exercise name from library if available
+                let logsWithNames = fetchedLogs;
+                if (exerciseLibrary && Array.isArray(exerciseLibrary)) {
+                    logsWithNames = fetchedLogs.map(log => {
+                        if (log.exerciseId) {
+                            const ex = exerciseLibrary.find(e => e.id === log.exerciseId);
+                            if (ex) {
+                                return { ...log, name: ex.name };
+                            }
+                        }
+                        return log;
+                    });
+                }
+                setLogs(logsWithNames);
                 setLoading(false);
             },
             (error) => {
@@ -36,7 +49,7 @@ export default function useHistory(logType, exerciseLibrary = null) {
         );
 
         return () => unsubscribe();
-    }, [user, logType]);
+    }, [user, logType, exerciseLibrary]);
 
     const handleDeleteLog = useCallback(async (id) => {
         if (!user) return;

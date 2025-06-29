@@ -13,7 +13,13 @@ export default function useExerciseLogging(exerciseLibrary, exerciseHistory, car
 
     const handleSelect = (exercise) => {
         cart.addToCart(exercise);
-        setCurrentLogData(prev => ({ ...prev, [exercise.id]: { sets: [{ weight: '', reps: '' }] } }));
+        setCurrentLogData(prev => ({
+            ...prev,
+            [exercise.id]:
+                exercise.category && exercise.category.toLowerCase() === 'cardio'
+                    ? { duration: '' }
+                    : { sets: [{ weight: '', reps: '' }] }
+        }));
         if (search && search.clearSearch) {
             search.clearSearch();
         }

@@ -56,6 +56,7 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
               levelDisplay={levelDisplay}
               totalXP={totalXP}
               userProfile={userProfile}
+              workoutLogs={workoutLogs}
             />
           </TooltipContent>
         </Tooltip>

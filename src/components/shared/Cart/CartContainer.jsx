@@ -220,6 +220,7 @@ export default function CartContainer({
   exerciseLibrary,
   userProfile,
   onRecipeCreated,
+  onLogDataChange,
   ...rest
 }) {
   if (items.length === 0) {
@@ -256,6 +257,8 @@ export default function CartContainer({
               key={item.id || `${item.label}-${item.units}-${index}`}
               item={item}
               type={type}
+              logData={logData}
+              onLogDataChange={onLogDataChange}
               {...rest}
             />
           ))}
