@@ -149,6 +149,7 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                   <SelectItem value="hamstrings">Hamstrings</SelectItem>
                   <SelectItem value="calves">Calves</SelectItem>
                   <SelectItem value="glutes">Glutes</SelectItem>
+                  <SelectItem value="cardiovascular system">Cardiovascular System</SelectItem>
                 </SelectContent>
               </Select>
             </div>
