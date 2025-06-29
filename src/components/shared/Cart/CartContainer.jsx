@@ -15,6 +15,7 @@ import { getFoodMacros } from '../../../utils/dataUtils';
 import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../../services/gamification/suggestionService';
 import { calculateStreakBonuses } from '../../../services/gamification/levelService';
 import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../../services/gamification/foodScoringService';
+import { calculateExerciseScore } from '../../../services/exercise/exerciseService';
 
 const CartMacroSummary = ({ items }) => {
     const totals = items.reduce((acc, item) => {
@@ -54,13 +55,13 @@ const CartMacroSummary = ({ items }) => {
 
 const CartFoodSummary = ({ items }) => {
     const totalXP = items.reduce((acc, item) => {
-        const xp = calculateFoodXP(item, item.quantity || 1);
+        const xp = calculateFoodXP(item, 1);
         return acc + xp;
     }, 0);
 
     // Calculate breakdown for tooltip
     const xpBreakdown = items.map(item => {
-        const baseXP = calculateFoodXP(item, item.quantity || 1);
+        const baseXP = calculateFoodXP(item, 1);
         const multiplier = calculateFoodGroupMultiplier(item);
         const multiplierBonus = Math.round(baseXP * (multiplier - 1));
         
@@ -119,10 +120,8 @@ const CartFoodSummary = ({ items }) => {
 };
 
 const CartExerciseSummary = ({ items, logData, history, library, userProfile }) => {
-    // TODO: Implement XP scoring separately from muscle scores
-    const totalScore = 0; // Placeholder until XP scoring is implemented
-
-    // Calculate breakdown for tooltip
+    // Calculate XP for each exercise in the cart
+    let totalScore = 0;
     const scoreBreakdown = items.map(item => {
         const workoutData = logData[item.id] || {};
         const exerciseDetails = library.find(e => e.id === item.id) || {};
@@ -142,21 +141,26 @@ const CartExerciseSummary = ({ items, logData, history, library, userProfile }) 
             };
         }
 
-        // TODO: Implement XP calculation here
-        // For now, just show basic info
+        // Calculate XP for each set or duration
         let xpLines = [];
+        let exerciseScore = 0;
         if (workoutData.sets && workoutData.sets.length > 0) {
             workoutData.sets.forEach((set, idx) => {
+                const setData = { ...set };
+                const setScore = calculateExerciseScore({ sets: [setData] }, exerciseDetails);
+                exerciseScore += setScore;
                 const weight = set.weight || 0;
                 const reps = set.reps || 0;
                 if (weight || reps) {
-                    xpLines.push({ xp: 0, label: `${weight} lbs × ${reps} reps` });
+                    xpLines.push({ xp: setScore, label: `${weight} lbs × ${reps} reps` });
                 }
             });
         } else if (workoutData.duration) {
-            xpLines.push({ xp: 0, label: `${workoutData.duration} min` });
+            const durationScore = calculateExerciseScore({ duration: workoutData.duration }, exerciseDetails);
+            exerciseScore += durationScore;
+            xpLines.push({ xp: durationScore, label: `${workoutData.duration} min` });
         }
-
+        totalScore += exerciseScore;
         return {
             name: item.name,
             lines: xpLines,

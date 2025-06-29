@@ -77,10 +77,12 @@ function getUniqueFoodId(food) {
  * @returns {number} Base XP points
  */
 export function calculateFoodBaseXP(food, serving = 1) {
+  // If the food object already has a .calories property, use it directly (already scaled)
+  if (typeof food.calories === 'number' && !isNaN(food.calories)) {
+    return Math.round(food.calories * 2);
+  }
   const data = food.nutritionix_data || food.nutrition || food;
   const calories = (data.nf_calories || data.calories || 0) * serving;
-  
-  // Base scale: 2 points per calorie
   return Math.round(calories * 2);
 }
 
