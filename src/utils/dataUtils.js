@@ -117,4 +117,82 @@ export function getLastTrainedDate(logs, exerciseId) {
     const latestTime = latest.timestamp?.seconds ? latest.timestamp.seconds : new Date(latest.timestamp).getTime() / 1000;
     return lTime > latestTime ? l : latest;
   }, null)?.timestamp || null;
+}
+
+// Milestones for weekly progress
+export const STRENGTH_REP_MILESTONES = [10, 20, 50, 80, 120, 150, 180, 210, 360, 420];
+export const CARDIO_MIN_MILESTONES = [5, 10, 20, 40, 60, 90, 120, 240, 360, 480];
+
+// Returns the start of the current week (Monday)
+export function getStartOfWeek(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Get total strength reps for the current week
+export function getWeeklyStrengthReps(logs) {
+  const startOfWeek = getStartOfWeek();
+  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && l.sets)
+    .reduce((sum, l) => sum + l.sets.reduce((s, set) => s + (set.reps || 0), 0), 0);
+}
+
+// Get total cardio minutes for the current week
+export function getWeeklyCardioMinutes(logs) {
+  const startOfWeek = getStartOfWeek();
+  return logs.filter(l => l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp) >= startOfWeek && l.duration)
+    .reduce((sum, l) => sum + (l.duration || 0), 0);
+}
+
+// Get current milestone tier and progress for a value and milestone array
+export function getMilestoneProgress(value, milestones) {
+  let tier = 0;
+  while (tier < milestones.length && value >= milestones[tier]) tier++;
+  const prev = tier === 0 ? 0 : milestones[tier - 1];
+  const next = milestones[tier] || milestones[milestones.length - 1];
+  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
+  return { tier, prev, next, progress };
+}
+
+// Greek symbols for prestige tiers
+export const GREEK_SYMBOLS = [
+  'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'
+];
+
+// Dynamic milestone logic for reps
+export function getRepMilestone(tier) {
+  const base = [10, 20, 30, 50, 70, 90];
+  if (tier <= base.length) return base[tier - 1];
+  return base[base.length - 1] + 30 * (tier - base.length);
+}
+// Dynamic milestone logic for cardio
+export function getCardioMilestone(tier) {
+  const base = [5, 10, 15, 20, 40, 60];
+  if (tier <= base.length) return base[tier - 1];
+  return base[base.length - 1] + 20 * (tier - base.length);
+}
+
+// Get current milestone tier and progress for a value and dynamic milestone function
+export function getDynamicMilestoneProgress(value, getMilestone) {
+  let tier = 1;
+  let next = getMilestone(tier);
+  while (value >= next) {
+    tier++;
+    next = getMilestone(tier);
+  }
+  const prev = getMilestone(tier - 1) || 0;
+  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
+  return { tier, prev, next, progress };
+}
+
+// Get prestige tier label
+export function getPrestigeTierLabel(tier) {
+  if (tier <= 10) return `Tier ${tier}`;
+  const greekIndex = Math.floor((tier - 11) / 10) % GREEK_SYMBOLS.length;
+  const greek = GREEK_SYMBOLS[greekIndex];
+  const subTier = ((tier - 1) % 10) + 1;
+  return `${greek} Tier ${subTier}`;
 } 

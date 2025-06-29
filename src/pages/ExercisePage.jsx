@@ -12,7 +12,6 @@ import PaywalledMuscleChart from '../components/exercise/PaywalledMuscleChart';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
-import useHistory from "../hooks/useHistory";
 import useLibrary from '../hooks/useLibrary';
 import useSearch from '../hooks/useSearch';
 import useAuthStore from "../store/useAuthStore";
@@ -20,12 +19,15 @@ import useExerciseLogging from '../hooks/useExerciseLogging';
 import { ensureAvailableEquipment } from '../utils/dataUtils';
 import { getMuscleGroupCategoryNames } from '../services/svgMappingService';
 import { analyzeLaggingMuscles } from '../services/gamification/suggestionService';
+import useExerciseLogStore from '../store/useExerciseLogStore';
 
 export default function ExercisePage() {
     const { user, userProfile, togglePinExercise } = useAuthStore();
     const dateTimePicker = useDateTimePicker('exercise');
     const [selectedFilter, setSelectedFilter] = useState(null); // null = all
     const [showPinnedExercises, setShowPinnedExercises] = useState(false); // Temporarily hide pinned exercises
+    const { fetchLogs, logs: zustandLogs, loading: zustandLoading } = useExerciseLogStore();
+    React.useEffect(() => { fetchLogs(); }, [fetchLogs]);
     
     // Get account creation date (use user creation time or default to 30 days ago)
     const accountCreationDate = useMemo(() => {
@@ -38,13 +40,15 @@ export default function ExercisePage() {
     
     // Initialize hooks
     const exerciseLibrary = useLibrary('exercise');
-    const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
     const search = useSearch('exercise', exerciseLibrary, userProfile);
     const cart = useCart('exercise');
     
+    // Debug logs
+    console.log('exerciseLibrary.loading', exerciseLibrary.loading, 'zustandLogs.length', zustandLogs.length, 'zustandLoading', zustandLoading);
+    
     // Use custom exercise logging hook
     const { handleSelect, logCart, cartProps } = useExerciseLogging(
-        exerciseLibrary, exerciseHistory, cart, search, dateTimePicker
+        exerciseLibrary, zustandLogs, cart, search, dateTimePicker
     );
     
     const exerciseFilterOptions = {
@@ -67,11 +71,11 @@ export default function ExercisePage() {
 
     // Compute lagging muscles for search and suggestions
     const laggingMuscles = React.useMemo(() => {
-        if (!userProfile || !exerciseHistory.logs || !exerciseLibrary.items) return [];
-        return analyzeLaggingMuscles(userProfile.muscleScores, exerciseHistory.logs, exerciseLibrary.items);
-    }, [userProfile, exerciseHistory.logs, exerciseLibrary.items]);
+        if (!userProfile || !zustandLogs || !exerciseLibrary.items) return [];
+        return analyzeLaggingMuscles(userProfile.muscleScores, zustandLogs, exerciseLibrary.items);
+    }, [userProfile, zustandLogs, exerciseLibrary.items]);
 
-    if (exerciseLibrary.loading || exerciseHistory.loading) {
+    if (exerciseLibrary.loading || zustandLoading) {
         return <div>Loading exercise data...</div>;
     }
 
@@ -79,14 +83,13 @@ export default function ExercisePage() {
         <div className="max-w-3xl mx-auto w-full">
             <LevelDisplay
                 totalXP={userProfile?.totalXP || 0}
-                workoutLogs={exerciseHistory.logs}
+                workoutLogs={zustandLogs}
                 accountCreationDate={accountCreationDate}
                 className="mb-4 w-full"
                 userProfile={userProfile}
             />
             <WorkoutSuggestions
                 muscleScores={userProfile?.muscleScores || {}}
-                workoutLogs={exerciseHistory.logs}
                 exerciseLibrary={exerciseLibrary.items}
                 availableEquipment={selectedEquipment}
                 onAddToCart={handleSelect}
@@ -158,7 +161,7 @@ export default function ExercisePage() {
                     updateCartItem={cart.updateCartItem}
                     removeFromCart={cart.removeFromCart}
                     logCart={logCart}
-                    userWorkoutHistory={exerciseHistory.logs}
+                    userWorkoutHistory={zustandLogs}
                     exerciseLibrary={exerciseLibrary.items}
                     userProfile={userProfile}
                     {...cartProps}
