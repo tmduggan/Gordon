@@ -7,26 +7,29 @@
  * @param {Object} workoutData - Workout data with sets and duration
  * @param {Object} exerciseDetails - Exercise details from library
  * @returns {number} Calculated score
+ *
+ * See ARCHITECTURE.md for the XP algorithm.
  */
 export function calculateExerciseScore(workoutData, exerciseDetails) {
-    // TODO: Implement proper scoring logic
-    // This is a placeholder for the scoring implementation
     let score = 0;
-    
-    // Basic scoring based on sets and reps
+    // Sets-based scoring
     if (workoutData.sets && workoutData.sets.length > 0) {
         score = workoutData.sets.reduce((total, set) => {
             const reps = parseInt(set.reps) || 0;
             const weight = parseFloat(set.weight) || 0;
-            return total + (reps * weight * 0.1); // Basic scoring formula
+            if (weight > 0) {
+                return total + (reps * weight * 0.1);
+            } else if (reps > 0) {
+                return total + (reps * 1); // 1 XP per rep for bodyweight/rep-only
+            } else {
+                return total;
+            }
         }, 0);
     }
-    
     // Duration-based scoring
     if (workoutData.duration) {
         score += parseInt(workoutData.duration) * 2; // 2 points per minute
     }
-    
     return Math.round(score);
 }
 

@@ -344,4 +344,18 @@ This architecture ensures maintainability, testability, and scalability as the a
 - For backend/Cloud Function changes, deploy functions as well.
 - You can always check the Firebase docs for more details: https://firebase.google.com/docs/cli
 
-This section is the single source of truth for commit, build, and deploy for this project. Cursor and all developers should reference this for deployment best practices. 
+This section is the single source of truth for commit, build, and deploy for this project. Cursor and all developers should reference this for deployment best practices.
+
+## Exercise XP Calculation
+
+The canonical algorithm for calculating XP (score) for exercise logs is as follows:
+
+- For each set:
+  - If `weight > 0`: XP = reps * weight * 0.1
+  - If `weight == 0` and `reps > 0`: XP = reps * 1 (bodyweight/rep-only exercises)
+- For duration-based (cardio) exercises:
+  - XP = duration (in minutes) * 2
+- The total XP for a workout is the sum of all set and duration XP, rounded to the nearest integer.
+- Bonuses (e.g., for personal bests, lagging muscles) may be added on top of this base XP.
+
+This algorithm is implemented in `src/services/exercise/exerciseService.js` in the `calculateExerciseScore` function. 

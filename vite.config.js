@@ -15,4 +15,10 @@ export default defineConfig({
     host: true, // This allows external connections if needed
     strictPort: true, // This will fail if port 3001 is already in use
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    css: true,
+  },
 }) 

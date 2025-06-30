@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,6 +15,7 @@ import {
 } from '../../utils/dataUtils';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import { Tooltip as ShadTooltip, TooltipContent as ShadTooltipContent, TooltipProvider as ShadTooltipProvider, TooltipTrigger as ShadTooltipTrigger } from '@/components/ui/tooltip';
+import AnimatedProgressBar from '@/components/ui/AnimatedProgressBar';
 
 // Helper for tier tooltip content
 function TierTooltip({ repProgress, cardioProgress }) {
@@ -97,6 +98,38 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
   const displayRepNext = safeInt(repProgress.next);
   const displayCardioNext = safeInt(cardioProgress.next);
 
+  // Cosmetic animation state for progress bars
+  const [prevXP, setPrevXP] = useState(levelInfo.progress);
+  const [prevStrength, setPrevStrength] = useState(repProgress.progress);
+  const [prevCardio, setPrevCardio] = useState(cardioProgress.progress);
+
+  // Animate XP bar when value changes
+  useEffect(() => {
+    if (levelInfo.progress !== prevXP) {
+      setPrevXP(prev => prev); // keep old value for animation
+      const timeout = setTimeout(() => setPrevXP(levelInfo.progress), 1600); // 1s anim + buffer
+      return () => clearTimeout(timeout);
+    }
+  }, [levelInfo.progress]);
+
+  // Animate Strength bar when value changes
+  useEffect(() => {
+    if (repProgress.progress !== prevStrength) {
+      setPrevStrength(prev => prev);
+      const timeout = setTimeout(() => setPrevStrength(repProgress.progress), 1600);
+      return () => clearTimeout(timeout);
+    }
+  }, [repProgress.progress]);
+
+  // Animate Cardio bar when value changes
+  useEffect(() => {
+    if (cardioProgress.progress !== prevCardio) {
+      setPrevCardio(prev => prev);
+      const timeout = setTimeout(() => setPrevCardio(cardioProgress.progress), 1600);
+      return () => clearTimeout(timeout);
+    }
+  }, [cardioProgress.progress]);
+
   return (
     <div className={`w-full bg-white rounded-xl shadow-lg px-8 py-6 flex flex-col items-center justify-center ${className}`}>
       <TooltipProvider>
@@ -123,7 +156,7 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                   </div>
                 </div>
               </div>
-              <Progress value={levelInfo.progress} className="h-3 w-full" />
+              <AnimatedProgressBar value={levelInfo.progress} previousValue={prevXP} className="h-3 w-full" />
               {/* Weekly Progress Bars */}
               <div className="w-full mt-4 flex flex-col gap-2">
                 {/* Strength Progress Bar with Tooltip */}
@@ -135,7 +168,7 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                           <span>Strength Reps This Week</span>
                           <span>Tier {repProgress.displayTier}: {displayReps} / {displayRepNext} reps</span>
                         </div>
-                        <Progress value={repProgress.progress} className="h-2 w-full bg-gray-200" />
+                        <AnimatedProgressBar value={repProgress.progress} previousValue={prevStrength} className="h-2 w-full bg-gray-200" />
                       </div>
                     </ShadTooltipTrigger>
                     <ShadTooltipContent side="top" align="center">
@@ -161,7 +194,7 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                           <span>Cardio Minutes This Week</span>
                           <span>Tier {cardioProgress.displayTier}: {displayCardio} / {displayCardioNext} min</span>
                         </div>
-                        <Progress value={cardioProgress.progress} className="h-2 w-full bg-gray-200" />
+                        <AnimatedProgressBar value={cardioProgress.progress} previousValue={prevCardio} className="h-2 w-full bg-gray-200" />
                       </div>
                     </ShadTooltipTrigger>
                     <ShadTooltipContent side="top" align="center">
