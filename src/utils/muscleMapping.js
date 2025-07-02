@@ -8,50 +8,36 @@ export const muscleMapping = {
   // Example: Exercise with target="shoulders" will shade the "deltoids" SVG muscle group
 
   // Core muscles
-  abs: ['abs', 'abdominals', 'abdominal', 'core'],
+  abs: ['upper abs', 'abs', 'abdominal', 'abdominals', 'core'],
   obliques: ['obliques', 'oblique'],
   lower_abs: ['lower abs'],
-  upper_abs: ['abs', 'abdominals'],
-  abdominals: ['abs', 'abdominals', 'abdominal', 'core'],
   
   // Leg muscles
   quads: ['quads', 'quadriceps', 'quad', 'thighs', 'hip flexors'],
   hamstrings: ['hamstrings', 'hams', 'hamstring'],
   glutes: ['glutes', 'gluteus', 'butt', 'buttocks'],
   calves: ['calves', 'calf', 'gastrocnemius', 'soleus'],
-  adductors: ['adductors', 'adductor', 'inner thighs', 'groin'],
-  abductors: ['abductors', 'abductor'],
-  hip_adductor: ['hip adductor', 'hip adductors', 'adductor'],
-  hip_abductor: ['hip abductor', 'hip abductors'],
+  adductors: ['adductors', 'adductor', 'inner thighs', 'groin', 'hip adductor', 'hip adductors'],
+  abductors: ['abductors', 'abductor', 'hip abductor', 'hip abductors'],
   
-  // Arm muscles
-  biceps: ['biceps', 'bicep', 'brachialis'],
-  triceps: ['triceps', 'tricep'],
-  forearms: ['forearms', 'forearm', 'wrist flexors', 'wrist extensors', 'wrists'],
-  hands: ['hands', 'hand', 'grip muscles'],
-  
-  // Shoulder muscles
-  side_delts: ['shoulders', 'deltoids', 'deltoid', 'delt', 'delts'],
-  front_delts: ['shoulders', 'deltoids', 'deltoid', 'delt', 'delts'],
-  rear_delts: ['rear deltoids', 'rotator cuff'],
-  deltoids: ['deltoids', 'deltoid', 'delt', 'shoulders', 'delts'],
-  
-  // Chest muscles
-  upper_pecs: ['chest', 'pecs', 'pectorals', 'pectoral', 'upper chest'],
-  lower_pecs: ['chest', 'pecs', 'pectorals', 'pectoral'],
-  middle_pecs: ['chest', 'pecs', 'pectorals', 'pectoral'],
-  pectorals: ['pectorals', 'chest', 'pecs', 'pectoral', 'upper chest'],
+  // Upper body muscles
+  pectorals: ['chest', 'pectorals', 'pecs', 'upper pecs', 'lower pecs', 'middle pecs', 'pectoralis major', 'pectoralis minor'],
+  deltoids: ['side delts', 'front delts', 'shoulders', 'deltoids', 'delts', 'lateral deltoids', 'anterior deltoids', 'medial deltoids'],
+  rear_delts: ['rear deltoids', 'rear delts', 'rotator cuff'],
+  biceps: ['biceps', 'bicep', 'biceps brachii'],
+  triceps: ['triceps', 'tricep', 'triceps brachii'],
+  forearms: ['forearms', 'forearm', 'wrist flexors', 'wrist extensors'],
   
   // Back muscles
-  lats: ['lats', 'latissimus', 'latissimus dorsi'],
+  lats: ['lats', 'latissimus dorsi', 'lat', 'back'],
   rhomboids: ['rhomboids', 'rhomboid'],
-  lower_back: ['lower back', 'lumbar', 'erector spinae', 'back'],
-  upper_traps: ['upper traps', 'upper trapezius', 'upper back'],
-  lower_traps: ['lower traps', 'lower trapezius', 'traps', 'trapezius'],
-  trapezius: ['trapezius', 'traps', 'upper traps', 'middle traps', 'lower traps', 'upper trapezius', 'middle trapezius', 'lower trapezius'],
+  upper_traps: ['upper traps', 'upper trapezius', 'traps'],
+  lower_traps: ['lower traps', 'lower trapezius'],
+  lower_back: ['lower back', 'erector spinae', 'spinal erectors'],
   
-  // Neck
-  neck: ['neck', 'cervical', 'sternocleidomastoid', 'levator scapulae'],
+  // Other muscles
+  neck: ['neck', 'cervical'],
+  hands: ['hands', 'grip'],
   
   // Additional muscle groups that need SVG representation
   // These could be added to the SVG if needed, or mapped to existing groups

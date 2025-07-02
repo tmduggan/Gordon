@@ -84,8 +84,8 @@ export default function PaymentSuccessPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+          <div className="mx-auto w-16 h-16 bg-status-success rounded-full flex items-center justify-center mb-4">
+            <CheckCircle className="h-8 w-8 text-status-success" />
           </div>
           <CardTitle className="text-2xl">Welcome to Premium!</CardTitle>
         </CardHeader>
@@ -102,7 +102,7 @@ export default function PaymentSuccessPage() {
                 </p>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="bg-equipment p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 mb-2">What's Next?</h3>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Explore advanced muscle analytics</li>

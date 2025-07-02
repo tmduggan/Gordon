@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Medal, Apple, Dumbbell, User, Bug, Target, Crown, Settings, RefreshCw, Shield } from 'lucide-react';
 import LevelDisplay from '../gamification/LevelDisplay';
@@ -19,6 +19,9 @@ import NutritionGoals from './NutritionGoals';
 import EquipmentModal from './EquipmentModal';
 import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionManagement from '../payment/SubscriptionManagement';
+import ProfileInfoForm from './ProfileInfoForm';
+import NutritionGoalsForm from './NutritionGoalsForm';
+import AnimatedModal from '../ui/AnimatedModal';
 
 const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
 
@@ -239,7 +242,7 @@ export default function ProfileModal({ open, onOpenChange }) {
       case 'admin':
         return { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Crown };
       case 'premium':
-        return { label: 'Premium', color: 'bg-green-100 text-green-800 border-green-200', icon: Crown };
+        return { label: 'Premium', color: 'bg-status-success text-status-success border-status-success', icon: Crown };
       case 'basic':
       default:
         return { label: 'Basic', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: User };
@@ -249,27 +252,30 @@ export default function ProfileModal({ open, onOpenChange }) {
   const { icon: StatusIcon, label: statusLabel, color: statusColor } = getSubscriptionStatus();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <AnimatedModal open={open} onOpenChange={onOpenChange}>
+      <div className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Profile</DialogTitle>
+          <DialogDescription className="sr-only">
+            View and edit your profile, nutrition goals, equipment, and more.
+          </DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="w-full mt-2">
-          <TabsList className="grid grid-cols-5 gap-2 mb-4">
-            <TabsTrigger value="achievements">
+          <TabsList className="grid grid-cols-5 gap-2 mb-4 w-full">
+            <TabsTrigger value="achievements" className="flex items-center min-w-0 flex-1">
               <Medal className="inline-block mr-1" /> Achievements
             </TabsTrigger>
-            <TabsTrigger value="nutrition">
+            <TabsTrigger value="nutrition" className="flex items-center min-w-0 flex-1">
               <Apple className="inline-block mr-1" /> Nutrition
             </TabsTrigger>
-            <TabsTrigger value="goliath">
+            <TabsTrigger value="goliath" className="flex items-center min-w-0 flex-1">
               <Dumbbell className="inline-block mr-1" /> Goliath
             </TabsTrigger>
-            <TabsTrigger value="profile">
+            <TabsTrigger value="profile" className="flex items-center min-w-0 flex-1">
               <User className="inline-block mr-1" /> Profile
             </TabsTrigger>
             {isAdminUser && (
-              <TabsTrigger value="admin">
+              <TabsTrigger value="admin" className="flex items-center min-w-0 flex-1">
                 <Crown className="inline-block mr-1" /> Admin
               </TabsTrigger>
             )}
@@ -299,10 +305,8 @@ export default function ProfileModal({ open, onOpenChange }) {
 
           {/* Nutrition Tab */}
           <TabsContent value="nutrition">
-            {/* New NutritionGoals component for testing */}
-            <NutritionGoals
-              goals={goals}
-              setGoals={setGoals}
+            <NutritionGoalsForm
+              userProfile={userProfile}
               onSave={handleSaveGoals}
               onCancel={() => onOpenChange(false)}
             />
@@ -310,7 +314,6 @@ export default function ProfileModal({ open, onOpenChange }) {
 
           {/* Goliath Tab (Equipment) */}
           <TabsContent value="goliath">
-            {/* New EquipmentModal component for testing */}
             <EquipmentModal
               equipmentCategory={equipmentCategory}
               setEquipmentCategory={setEquipmentCategory}
@@ -330,44 +333,13 @@ export default function ProfileModal({ open, onOpenChange }) {
           {/* Profile Tab */}
           <TabsContent value="profile">
             <div className="space-y-6">
-              {/* Profile Info */}
-              <div>
-                <h3 className="font-semibold mb-2">Profile Info</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <label className="w-20">Name</label>
-                    <input
-                      type="text"
-                      value={profile.name}
-                      onChange={e => setProfile({ ...profile, name: e.target.value })}
-                      className="border rounded px-2 py-1 w-40"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="w-20">Email</label>
-                    <input
-                      type="email"
-                      value={profile.email}
-                      disabled
-                      className="border rounded px-2 py-1 w-40 bg-gray-100"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="w-20">Time Zone</label>
-                    <input
-                      type="text"
-                      value={profile.timeZone}
-                      onChange={e => setProfile({ ...profile, timeZone: e.target.value })}
-                      className="border rounded px-2 py-1 w-40"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                  <Button onClick={handleSaveProfile}>Save Profile</Button>
-                </div>
-              </div>
-
+              <ProfileInfoForm
+                userProfile={userProfile}
+                user={user}
+                onSave={handleSaveProfile}
+                onCancel={() => onOpenChange(false)}
+              />
+              
               {/* Subscription Management */}
               <SubscriptionManagement />
             </div>
@@ -386,7 +358,7 @@ export default function ProfileModal({ open, onOpenChange }) {
             </TabsContent>
           )}
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </AnimatedModal>
   );
 } 

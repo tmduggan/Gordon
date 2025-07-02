@@ -99,19 +99,19 @@ export default function ExercisePage() {
                 equipmentButtons={
                     <div className="flex justify-center gap-2 mb-4">
                         <button
-                            className={`px-4 py-2 rounded-l-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'bodyweight' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                            className={`px-4 py-2 rounded-l-full border border-border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedFilter === 'bodyweight' ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground hover:bg-accent'}`}
                             onClick={() => setSelectedFilter(selectedFilter === 'bodyweight' ? null : 'bodyweight')}
                         >
                             Body Weight
                         </button>
                         <button
-                            className={`px-4 py-2 border-t border-b border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'gym' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                            className={`px-4 py-2 border-t border-b border-border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedFilter === 'gym' ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground hover:bg-accent'}`}
                             onClick={() => setSelectedFilter(selectedFilter === 'gym' ? null : 'gym')}
                         >
                             Gym Equipment
                         </button>
                         <button
-                            className={`px-4 py-2 rounded-r-full border border-gray-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${selectedFilter === 'cardio' ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 hover:bg-blue-50'}`}
+                            className={`px-4 py-2 rounded-r-full border border-border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedFilter === 'cardio' ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground hover:bg-accent'}`}
                             onClick={() => setSelectedFilter(selectedFilter === 'cardio' ? null : 'cardio')}
                         >
                             Cardio

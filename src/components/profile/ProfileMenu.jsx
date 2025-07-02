@@ -15,6 +15,7 @@ import {
 import { useToast } from '../../hooks/useToast';
 import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
 import { getPendingSubmissions, approveExerciseSubmission, rejectExerciseSubmission } from '../../services/exercise/exerciseSubmissionService';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfileMenu() {
   const { user, userProfile, isAdmin, getRemainingHides, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
@@ -46,7 +47,7 @@ export default function ProfileMenu() {
       case 'admin':
         return { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Crown };
       case 'premium':
-        return { label: 'Premium', color: 'bg-green-100 text-green-800 border-green-200', icon: Crown };
+        return { label: 'Premium', color: 'bg-status-success text-status-success border-status-success', icon: Crown };
       case 'basic':
       default:
         return { label: 'Basic', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: User };
@@ -209,110 +210,118 @@ export default function ProfileMenu() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 p-1">
-                {/* User Info Header */}
-                <div className="px-3 py-2 border-b border-gray-200">
-                  <div className="text-sm font-medium">{user.displayName || user.email}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {isAdminUser ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              className={`focus:outline-none ${subscriptionInfo.color} rounded px-2 py-1 flex items-center gap-1 border`}
-                              onClick={handleCycleActualStatus}
-                            >
-                              <subscriptionInfo.icon className="h-3 w-3 mr-1" />
-                              {subscriptionInfo.label}
-                              <Pencil className="h-3 w-3 ml-1 text-blue-500" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <span>Click to cycle your actual subscription status (Basic → Premium → Admin → Basic)</span>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : (
-                      <Badge className={`text-xs ${subscriptionInfo.color}`}>
-                        <subscriptionInfo.icon className="h-3 w-3 mr-1" />
-                        {subscriptionInfo.label}
-                      </Badge>
-                    )}
-                    {subscriptionInfo.label === 'Basic' && (
-                      <span className="text-xs text-gray-500">
-                        ({remainingHides} hides left)
-                      </span>
+            <AnimatePresence>
+              {showDropdown && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 p-1"
+                >
+                  {/* User Info Header */}
+                  <div className="px-3 py-2 border-b border-gray-200">
+                    <div className="text-sm font-medium">{user.displayName || user.email}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {isAdminUser ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className={`focus:outline-none ${subscriptionInfo.color} rounded px-2 py-1 flex items-center gap-1 border`}
+                                onClick={handleCycleActualStatus}
+                              >
+                                <subscriptionInfo.icon className="h-3 w-3 mr-1" />
+                                {subscriptionInfo.label}
+                                <Pencil className="h-3 w-3 ml-1 text-blue-500" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span>Click to cycle your actual subscription status (Basic → Premium → Admin → Basic)</span>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <Badge className={`text-xs ${subscriptionInfo.color}`}>
+                          <subscriptionInfo.icon className="h-3 w-3 mr-1" />
+                          {subscriptionInfo.label}
+                        </Badge>
+                      )}
+                      {subscriptionInfo.label === 'Basic' && (
+                        <span className="text-xs text-gray-500">
+                          ({remainingHides} hides left)
+                        </span>
+                      )}
+                    </div>
+                    {isAdminUser && simulatedStatus !== null && (
+                      <div className="text-xs text-blue-600 mt-1">Simulating: {simulatedStatus.charAt(0).toUpperCase() + simulatedStatus.slice(1)}</div>
                     )}
                   </div>
-                  {isAdminUser && simulatedStatus !== null && (
-                    <div className="text-xs text-blue-600 mt-1">Simulating: {simulatedStatus.charAt(0).toUpperCase() + simulatedStatus.slice(1)}</div>
+
+                  {/* Menu Items */}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowProfileModal(true);
+                      setShowDropdown(false);
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Profile Settings
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowHiddenExercises(true);
+                      setShowDropdown(false);
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    Hidden Exercises
+                    {userProfile.hiddenExercises?.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {userProfile.hiddenExercises.length}
+                      </Badge>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => auth.signOut()}
+                    className="w-full justify-start"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+
+                  {isAdminUser && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={handleDebugProfile}
+                        className="w-full justify-start"
+                      >
+                        <Bug className="h-4 w-4 mr-2" />
+                        Debug Profile
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleOpenAdminSubmissions}
+                        className="w-full justify-start bg-status-success hover:bg-status-success/90"
+                      >
+                        <Dumbbell className="h-4 w-4 mr-2" />
+                        View Submissions
+                        <Badge variant="secondary" className="ml-auto text-xs">{pendingCount}</Badge>
+                      </Button>
+                    </>
                   )}
-                </div>
-
-                {/* Menu Items */}
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowProfileModal(true);
-                    setShowDropdown(false);
-                  }}
-                  className="w-full justify-start"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Profile Settings
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowHiddenExercises(true);
-                    setShowDropdown(false);
-                  }}
-                  className="w-full justify-start"
-                >
-                  <EyeOff className="h-4 w-4 mr-2" />
-                  Hidden Exercises
-                  {userProfile.hiddenExercises?.length > 0 && (
-                    <Badge variant="secondary" className="ml-auto text-xs">
-                      {userProfile.hiddenExercises.length}
-                    </Badge>
-                  )}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => auth.signOut()}
-                  className="w-full justify-start"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-
-                {isAdminUser && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      onClick={handleDebugProfile}
-                      className="w-full justify-start"
-                    >
-                      <Bug className="h-4 w-4 mr-2" />
-                      Debug Profile
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={handleOpenAdminSubmissions}
-                      className="w-full justify-start"
-                    >
-                      <Dumbbell className="h-4 w-4 mr-2" />
-                      View Submissions
-                      <Badge variant="secondary" className="ml-auto text-xs">{pendingCount}</Badge>
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -462,7 +471,7 @@ export default function ProfileMenu() {
                   </Button>
                   <Button
                     onClick={() => handleApprove(currentSubmission)}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-status-success hover:bg-status-success/90"
                   >
                     Approve
                   </Button>

@@ -134,11 +134,11 @@ export default function FoodPage() {
                 )}
             </div>
             
-            <DailySummary 
+            {/* <DailySummary 
                 foodLibrary={foodLibrary.items} 
                 cart={cart.cart}
                 cartTimePeriod={dateTimePicker.timePeriod}
-            />
+            /> */}
             
             <DailyTotalsCard
                 logs={todayLogs}

@@ -106,7 +106,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
 
         <div className="space-y-4">
           {/* Info section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-equipment border border-equipment rounded-lg p-3">
             <div className="flex items-start gap-3">
               <EyeOff className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
@@ -179,7 +179,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                                     <img 
                                       src={equipmentIcon} 
                                       alt={equipment} 
-                                      className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                                      className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
                                     />
                                   </TooltipTrigger>
                                   <TooltipContent>

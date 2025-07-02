@@ -90,7 +90,7 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
   );
 
   return (
-    <Card className={`cursor-default py-2 px-4 flex items-center justify-between min-w-full relative bg-green-50 border-green-200 ${className}`}>
+    <Card className={`cursor-default py-2 px-4 flex items-center justify-between min-w-full relative bg-status-success border-status-success ${className}`}>
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -110,7 +110,7 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
                   <img 
                     src={equipmentIcon} 
                     alt={equipment} 
-                    className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                    className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
                   />
                 )}
                 <CheckCircle className="h-4 w-4 text-green-600" title="Completed" />

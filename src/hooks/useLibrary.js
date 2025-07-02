@@ -65,7 +65,15 @@ export default function useLibrary(libraryType, options = {}) {
         
         const savedFood = await fetchAndSaveFood(item, items);
         if (savedFood) {
-            setItems(currentItems => [...currentItems, savedFood]);
+            // Instead of just adding to local state, reload the full library from Firestore
+            try {
+                const foods = await loadFoodLibrary();
+                setItems(foods);
+            } catch (error) {
+                console.error('Error reloading food library after save:', error);
+                // Fallback: optimistically add to local state
+                setItems(currentItems => [...currentItems, savedFood]);
+            }
         }
         return savedFood;
     };
@@ -75,6 +83,13 @@ export default function useLibrary(libraryType, options = {}) {
         
         const results = await searchNutritionix(searchQuery, items);
         setApiResults(results);
+        // After API search and saves, reload the food library from Firestore
+        try {
+            const foods = await loadFoodLibrary();
+            setItems(foods);
+        } catch (error) {
+            console.error('Error reloading food library after Nutritionix search:', error);
+        }
         return results;
     };
 

@@ -330,11 +330,11 @@ export default function WorkoutSuggestions({
   const getLaggingTypeColor = (laggingType) => {
     switch (laggingType) {
       case 'neverTrained':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-status-error text-status-error border-status-error';
       case 'underTrained':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-status-warning text-status-warning border-status-warning';
       case 'neglected':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-status-warning text-status-warning border-status-warning';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -423,7 +423,7 @@ export default function WorkoutSuggestions({
   if (loading) {
     return (
       <div className={className}>
-        <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
+        <Card className="w-full mb-6 p-4 shadow-md border border-suggestion bg-suggestion min-h-[340px]">
           {equipmentButtons && (
             isAdmin || isPremium ? (
               equipmentButtons
@@ -507,7 +507,7 @@ export default function WorkoutSuggestions({
   
   return (
     <div className={className}>
-      <Card className="w-full mb-6 p-4 shadow-md border border-yellow-200 bg-yellow-50 min-h-[340px]">
+      <Card className="w-full mb-6 p-4 shadow-md border border-suggestion bg-suggestion min-h-[340px]">
         {equipmentButtons && (
           isAdmin || isPremium ? (
             equipmentButtons
@@ -582,7 +582,7 @@ export default function WorkoutSuggestions({
                 onPinToggle={null}
                 onUnhide={null}
                 loading={false}
-                className={'bg-green-50 border-green-200'}
+                className={'bg-status-success border-status-success'}
                 onClick={() => handleAddToCart(suggestion)}
                 variant="row"
                 nameClassName="text-xs"

@@ -25,7 +25,7 @@ const renderFoodProgressBar = (label, value, goal) => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div
-                    className={`h-2.5 rounded-full ${isOver ? 'bg-red-500' : 'bg-blue-600'}`}
+                    className={`h-2.5 rounded-full ${isOver ? 'bg-status-error' : 'bg-primary'}`}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
                 ></div>
             </div>

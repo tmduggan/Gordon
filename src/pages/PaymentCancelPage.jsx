@@ -36,7 +36,7 @@ export default function PaymentCancelPage() {
             </p>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-equipment p-4 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
               <Crown className="h-4 w-4" />
               Premium Features You're Missing

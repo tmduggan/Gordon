@@ -67,7 +67,7 @@ export default function EquipmentModal({ equipmentCategory, setEquipmentCategory
           <button
             key="body weight"
             type="button"
-            className="px-3 py-2 rounded border text-sm font-medium transition-colors bg-blue-600 text-white border-blue-600 shadow cursor-not-allowed opacity-70"
+            className="px-3 py-2 rounded border text-sm font-medium transition-colors bg-primary text-primary-foreground border-primary shadow cursor-not-allowed opacity-70"
             disabled
           >
             body weight
@@ -77,9 +77,7 @@ export default function EquipmentModal({ equipmentCategory, setEquipmentCategory
               key={option}
               type="button"
               onClick={() => handleBodyweightCheckboxChange(option)}
-              className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                ${selectedBodyweight.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
+              className={`px-3 py-2 rounded border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedBodyweight.includes(option) ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground border-border hover:bg-accent'}`}
             >
               {option}
             </button>
@@ -94,8 +92,8 @@ export default function EquipmentModal({ equipmentCategory, setEquipmentCategory
               type="button"
               onClick={() => handleGymCheckboxChange(option)}
               className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                ${selectedGym.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
+                ${selectedGym.includes(option) ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground border-border hover:bg-accent'}
+                focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
             >
               {option}
             </button>
@@ -112,9 +110,7 @@ export default function EquipmentModal({ equipmentCategory, setEquipmentCategory
               key={option}
               type="button"
               onClick={() => handleCardioCheckboxChange(option)}
-              className={`px-3 py-2 rounded border text-sm font-medium transition-colors
-                ${selectedCardio.includes(option) ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50'}
-                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2`}
+              className={`px-3 py-2 rounded border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedCardio.includes(option) ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-card text-card-foreground border-border hover:bg-accent'}`}
             >
               {option}
             </button>

@@ -49,9 +49,9 @@ export default function PaywalledMuscleChart({ className = "" }) {
                 </Badge>
               )}
               {!isPreview && (
-                <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                  <Unlock className="h-3 w-3 mr-1" />
-                  {subscriptionStatus === 'admin' ? 'Admin' : 'Premium'}
+                <Badge className="bg-status-success text-status-success border-status-success text-xs">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Premium Feature
                 </Badge>
               )}
             </CardTitle>
@@ -81,7 +81,7 @@ export default function PaywalledMuscleChart({ className = "" }) {
           </div>
           
           {isPreview && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-4 p-3 bg-equipment border border-equipment rounded-lg">
               <div className="flex items-start gap-3">
                 <Lock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">

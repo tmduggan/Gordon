@@ -14,7 +14,7 @@ export default function UserProfileModal({ user, userProfile }) {
       break;
     case 'premium':
       label = 'Premium';
-      color = 'bg-green-100 text-green-800 border-green-200';
+      color = 'bg-status-success text-status-success border-status-success';
       Icon = Crown;
       break;
     case 'basic':

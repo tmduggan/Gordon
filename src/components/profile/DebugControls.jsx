@@ -57,7 +57,7 @@ export default function DebugControls({
         <Target className="w-4 h-4 text-blue-600" />
         <h3 className="font-semibold text-sm text-blue-800">Muscle Score Migration</h3>
       </div>
-      <Button variant="outline" size="sm" onClick={onMigrateMuscleScores} disabled={loading} className="text-blue-700 border-blue-300 hover:bg-blue-100">Update Muscle Scores</Button>
+      <Button variant="outline" size="sm" onClick={onMigrateMuscleScores} disabled={loading} className="text-equipment border-equipment hover:bg-equipment">Update Muscle Scores</Button>
     </div>
   );
 } 

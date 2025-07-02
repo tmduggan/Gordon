@@ -85,7 +85,7 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
   const renderSet = (set, index) => (
     <div
       key={index}
-      className={`flex items-end gap-2 p-1 rounded bg-white ${set.completed ? 'bg-green-100' : ''}`}
+      className={`flex items-end gap-2 p-1 rounded bg-white ${set.completed ? 'bg-status-success' : ''}`}
     >
       {!isBodyweight && (
         <div className="flex flex-col">
@@ -123,7 +123,7 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
         type="button"
         variant={set.completed ? 'default' : 'outline'}
         size="icon"
-        className={`h-8 w-8 ${set.completed ? 'bg-green-500 text-white' : ''}`}
+        className={`h-8 w-8 ${set.completed ? 'bg-status-success text-status-success' : ''}`}
         onClick={() => toggleCompleted(index)}
         title={set.completed ? 'Mark as incomplete' : 'Mark as complete'}
       >

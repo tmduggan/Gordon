@@ -8,6 +8,7 @@ import { X, Filter, ChevronDown, ChevronUp, Loader2, Star, StarOff, Lightbulb } 
 import { useToast } from '../../../hooks/useToast';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
+import { getSvgGroupDisplayName } from '@/services/svgMappingService';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -35,9 +36,9 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     // Determine background color based on item type
     let bgColorClass = "hover:bg-accent";
     if (isPinned) {
-        bgColorClass = "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-400";
+        bgColorClass = "bg-equipment hover:bg-equipment/80 border-l-4 border-equipment";
     } else if (isRecipe) {
-        bgColorClass = "bg-green-50 hover:bg-green-100 border-l-4 border-green-400";
+        bgColorClass = "bg-status-success hover:bg-status-success/80 border-l-4 border-status-success";
     }
     
     return (
@@ -95,52 +96,62 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     );
 };
 
-const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterChange, isExpanded, onToggleExpanded }) => (
-    <div className="my-2">
-        {/* Filter Toggle Button */}
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={onToggleExpanded}
-            className="w-full justify-between"
-        >
-            <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <span>Filter by Muscle Group / Equipment</span>
-            </div>
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-        
-        {/* Filter Controls */}
-        {isExpanded && (
-            <div className="flex flex-col sm:flex-row gap-2 mt-2 p-3 border rounded-md bg-gray-50">
-                <Select
-                    value={filters.targetCategory || 'all'}
-                    onValueChange={(value) => onFilterChange('targetCategory', value === 'all' ? '' : value)}
-                >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Filter by Muscle Group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Muscle Groups</SelectItem>
-                        {options.targets?.map((target) => (
-                            <SelectItem key={target} value={target}>
-                                {target.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <FilterSelect
-                    placeholder="Filter by Equipment Category"
-                    value={filters.equipmentCategory}
-                    options={options.equipmentCategories}
-                    onValueChange={(value) => onFilterChange('equipmentCategory', value)}
-                    onClear={() => onFilterChange('equipmentCategory', '')}
-                />
-            </div>
-        )}
-    </div>
-);
+const ExerciseFilterControls = ({ options = {}, filters, setFilters, onFilterChange, isExpanded, onToggleExpanded }) => {
+    // Deduplicate SVG muscle groups by display name
+    const seen = new Set();
+    const uniqueSvgGroups = (options.targets || []).filter(svgGroup => {
+        const displayName = getSvgGroupDisplayName(svgGroup);
+        if (seen.has(displayName)) return false;
+        seen.add(displayName);
+        return true;
+    });
+
+    return (
+        <div className="my-2">
+            {/* Filter Toggle Button */}
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleExpanded}
+                className="w-full justify-between"
+            >
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Filter by Muscle Group / Equipment</span>
+                </div>
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            {/* Filter Controls */}
+            {isExpanded && (
+                <div className="flex flex-col sm:flex-row gap-2 mt-2 p-3 border rounded-md bg-gray-50">
+                    <Select
+                        value={filters.targetCategory || 'all'}
+                        onValueChange={(value) => onFilterChange('targetCategory', value === 'all' ? '' : value)}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Filter by Muscle Group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Muscle Groups</SelectItem>
+                            {uniqueSvgGroups.map((svgGroup) => (
+                                <SelectItem key={svgGroup} value={svgGroup}>
+                                    {getSvgGroupDisplayName(svgGroup)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FilterSelect
+                        placeholder="Filter by Equipment Category"
+                        value={filters.equipmentCategory}
+                        options={options.equipmentCategories}
+                        onValueChange={(value) => onFilterChange('equipmentCategory', value)}
+                        onClear={() => onFilterChange('equipmentCategory', '')}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
 
 const FilterSelect = ({ placeholder, value, options = [], onValueChange, onClear }) => (
     <div className="flex items-center gap-1 w-full">
@@ -240,11 +251,11 @@ export default function Search({
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(10); }}
                                 onFocus={() => setIsOpen(true)}
-                                className={`${nutrientsLoading ? 'border-blue-300 bg-blue-50' : ''}`}
+                                className={`${nutrientsLoading ? 'border-equipment bg-equipment' : ''}`}
                             />
                             {nutrientsLoading && (
                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                    <Loader2 className="h-4 w-4 animate-spin text-equipment" />
                                 </div>
                             )}
                         </div>

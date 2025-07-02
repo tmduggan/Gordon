@@ -83,14 +83,14 @@ export default function ExerciseDisplay({
         return <Target className="h-4 w-4 text-gray-500" />;
     }
   };
-  const getLaggingTypeColor = (type) => {
-    switch (type) {
+  const getLaggingTypeColor = (laggingType) => {
+    switch (laggingType) {
       case 'neverTrained':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-status-error text-status-error border-status-error';
       case 'underTrained':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-status-warning text-status-warning border-status-warning';
       case 'neglected':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-status-warning text-status-warning border-status-warning';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -109,7 +109,7 @@ export default function ExerciseDisplay({
           <strong className="block text-lg">{toTitleCase(name)}</strong>
           <div className="flex flex-row items-center gap-2">
             {muscleIcon && <img src={muscleIcon} alt={target} className="h-6 w-6 rounded-md border border-black" />}
-            {equipmentIcon && <img src={equipmentIcon} alt={equipment} className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" />}
+            {equipmentIcon && <img src={equipmentIcon} alt={equipment} className="h-6 w-6 p-0.5 bg-equipment rounded-md" />}
             {showXP && xp !== undefined && <Badge variant="secondary" className="text-sm"><Zap className="h-4 w-4 mr-1" />{xp} XP</Badge>}
             {bonusXP !== undefined && (
               <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
@@ -158,7 +158,7 @@ export default function ExerciseDisplay({
                 <img 
                   src={equipmentIcon} 
                   alt={equipment} 
-                  className="h-6 w-6 p-0.5 bg-blue-100 rounded-md" 
+                  className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
                 />
               )}
               {bonusXP !== undefined && (

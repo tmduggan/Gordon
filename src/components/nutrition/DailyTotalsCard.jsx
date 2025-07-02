@@ -11,12 +11,11 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
     // Calculate daily food XP
     const dailyXP = calculateDailyFoodXP(logs, getFoodById, goals);
     
-    const macroConfig = [
-        { key: 'calories', label: '🔥 Calories', goal: goals.calories, color: 'bg-orange-500' },
-        { key: 'protein', label: '🍗 Protein', goal: goals.protein, color: 'bg-red-500' },
-        { key: 'carbs', label: '🍞 Carbs', goal: goals.carbs, color: 'bg-blue-500' },
-        { key: 'fat', label: '🥑 Fat', goal: goals.fat, color: 'bg-yellow-500' },
-        { key: 'fiber', label: '🌱 Fiber', goal: goals.fiber, color: 'bg-green-500' },
+    const macroBars = [
+        { key: 'protein', label: '🥩 Protein', goal: goals.protein, color: 'bg-status-success' },
+        { key: 'carbs', label: '🍞 Carbs', goal: goals.carbs, color: 'bg-equipment' },
+        { key: 'fat', label: '🥑 Fat', goal: goals.fat, color: 'bg-status-warning' },
+        { key: 'fiber', label: '🌱 Fiber', goal: goals.fiber, color: 'bg-status-success' },
     ];
 
     const MacroProgress = ({ config, value, goal }) => {
@@ -62,16 +61,16 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
 
     return (
         <Card className="mb-4">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 flex flex-row items-start justify-between">
                 <CardTitle className="text-lg">Daily Totals</CardTitle>
                 {dailyXP.totalXP > 0 && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap mt-1 ml-4">
                         Today's Food XP: <span className="font-semibold text-primary">+{dailyXP.totalXP}</span>
                     </div>
                 )}
             </CardHeader>
-            <CardContent className="space-y-4">
-                {macroConfig.map((config) => (
+            <CardContent className="space-y-2">
+                {macroBars.map((config) => (
                     <MacroProgress
                         key={config.key}
                         config={config}
@@ -81,33 +80,38 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
                 ))}
                 
                 {/* Micronutrients Section */}
-                {micronutrientsWithValues.length > 0 && (
-                    <div className="pt-4 border-t">
-                        <h4 className="text-sm font-medium mb-3">Top Micronutrients</h4>
-                        <div className="space-y-2">
-                            {micronutrientsWithValues.map(([label, value]) => {
-                                const info = getMicronutrientInfo(label);
+                <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-3">Micronutrients</h4>
+                    <div className="space-y-1">
+                        {(() => {
+                            const seen = new Set();
+                            return MICRONUTRIENT_ATTRS.filter((info) => {
+                                if (seen.has(info.label)) return false;
+                                seen.add(info.label);
+                                return true;
+                            }).map((info) => {
+                                const value = totals.micronutrients[info.label] || 0;
                                 let displayValue = value;
-                                if (info && (info.unit === 'mg' || info.unit === 'mcg' || info.unit === 'IU')) {
+                                if (info.unit === 'mg' || info.unit === 'mcg' || info.unit === 'IU') {
                                     displayValue = value < 10 ? value.toFixed(1) : Math.round(value);
                                 }
                                 let percent = undefined;
-                                if (info && info.rdv) {
+                                if (info.rdv) {
                                     percent = Math.round((value / info.rdv) * 100);
                                 }
                                 return (
-                                    <div key={label} className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">{label}</span>
+                                    <div key={info.label} className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">{info.label}</span>
                                         <span className="font-medium">
-                                            {displayValue}{info ? ` ${info.unit}` : ''}
+                                            {displayValue}{` ${info.unit}`}
                                             {percent !== undefined ? ` (${percent}%)` : ''}
                                         </span>
                                     </div>
                                 );
-                            })}
-                        </div>
+                            });
+                        })()}
                     </div>
-                )}
+                </div>
             </CardContent>
         </Card>
     );

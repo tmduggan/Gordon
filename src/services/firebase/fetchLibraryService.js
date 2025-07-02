@@ -124,8 +124,8 @@ export async function searchNutritionix(searchQuery, existingItems = []) {
         const itemsToSave = [...newBranded, ...newCommon];
         console.log('[searchNutritionix] Items to save:', itemsToSave);
         
-        // Save items in background
-        itemsToSave.forEach(item => fetchAndSaveFood(item, existingItems));
+        // Save items and wait for all to complete
+        await Promise.all(itemsToSave.map(item => fetchAndSaveFood(item, existingItems)));
         
         return results;
     } catch (error) {

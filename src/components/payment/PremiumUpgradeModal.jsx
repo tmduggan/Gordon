@@ -96,8 +96,8 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
               <div className="space-y-4">
                 {PREMIUM_FEATURES.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <feature.icon className="h-4 w-4 text-blue-600" />
+                    <div className="flex-shrink-0 w-8 h-8 bg-equipment rounded-lg flex items-center justify-center">
+                      <feature.icon className="h-4 w-4 text-equipment" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">{feature.title}</h4>
@@ -141,10 +141,10 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
                 {Object.entries(PREMIUM_PLANS).map(([key, plan]) => (
                   <Card
                     key={key}
-                    className={`cursor-pointer transition-all ${
-                      selectedPlan === key
-                        ? 'ring-2 ring-blue-500 bg-blue-50'
-                        : 'hover:bg-gray-50'
+                    className={`relative p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedPlan === 'monthly' 
+                        ? 'ring-2 ring-primary bg-equipment'
+                        : 'border-border hover:bg-accent'
                     }`}
                     onClick={() => setSelectedPlan(key)}
                   >
@@ -158,13 +158,18 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
                           <div className="font-bold text-xl">${plan.price}</div>
                           <div className="text-sm text-gray-600">per {plan.interval}</div>
                           {key === 'quarterly' && (
-                            <Badge className="mt-1 bg-green-100 text-green-800 text-xs">
+                            <Badge className="mt-1 bg-status-success text-status-success text-xs">
                               Save 17%
                             </Badge>
                           )}
                           {key === 'annual' && (
-                            <Badge className="mt-1 bg-green-100 text-green-800 text-xs">
+                            <Badge className="mt-1 bg-status-success text-status-success text-xs">
                               Save 25%
+                            </Badge>
+                          )}
+                          {key === 'monthly' && (
+                            <Badge className="mt-1 bg-status-success text-status-success text-xs">
+                              Most Popular
                             </Badge>
                           )}
                         </div>

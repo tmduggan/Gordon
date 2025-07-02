@@ -268,39 +268,56 @@ exports.refreshExerciseDbGifs = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// On-demand trigger: only allows refresh if not run in last 1 hour
-exports.triggerGifRefresh = functions.https.onRequest(async (req, res) => {
-  const docRef = admin.firestore().collection('admin').doc('gifRefresh');
-  const doc = await docRef.get();
-  const now = Date.now();
-  const lastRefresh = doc.exists ? doc.data().lastGifRefreshTimestamp : 0;
-  // Only allow if more than 1 hour since last refresh
-  if (now - lastRefresh < 60 * 60 * 1000) {
-    return res.status(200).send('Refresh already run recently.');
-  }
-  await docRef.set({ lastGifRefreshTimestamp: now });
-  // Run the refresh logic
-  try {
-    const response = await fetch('https://exercisedb.p.rapidapi.com/exercises', {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
-        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+// Scheduled function to run every 24 hours
+exports.scheduledGifRefresh = functions.pubsub
+  .schedule('every 24 hours')
+  .timeZone('America/Los_Angeles') // Set your timezone if needed
+  .onRun(async (context) => {
+    try {
+      console.log('Scheduled GIF refresh started: Fetching all exercises from ExerciseDB');
+      let allExercises = [];
+      let offset = 0;
+      const limit = 100;
+      while (true) {
+        const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?offset=${offset}&limit=${limit}`, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
+            'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+          }
+        });
+        const exercises = await response.json();
+        if (!Array.isArray(exercises) || exercises.length === 0) break;
+        allExercises = allExercises.concat(exercises);
+        offset += exercises.length;
+        if (exercises.length < limit) break;
       }
-    });
-    const exercises = await response.json();
-    const batch = admin.firestore().batch();
-    exercises.forEach(ex => {
-      const docRef = admin.firestore().collection('exercises').doc(ex.id || ex._id || ex.name);
-      batch.set(docRef, {
-        ...ex,
-        gifUrl: ex.gifUrl
-      }, { merge: true });
-    });
-    await batch.commit();
-    res.status(200).send('ExerciseDB GIF URLs refreshed!');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Failed to refresh ExerciseDB GIF URLs');
-  }
-});
+      console.log(`Fetched ${allExercises.length} exercises from ExerciseDB`);
+
+      const exerciseLibraryRef = admin.firestore().collection('exerciseLibrary');
+      const snapshot = await exerciseLibraryRef.get();
+      const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const updates = [];
+      for (const ex of allExercises) {
+        const exId = ex.id ? String(ex.id) : undefined;
+        const match = allDocs.find(doc => doc.id && String(doc.id) === exId);
+        if (match && ex.gifUrl) {
+          updates.push({ docRef: exerciseLibraryRef.doc(match.id), data: { gifUrl: ex.gifUrl } });
+        }
+      }
+
+      const batchSize = 500;
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = admin.firestore().batch();
+        const chunk = updates.slice(i, i + batchSize);
+        chunk.forEach(({ docRef, data }) => batch.set(docRef, data, { merge: true }));
+        await batch.commit();
+      }
+
+      console.log(`Scheduled GIF refresh complete. Updated ${updates.length} exercises.`);
+    } catch (err) {
+      console.error('Scheduled GIF refresh error:', err);
+    }
+    return null;
+  });

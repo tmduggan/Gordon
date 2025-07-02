@@ -434,7 +434,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
               <Button
                 variant="outline"
                 onClick={() => setShowHidden(!showHidden)}
-                className={`flex items-center gap-2 ${showHidden ? 'bg-blue-50 border-blue-200' : ''}`}
+                className={`flex items-center gap-2 ${showHidden ? 'bg-equipment border-equipment' : ''}`}
               >
                 {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 {showHidden ? 'Show Hidden' : 'Hide Hidden'}

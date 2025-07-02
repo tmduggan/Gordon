@@ -90,7 +90,7 @@ export default function AnimatedProgressBar({ value, previousValue, className = 
       {/* Green gain overlay */}
       {animating && gainWidth > 0 && (
         <div
-          className="absolute left-0 top-0 h-full bg-green-500/80 pointer-events-none rounded-full"
+          className="absolute left-0 top-0 h-full bg-status-success/80 pointer-events-none rounded-full"
           style={{
             width: `${gainEnd}%`,
             clipPath: `inset(0 ${100 - gainEnd}% 0 ${gainStart}%)`,
