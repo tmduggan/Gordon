@@ -33,7 +33,7 @@ const renderFoodProgressBar = (label, value, goal) => {
     );
 };
 
-const FoodLogRow = ({ log, food, updateLog, deleteLog }) => (
+const FoodLogRow = ({ log, food, updateLog, deleteLog, disableDelete }) => (
     <tr className="border-b hover:bg-gray-50">
         <td className="py-2 px-1">
             <TooltipProvider>
@@ -64,9 +64,11 @@ const FoodLogRow = ({ log, food, updateLog, deleteLog }) => (
             )}
         </td>
         <td className="text-center py-2 px-1">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLog(log.id)}>
-                <X className="h-4 w-4 text-red-500" />
-            </Button>
+            {!disableDelete && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLog(log.id)}>
+                    <X className="h-4 w-4 text-red-500" />
+                </Button>
+            )}
         </td>
     </tr>
 );
@@ -173,7 +175,12 @@ export default function HistoryView({ type, logs, ...props }) {
                                             return (
                                                 <React.Fragment key={group.groupKey}>
                                                     <tr className="border-b bg-orange-50 cursor-pointer" onClick={() => setExpandedRecipe(expandedRecipe === group.groupKey ? null : group.groupKey)}>
-                                                        <td className="font-semibold">🍲 {group.recipeName} ({group.recipeLoggedServings} serving{group.recipeLoggedServings > 1 ? 's' : ''})</td>
+                                                        <td className="font-semibold flex items-center gap-2">
+                                                            🍲 {group.recipeName} ({group.recipeLoggedServings} serving{group.recipeLoggedServings > 1 ? 's' : ''})
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 ml-2" title="Delete entire recipe log" onClick={e => { e.stopPropagation(); group.logs.forEach(l => deleteLog(l.id)); }}>
+                                                                <X className="h-4 w-4 text-red-500" />
+                                                            </Button>
+                                                        </td>
                                                         <td></td>
                                                         <td></td>
                                                         <td className="text-right py-2 px-1">{Math.round(macros.calories)}</td>
@@ -186,14 +193,14 @@ export default function HistoryView({ type, logs, ...props }) {
                                                     </tr>
                                                     {expandedRecipe === group.groupKey && group.logs.map((log) => {
                                                         const food = getFoodById(log.foodId);
-                                                        return food ? <FoodLogRow key={log.id} log={log} food={food} updateLog={updateLog} deleteLog={deleteLog} /> : null;
+                                                        return food ? <FoodLogRow key={log.id} log={log} food={food} updateLog={updateLog} deleteLog={deleteLog} disableDelete={true} /> : null;
                                                     })}
                                                 </React.Fragment>
                                             );
                                         } else {
                                             const { log } = group;
                                             const food = getFoodById(log.foodId);
-                                            return food ? <FoodLogRow key={log.id} log={log} food={food} updateLog={updateLog} deleteLog={deleteLog} /> : null;
+                                            return food ? <FoodLogRow key={log.id} log={log} food={food} updateLog={updateLog} deleteLog={deleteLog} disableDelete={false} /> : null;
                                         }
                                     })}
                                 </tbody>
