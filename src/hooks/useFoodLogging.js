@@ -66,7 +66,7 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
                 }
             }
             try {
-                const loggedEntry = await logFoodEntry(food, user, item.quantity, timestamp);
+                const loggedEntry = await logFoodEntry(food, user, item.quantity, timestamp, item.units);
                 totalXP += loggedEntry.xp || 0;
             } catch (error) { 
                 console.error("Error adding food log from cart:", error, item); 

@@ -8,26 +8,29 @@ import { calculateFoodXP } from '../../services/gamification/foodScoringService'
  * @param {object} user - The authenticated user object.
  * @param {number} serving - The serving size.
  * @param {Date} timestamp - The specific timestamp for the log entry.
+ * @param {string} [units] - The selected unit (optional, from cart).
  * @returns {object} The newly created log entry with its auto-generated ID.
  */
-export async function logFoodEntry(item, user, serving, timestamp) {
+export async function logFoodEntry(item, user, serving, timestamp, units) {
     if (!user || !item.id) {
         throw new Error("User and Food ID must be provided to log an entry.");
     }
 
     // Calculate XP for this food item
-    const xp = calculateFoodXP(item, serving);
+    const xp = calculateFoodXP(item, serving, units);
 
     const newLog = {
         foodId: item.id,
         timestamp: timestamp, // Use the provided timestamp directly
         serving: serving || 1,
-        units: item.units || item.serving_unit || 'serving',
+        units: units || item.units || item.serving_unit || 'serving',
         userId: user.uid,
         recordedTime: serverTimestamp(),
         xp: xp, // Add XP to the log entry
     };
     
+    // Debug: Output the log entry before saving
+    console.log('[logFoodEntry] Logging food entry:', { newLog, item });
     // Add the new log to the user's 'foodLog' subcollection
     const subcollectionRef = collection(db, 'users', user.uid, 'foodLog');
     const docRef = await addDoc(subcollectionRef, newLog);

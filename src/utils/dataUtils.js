@@ -28,6 +28,29 @@ export const getFoodMacros = (food) => {
     };
 };
 
+// Utility: Convert any (qty, unit) pair to grams for a given food
+export function convertToGrams(food, qty, unit) {
+    if (!food) return 0;
+    const servingWeightGrams = food.serving_weight_grams || 1;
+    // If unit is grams, return qty directly
+    if (unit === 'g') {
+        return qty;
+    }
+    // If unit is the base serving unit
+    if (unit === food.serving_unit) {
+        return (servingWeightGrams / (food.serving_qty || 1)) * qty;
+    }
+    // If alt_measures exist, try to find the matching measure
+    if (food.alt_measures) {
+        const alt = food.alt_measures.find(m => m.measure === unit);
+        if (alt) {
+            return (alt.serving_weight / alt.qty) * qty;
+        }
+    }
+    // Fallback: treat as base unit
+    return (servingWeightGrams / (food.serving_qty || 1)) * qty;
+}
+
 // Helper to calculate initial scaled nutrition for cart items
 // This replicates the logic from ServingSizeEditor for initial values
 export const getInitialScaledNutrition = (food) => {
@@ -50,28 +73,8 @@ export const getInitialScaledNutrition = (food) => {
         fiber: (macros.nf_dietary_fiber || macros.fiber || 0) / servingWeightGrams,
     };
 
-    // Convert to grams (same logic as ServingSizeEditor)
-    let grams = 0;
-    if (unit === 'g') {
-        grams = quantity;
-    } else if (unit === food.serving_unit) {
-        // For base unit, use the serving_weight_grams directly
-        grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
-    } else {
-        // Check alt_measures
-        if (food.alt_measures) {
-            const alt = food.alt_measures.find(m => m.measure === unit);
-            if (alt) {
-                grams = (alt.serving_weight / alt.qty) * quantity;
-            } else {
-                // Fallback: treat as base unit
-                grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
-            }
-        } else {
-            // Fallback: treat as base unit
-            grams = (servingWeightGrams / (food.serving_qty || 1)) * quantity;
-        }
-    }
+    // Use the new utility for grams
+    const grams = convertToGrams(food, quantity, unit);
 
     // Calculate scaled nutrition
     const safe = v => (isFinite(v) && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;

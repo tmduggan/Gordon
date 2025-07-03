@@ -1,6 +1,8 @@
 // Food scoring service for unified XP system
 // Implements scoring based on food groups, unique foods, macro goals, and micronutrients
 
+import { convertToGrams } from '../../utils/dataUtils';
+
 // Food group multipliers based on nutritional value
 const FOOD_GROUP_MULTIPLIERS = {
   3: 1.5, // Fruits - high value
@@ -74,15 +76,20 @@ function getUniqueFoodId(food) {
  * Calculate base XP for a food item
  * @param {object} food - The food item
  * @param {number} serving - The serving size
+ * @param {string} units - The unit (optional)
  * @returns {number} Base XP points
  */
-export function calculateFoodBaseXP(food, serving = 1) {
+export function calculateFoodBaseXP(food, serving = 1, units = undefined) {
   // If the food object already has a .calories property, use it directly (already scaled)
   if (typeof food.calories === 'number' && !isNaN(food.calories)) {
     return Math.round(food.calories * 2);
   }
   const data = food.nutritionix_data || food.nutrition || food;
-  const calories = (data.nf_calories || data.calories || 0) * serving;
+  const servingWeightGrams = food.serving_weight_grams || 1;
+  // Use convertToGrams for correct scaling
+  const grams = convertToGrams(food, serving, units || food.serving_unit);
+  const caloriesPerGram = (data.nf_calories || data.calories || 0) / servingWeightGrams;
+  const calories = caloriesPerGram * grams;
   return Math.round(calories * 2);
 }
 
@@ -117,18 +124,20 @@ export function calculateDailyTotals(logs, getFoodById) {
     if (food) {
       const data = food.nutritionix_data || food.nutrition || food;
       const serving = log.serving || 1;
-      
-      // Add macros
-      totals.calories += (data.nf_calories || data.calories || 0) * serving;
-      totals.fat += (data.nf_total_fat || data.fat || 0) * serving;
-      totals.carbs += (data.nf_total_carbohydrate || data.carbs || 0) * serving;
-      totals.protein += (data.nf_protein || data.protein || 0) * serving;
-      totals.fiber += (data.nf_dietary_fiber || data.fiber || 0) * serving;
-      
+      const units = log.units || food.serving_unit;
+      const servingWeightGrams = food.serving_weight_grams || 1;
+      // Use convertToGrams for correct scaling
+      const grams = convertToGrams(food, serving, units);
+      // Add macros per gram
+      totals.calories += ((data.nf_calories || data.calories || 0) / servingWeightGrams) * grams;
+      totals.fat += ((data.nf_total_fat || data.fat || 0) / servingWeightGrams) * grams;
+      totals.carbs += ((data.nf_total_carbohydrate || data.carbs || 0) / servingWeightGrams) * grams;
+      totals.protein += ((data.nf_protein || data.protein || 0) / servingWeightGrams) * grams;
+      totals.fiber += ((data.nf_dietary_fiber || data.fiber || 0) / servingWeightGrams) * grams;
       // Add micronutrients
       const full_nutrients = data.full_nutrients || [];
       MICRONUTRIENT_ATTRS.forEach(({ attr_id, label }) => {
-        const value = getNutrientValue(full_nutrients, attr_id) * serving;
+        const value = getNutrientValue(full_nutrients, attr_id) * (grams / servingWeightGrams);
         if (value > 0) {
           totals.micronutrients[label] = (totals.micronutrients[label] || 0) + value;
         }
@@ -236,10 +245,11 @@ export function calculateUniqueFoodBonus(logs, getFoodById) {
  * Calculate total XP for a single food item
  * @param {object} food - The food item
  * @param {number} serving - The serving size
+ * @param {string} units - The unit (optional)
  * @returns {number} Total XP for this food item
  */
-export function calculateFoodXP(food, serving = 1) {
-  const baseXP = calculateFoodBaseXP(food, serving);
+export function calculateFoodXP(food, serving = 1, units = undefined) {
+  const baseXP = calculateFoodBaseXP(food, serving, units);
   const multiplier = calculateFoodGroupMultiplier(food);
   
   return Math.round(baseXP * multiplier);
@@ -264,7 +274,7 @@ export function calculateDailyFoodXP(logs, getFoodById, goals) {
   logs.forEach(log => {
     const food = getFoodById(log.foodId);
     if (food) {
-      const itemBaseXP = calculateFoodBaseXP(food, log.serving);
+      const itemBaseXP = calculateFoodBaseXP(food, log.serving, log.units);
       const multiplier = calculateFoodGroupMultiplier(food);
       
       baseXP += itemBaseXP;

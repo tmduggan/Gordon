@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { convertToGrams } from '../../utils/dataUtils';
 
 /**
  * A component for selecting a serving size and quantity for a food item.
@@ -60,31 +61,6 @@ const ServingSizeEditor = ({ food, onUpdate }) => {
         return Array.from(units).sort();
     }, [food]);
 
-    // Convert any unit to grams
-    const convertToGrams = (qty, unit) => {
-        if (!food.serving_weight_grams) {
-            // No grams reference: only allow base unit, treat as 1 serving = 1 unit
-            return qty;
-        }
-        if (unit === 'g') {
-            return qty;
-        }
-        // Check if it's the base unit
-        if (unit === food.serving_unit) {
-            // For base unit, use the serving_weight_grams directly
-            return (food.serving_weight_grams / (food.serving_qty || 1)) * qty;
-        }
-        // Check alt_measures
-        if (food.alt_measures && Array.isArray(food.alt_measures)) {
-            const alt = food.alt_measures.find(m => m.measure === unit);
-            if (alt) {
-                return (alt.serving_weight / alt.qty) * qty;
-            }
-        }
-        // Fallback: treat as base unit (never return 0 unless qty is 0)
-        return (food.serving_weight_grams / (food.serving_qty || 1)) * qty;
-    };
-
     // Calculate scaled nutrition
     const getScaledNutrition = (qty, unit) => {
         if (macrosPerGram.perServing) {
@@ -98,7 +74,8 @@ const ServingSizeEditor = ({ food, onUpdate }) => {
                 fiber: safe(macrosPerGram.fiber * qty),
             };
         }
-        const grams = convertToGrams(qty, unit);
+        // Use shared convertToGrams utility
+        const grams = convertToGrams(food, qty, unit);
         const safe = v => (isFinite(v) && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;
         return {
             calories: safe(macrosPerGram.calories * grams),

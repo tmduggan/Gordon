@@ -18,6 +18,8 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || functions.config().stripe.secret);
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+import GroqService from './groq-service.js';
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -202,6 +204,169 @@ paymentApp.post('/api/cancel-subscription', async (req, res) => {
 // Export the Express app as a Firebase Function
 exports.api = functions.https.onRequest(paymentApp);
 
+// --- GROQ AI ENDPOINTS ---
+const groqApp = express();
+groqApp.use(cors);
+groqApp.use(express.json());
+
+// Initialize Groq service
+const groqService = new GroqService();
+
+// Rate limiting helper
+const checkRateLimit = (userProfile, endpoint) => {
+  const limits = {
+    basic: { daily: 1, weekly: 4, monthly: 16 },
+    premium: { daily: 10, weekly: 50, monthly: 200 },
+    admin: { daily: 50, weekly: 250, monthly: 1000 }
+  };
+  
+  const userType = userProfile?.subscription?.status || 'basic';
+  const userLimits = limits[userType];
+  
+  // For now, return true (implement actual rate limiting later)
+  return { allowed: true, limits: userLimits };
+};
+
+// Generate workout suggestions
+groqApp.post('/api/groq/workout-suggestions', async (req, res) => {
+  try {
+    const { userData, userProfile } = req.body;
+    
+    if (!userData) {
+      return res.status(400).json({ error: 'Missing user data' });
+    }
+    
+    // Check rate limits
+    const rateLimit = checkRateLimit(userProfile, 'workout');
+    if (!rateLimit.allowed) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    
+    logger.info('Generating workout suggestions via Groq API', { structuredData: true });
+    
+    const result = await groqService.generateWorkoutSuggestions(userData);
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        suggestions: result.content,
+        usage: result.usage
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    logger.error('Error generating workout suggestions:', error);
+    res.status(500).json({ error: 'Failed to generate workout suggestions' });
+  }
+});
+
+// Generate nutrition suggestions
+groqApp.post('/api/groq/nutrition-suggestions', async (req, res) => {
+  try {
+    const { userData, userProfile } = req.body;
+    
+    if (!userData) {
+      return res.status(400).json({ error: 'Missing user data' });
+    }
+    
+    // Check rate limits
+    const rateLimit = checkRateLimit(userProfile, 'nutrition');
+    if (!rateLimit.allowed) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    
+    logger.info('Generating nutrition suggestions via Groq API', { structuredData: true });
+    
+    const result = await groqService.generateNutritionSuggestions(userData);
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        suggestions: result.content,
+        usage: result.usage
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    logger.error('Error generating nutrition suggestions:', error);
+    res.status(500).json({ error: 'Failed to generate nutrition suggestions' });
+  }
+});
+
+// Generate achievement goals
+groqApp.post('/api/groq/achievement-goals', async (req, res) => {
+  try {
+    const { userData, userProfile } = req.body;
+    
+    if (!userData) {
+      return res.status(400).json({ error: 'Missing user data' });
+    }
+    
+    // Check rate limits
+    const rateLimit = checkRateLimit(userProfile, 'achievements');
+    if (!rateLimit.allowed) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    
+    logger.info('Generating achievement goals via Groq API', { structuredData: true });
+    
+    const result = await groqService.generateAchievementGoals(userData);
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        suggestions: result.content,
+        usage: result.usage
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error) {
+    logger.error('Error generating achievement goals:', error);
+    res.status(500).json({ error: 'Failed to generate achievement goals' });
+  }
+});
+
+// Test endpoint for Groq API connectivity
+groqApp.get('/api/groq/test', async (req, res) => {
+  try {
+    const testPrompt = "Hello, this is a test. Please respond with 'Groq API is working!'";
+    const result = await groqService.makeRequest(testPrompt);
+    
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: 'Groq API is connected and working',
+        response: result.content,
+        usage: result.usage
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        message: 'Groq API connection failed'
+      });
+    }
+  } catch (error) {
+    logger.error('Groq API test failed:', error);
+    res.status(500).json({ error: 'Groq API test failed' });
+  }
+});
+
+// Export the Groq app as a Firebase Function
+exports.groq = functions.https.onRequest(groqApp);
+
 admin.initializeApp();
 
 // Updated refreshExerciseDbGifs with pagination, batching, and name-matching
@@ -268,11 +433,13 @@ exports.refreshExerciseDbGifs = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Scheduled function to run every 24 hours
-exports.scheduledGifRefresh = functions.pubsub
-  .schedule('every 24 hours')
-  .timeZone('America/Los_Angeles') // Set your timezone if needed
-  .onRun(async (context) => {
+// Replace the old scheduledGifRefresh export with the new v2 API
+exports.scheduledGifRefresh = onSchedule(
+  {
+    schedule: 'every 24 hours',
+    timeZone: 'America/Los_Angeles',
+  },
+  async (event) => {
     try {
       console.log('Scheduled GIF refresh started: Fetching all exercises from ExerciseDB');
       let allExercises = [];
@@ -320,4 +487,5 @@ exports.scheduledGifRefresh = functions.pubsub
       console.error('Scheduled GIF refresh error:', err);
     }
     return null;
-  });
+  }
+);

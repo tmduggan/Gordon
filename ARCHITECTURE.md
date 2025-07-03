@@ -62,6 +62,57 @@ users
 
 ---
 
+## Foods Collection Structure & Unit Conversion (Canonical Reference)
+
+This section documents the canonical structure for food items in the `foods` collection and the rules for unit conversion and UI behavior. **Always reference this section for any code that reads, writes, or displays food data.**
+
+### Branded Food Example (No `alt_measures`)
+```json
+{
+  "id": "branded_61c08b5a8fce1c00093bfd7f",
+  "food_name": "Whey Protein Isolate Protein Powder, Creamy Vanilla",
+  "brand_name": "Now Sports",
+  "serving_qty": 1,
+  "serving_unit": "packet",
+  "serving_weight_grams": 32,
+  "alt_measures": null,
+  ...
+}
+```
+- **Unit Conversion Rules:**
+  - If `alt_measures` is `null` and `serving_weight_grams` is present, allow the user to select either the default unit (`serving_unit`) or grams (`g`).
+  - If neither `alt_measures` nor `serving_weight_grams` is present, only allow the default unit (`serving_unit`).
+
+### Generic Food Example (With `alt_measures`)
+```json
+{
+  "id": "usda_9020",
+  "food_name": "applesauce",
+  "serving_qty": 1,
+  "serving_unit": "container",
+  "serving_weight_grams": 111,
+  "alt_measures": [
+    { "measure": "cup", "qty": 1, "serving_weight": 246 },
+    { "measure": "container", "qty": 1, "serving_weight": 111 },
+    { "measure": "g", "qty": 100, "serving_weight": 100 },
+    ...
+  ],
+  ...
+}
+```
+- **Unit Conversion Rules:**
+  - If `alt_measures` is present and non-empty, allow the user to select any unit listed in `alt_measures`.
+  - If `alt_measures` is missing or empty, fallback to the branded food rules above (allow default unit and grams if `serving_weight_grams` is present).
+
+### UI/UX Rules for Unit Selection
+- If a food has `alt_measures`, allow all units in `alt_measures`.
+- If a food does not have `alt_measures` but has `serving_weight_grams`, allow both the default unit and grams (`g`).
+- If a food has neither, only allow the default unit.
+- The UI must not allow the user to select a unit for which there is no conversion data.
+- When logging food, always use the user's selected unit and quantity, and ensure the backend log reflects this selection.
+
+---
+
 ## Directory Structure
 
 ```
