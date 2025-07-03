@@ -2,47 +2,36 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Save, ChefHat } from 'lucide-react';
+import useCart from '../../hooks/useCart';
 
 export default function SaveCartAsRecipe({ cart, onRecipeCreated, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [recipeName, setRecipeName] = useState('');
+  const [servings, setServings] = useState(1);
+  const foodCart = useCart('food');
 
   const handleSaveRecipe = () => {
-    if (recipeName.trim() && cart.length > 0) {
-      // Convert cart items to recipe format
+    if (recipeName.trim() && cart.length > 0 && servings > 0) {
       const recipeItems = cart.map(item => ({
         id: item.id,
-        name: item.food_name || item.label || item.name,
         quantity: item.quantity || 1,
-        unit: item.serving_unit || item.units || 'serving',
-        macros: {
-          calories: item.calories || 0,
-          protein: item.protein || 0,
-          carbs: item.carbs || 0,
-          fat: item.fat || 0,
-          fiber: item.fiber || 0
-        }
+        unit: item.serving_unit || item.units || 'serving'
       }));
-
       const recipe = {
         id: `recipe_${Date.now()}`,
         name: recipeName.trim(),
-        items: recipeItems,
         createdAt: new Date().toISOString(),
-        totalMacros: cart.reduce((total, item) => ({
-          calories: (total.calories || 0) + (item.calories || 0),
-          protein: (total.protein || 0) + (item.protein || 0),
-          carbs: (total.carbs || 0) + (item.carbs || 0),
-          fat: (total.fat || 0) + (item.fat || 0),
-          fiber: (total.fiber || 0) + (item.fiber || 0)
-        }), {})
+        servings: servings,
+        items: recipeItems
       };
-      
       onRecipeCreated(recipe);
       setIsOpen(false);
       setRecipeName('');
+      setServings(1);
+      foodCart.clearCart();
+      foodCart.addToCart(recipe, 1);
     }
   };
 
@@ -84,6 +73,19 @@ export default function SaveCartAsRecipe({ cart, onRecipeCreated, disabled = fal
               placeholder="e.g., My Custom Meal"
               value={recipeName}
               onChange={(e) => setRecipeName(e.target.value)}
+            />
+          </div>
+
+          {/* Number of Servings Input */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Number of Servings</label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={servings}
+              onChange={e => setServings(parseInt(e.target.value) || 1)}
+              placeholder="e.g., 4"
             />
           </div>
 

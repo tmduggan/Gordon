@@ -59,6 +59,8 @@ export default function FoodPage() {
 
     const handleRecipeCreated = async (recipe) => {
         await addRecipe(recipe);
+        cart.clearCart();
+        cart.addToCart(recipe, 1);
     };
 
     const handleRecipeSelect = (recipe) => {

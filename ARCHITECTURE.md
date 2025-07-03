@@ -60,6 +60,36 @@ users
               └── xp: 129
 ```
 
+### Recipes Collection Structure (Canonical Reference)
+
+A recipe is a user-defined collection of foods, each with a specified quantity and unit. Macros and nutrition are always calculated dynamically from the food database at runtime.
+
+**Recipe Object:**
+```json
+{
+  "id": "recipe_1234567890",         // unique recipe id
+  "name": "Oats & Whey",             // recipe name (required for user display)
+  "createdAt": "2025-07-02T21:08:49.683Z", // ISO string, optional
+  "servings": 10,                    // number of servings the recipe makes (default: 1)
+  "items": [
+    {
+      "id": "usda_12012",            // food id (must match foods collection)
+      "quantity": 500,               // number (total amount for the whole recipe)
+      "unit": "g"                    // string, must match available units for this food
+      // "name": "rice"              // optional, for debugging
+    }
+    // ... more items
+  ]
+}
+```
+
+**Notes:**
+- Do **not** store per-ingredient or total macros in the recipe object.
+- The `unit` for each item must match a valid unit for that food (see Foods Collection Structure).
+- The `name` field for the recipe is **required** for display and user experience.
+- The `servings` field allows the user to specify how many servings the recipe makes. When a user adds "1 serving" of the recipe to their cart, the ingredient quantities are divided by `servings`.
+- Macros and nutrition for recipes are always calculated at runtime by summing the macros for each ingredient (using the current food database), divided by the number of servings as appropriate.
+
 ---
 
 ## Foods Collection Structure & Unit Conversion (Canonical Reference)

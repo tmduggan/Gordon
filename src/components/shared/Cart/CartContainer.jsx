@@ -16,41 +16,53 @@ import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../../ser
 import { calculateStreakBonuses } from '../../../services/gamification/levelService';
 import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../../services/gamification/foodScoringService';
 import { calculateExerciseScore } from '../../../services/exercise/exerciseService';
+import useLibrary from '../../../hooks/useLibrary';
 
 const CartMacroSummary = ({ items }) => {
-    const totals = items.reduce((acc, item) => {
-        // Use the scaled nutrition values that are stored directly on the item
-        // (calculated by ServingSizeEditor) instead of recalculating with getFoodMacros
-        const calories = item.calories || 0;
-        const fat = item.fat || 0;
-        const carbs = item.carbs || 0;
-        const protein = item.protein || 0;
-        
-        acc.calories += calories;
-        acc.fat += fat;
-        acc.carbs += carbs;
-        acc.protein += protein;
-        return acc;
-    }, { calories: 0, fat: 0, carbs: 0, protein: 0 });
+  const foodLibrary = useLibrary('food');
+  const totals = items.reduce((acc, item) => {
+    if (item.type === 'recipe' && item.recipe && item.recipe.items && item.recipe.servings) {
+      // Expand recipe ingredients
+      const servings = item.servings || 1;
+      const recipeServings = item.recipe.servings || 1;
+      item.recipe.items.forEach(ingredient => {
+        const food = foodLibrary.items.find(f => f.id === ingredient.id);
+        if (!food) return;
+        const macros = getFoodMacros(food);
+        const scaledQty = (ingredient.quantity / recipeServings) * servings;
+        acc.calories += (macros.calories || 0) * scaledQty;
+        acc.fat += (macros.fat || 0) * scaledQty;
+        acc.carbs += (macros.carbs || 0) * scaledQty;
+        acc.protein += (macros.protein || 0) * scaledQty;
+      });
+    } else {
+      // Regular food item
+      acc.calories += item.calories || 0;
+      acc.fat += item.fat || 0;
+      acc.carbs += item.carbs || 0;
+      acc.protein += item.protein || 0;
+    }
+    return acc;
+  }, { calories: 0, fat: 0, carbs: 0, protein: 0 });
 
-    const MacroPill = ({ label, value, unit, className }) => (
-        <div className={`text-center rounded-full px-3 py-1 text-xs font-medium ${className}`}>
-            <div>{label}</div>
-            <div className="font-bold">{value}{unit}</div>
-        </div>
-    );
+  const MacroPill = ({ label, value, unit, className }) => (
+    <div className={`text-center rounded-full px-3 py-1 text-xs font-medium ${className}`}>
+      <div>{label}</div>
+      <div className="font-bold">{value}{unit}</div>
+    </div>
+  );
 
-    return (
-        <div className="p-4 bg-muted/50 rounded-lg">
-            <h4 className="text-sm font-semibold mb-2 text-center">Cart Totals</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <MacroPill label="Calories" value={Math.round(totals.calories)} unit="" className="bg-orange-100 text-orange-800" />
-                <MacroPill label="Protein" value={Math.round(totals.protein)} unit="g" className="bg-sky-100 text-sky-800" />
-                <MacroPill label="Carbs" value={Math.round(totals.carbs)} unit="g" className="bg-lime-100 text-lime-800" />
-                <MacroPill label="Fat" value={Math.round(totals.fat)} unit="g" className="bg-amber-100 text-amber-800" />
-            </div>
-        </div>
-    );
+  return (
+    <div className="p-4 bg-muted/50 rounded-lg">
+      <h4 className="text-sm font-semibold mb-2 text-center">Cart Totals</h4>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <MacroPill label="Calories" value={Math.round(totals.calories)} unit="" className="bg-orange-100 text-orange-800" />
+        <MacroPill label="Protein" value={Math.round(totals.protein)} unit="g" className="bg-sky-100 text-sky-800" />
+        <MacroPill label="Carbs" value={Math.round(totals.carbs)} unit="g" className="bg-lime-100 text-lime-800" />
+        <MacroPill label="Fat" value={Math.round(totals.fat)} unit="g" className="bg-amber-100 text-amber-800" />
+      </div>
+    </div>
+  );
 };
 
 const CartFoodSummary = ({ items }) => {
@@ -263,6 +275,7 @@ export default function CartContainer({
               type={type}
               logData={logData}
               onLogDataChange={onLogDataChange}
+              isRecipe={item.type === 'recipe'}
               {...rest}
             />
           ))}

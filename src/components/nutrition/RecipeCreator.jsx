@@ -9,6 +9,7 @@ import Search from '../shared/Search/Search';
 import useLibrary from '../../hooks/useLibrary';
 import useSearch from '../../hooks/useSearch';
 import { getFoodMacros } from '../../utils/dataUtils';
+import useCart from '../../hooks/useCart';
 
 export default function RecipeCreator({ onRecipeCreated, userProfile }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,9 +17,11 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
   const [recipeItems, setRecipeItems] = useState([]);
   const [currentFood, setCurrentFood] = useState(null);
   const [currentQuantity, setCurrentQuantity] = useState(1);
+  const [servings, setServings] = useState(1);
   
   const foodLibrary = useLibrary('food');
   const search = useSearch('food', foodLibrary, userProfile);
+  const foodCart = useCart('food');
 
   const handleAddFood = () => {
     if (currentFood && currentQuantity > 0) {
@@ -42,28 +45,25 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
   };
 
   const handleSaveRecipe = () => {
-    if (recipeName.trim() && recipeItems.length > 0) {
+    if (recipeName.trim() && recipeItems.length > 0 && servings > 0) {
       const recipe = {
         id: `recipe_${Date.now()}`,
         name: recipeName.trim(),
-        items: recipeItems,
         createdAt: new Date().toISOString(),
-        totalMacros: recipeItems.reduce((total, item) => {
-          const macros = item.macros;
-          return {
-            calories: (total.calories || 0) + (macros.calories || 0),
-            protein: (total.protein || 0) + (macros.protein || 0),
-            carbs: (total.carbs || 0) + (macros.carbs || 0),
-            fat: (total.fat || 0) + (macros.fat || 0),
-            fiber: (total.fiber || 0) + (macros.fiber || 0)
-          };
-        }, {})
+        servings: servings,
+        items: recipeItems.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          unit: item.unit
+        }))
       };
-      
       onRecipeCreated(recipe);
       setIsOpen(false);
       setRecipeName('');
       setRecipeItems([]);
+      setServings(1);
+      foodCart.clearCart();
+      foodCart.addToCart(recipe, 1);
     }
   };
 
@@ -207,6 +207,19 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
                 </div>
               </Card>
             )}
+          </div>
+
+          {/* Number of Servings Input */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Number of Servings</label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={servings}
+              onChange={e => setServings(parseInt(e.target.value) || 1)}
+              placeholder="e.g., 4"
+            />
           </div>
 
           {/* Save Button */}

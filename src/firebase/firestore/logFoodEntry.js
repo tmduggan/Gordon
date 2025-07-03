@@ -9,9 +9,10 @@ import { calculateFoodXP } from '../../services/gamification/foodScoringService'
  * @param {number} serving - The serving size.
  * @param {Date} timestamp - The specific timestamp for the log entry.
  * @param {string} [units] - The selected unit (optional, from cart).
+ * @param {object} [extraFields] - Additional fields to include in the log entry.
  * @returns {object} The newly created log entry with its auto-generated ID.
  */
-export async function logFoodEntry(item, user, serving, timestamp, units) {
+export async function logFoodEntry(item, user, serving, timestamp, units, extraFields = {}) {
     if (!user || !item.id) {
         throw new Error("User and Food ID must be provided to log an entry.");
     }
@@ -27,6 +28,7 @@ export async function logFoodEntry(item, user, serving, timestamp, units) {
         userId: user.uid,
         recordedTime: serverTimestamp(),
         xp: xp, // Add XP to the log entry
+        ...extraFields
     };
     
     // Debug: Output the log entry before saving

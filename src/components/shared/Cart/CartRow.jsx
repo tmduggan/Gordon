@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
+import { Input } from '@/components/ui/input';
 
 // Mobile detection (same as WorkoutSuggestions)
 function useIsMobile() {
@@ -70,6 +71,7 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
   const isFoodItem = 'label' in item;
   const isMobile = useIsMobile();
   const [showConfirm, setShowConfirm] = useState(false);
+  const isRecipe = item.type === 'recipe';
 
   const InfoDialog = ({ item, isFood }) => {
     if (isFood) {
@@ -110,7 +112,40 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     removeFromCart(item.id);
   };
 
-  if (isFoodItem) {
+  if (isRecipe) {
+    // Render recipe row: show name and servings input only
+    return (
+      <Card className="border">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm">{item.name}</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={item.servings}
+                  onChange={e => updateCartItem(item.id, { servings: parseFloat(e.target.value) || 1 })}
+                  className="w-20"
+                />
+                <span className="text-sm text-gray-500">servings</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => removeFromCart(item.id)} 
+                  title="Remove recipe"
+                  className="h-8 w-8"
+                >
+                  <XCircle className="h-5 w-5 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  } else if (isFoodItem) {
     const currentUnitRef = useRef(item.units);
     useEffect(() => {
       currentUnitRef.current = item.units;
