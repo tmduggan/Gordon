@@ -12,8 +12,8 @@ import { convertToGrams } from '../../utils/dataUtils';
  */
 const ServingSizeEditor = ({ food, onUpdate }) => {
     // Store quantity as a string to allow empty input
-    const [quantity, setQuantity] = useState((food.serving_qty || 1).toString());
-    const [unit, setUnit] = useState(food.serving_unit || 'g');
+    const [quantity, setQuantity] = useState((food.quantity !== undefined ? food.quantity : (food.serving_qty || 1)).toString());
+    const [unit, setUnit] = useState(food.units || food.serving_unit || 'g');
 
     // Calculate macros per gram once
     const macrosPerGram = useMemo(() => {
