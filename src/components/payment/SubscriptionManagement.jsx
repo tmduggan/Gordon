@@ -8,7 +8,7 @@ import { useToast } from '../../hooks/useToast';
 import useAuthStore from '../../store/useAuthStore';
 import PremiumUpgradeModal from './PremiumUpgradeModal';
 
-export default function SubscriptionManagement() {
+export default function SubscriptionManagement({ adminDetails }) {
   const { user, userProfile } = useAuthStore();
   const { toast } = useToast();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -158,6 +158,33 @@ export default function SubscriptionManagement() {
                     Cancelling your subscription will downgrade you to Basic at the end of your current billing period. 
                     You'll lose access to premium features but can upgrade again anytime.
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Admin Details Section */}
+          {adminDetails && (
+            <div className="mt-8 border-t pt-4">
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <Crown className="h-4 w-4 text-purple-600" /> Admin Details
+              </h4>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Subscription Status:</span>
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">{adminDetails.status || 'Admin'}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Plan:</span>
+                  <span className="text-sm">{adminDetails.plan || 'admin'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Features:</span>
+                  <span className="text-sm">{Array.isArray(adminDetails.features) ? adminDetails.features.join(', ') : adminDetails.features || 'all_features'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Expires:</span>
+                  <span className="text-sm">{adminDetails.expiresAt || 'Never'}</span>
                 </div>
               </div>
             </div>

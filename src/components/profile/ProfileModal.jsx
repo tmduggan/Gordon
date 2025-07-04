@@ -328,39 +328,13 @@ export default function ProfileModal({ open, onOpenChange }) {
                   <div className="text-xs text-gray-500 mt-2">To change your goals, update your activity level or body stats above.</div>
                 </CardContent>
               </Card>
-              {/* Subscription Management (all users) */}
-              <SubscriptionManagement />
-              {/* Admin Info (only for admins) */}
-              {isAdminUser && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Crown className="h-5 w-5" />
-                      <span>Admin Details</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Subscription Status:</span>
-                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Plan:</span>
-                        <span className="text-sm">{userProfile?.subscription?.plan || 'admin'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Features:</span>
-                        <span className="text-sm">{userProfile?.subscription?.features?.join(', ') || 'all_features'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Expires:</span>
-                        <span className="text-sm">{userProfile?.subscription?.expiresAt || 'Never'}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Subscription Management (all users, with admin details for admins) */}
+              <SubscriptionManagement adminDetails={isAdminUser ? {
+                status: userProfile?.subscription?.status,
+                plan: userProfile?.subscription?.plan,
+                features: userProfile?.subscription?.features,
+                expiresAt: userProfile?.subscription?.expiresAt,
+              } : null} />
             </div>
           </TabsContent>
         </Tabs>
