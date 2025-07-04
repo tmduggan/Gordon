@@ -302,14 +302,6 @@ export default function ProfileMenu() {
                     <>
                       <Button
                         variant="ghost"
-                        onClick={handleDebugProfile}
-                        className="w-full justify-start"
-                      >
-                        <Bug className="h-4 w-4 mr-2" />
-                        Debug Profile
-                      </Button>
-                      <Button
-                        variant="ghost"
                         onClick={handleOpenAdminSubmissions}
                         className="w-full justify-start bg-status-success hover:bg-status-success/90"
                       >

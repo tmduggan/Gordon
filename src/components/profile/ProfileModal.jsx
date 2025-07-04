@@ -261,12 +261,9 @@ export default function ProfileModal({ open, onOpenChange }) {
           </DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="w-full mt-2">
-          <TabsList className="grid grid-cols-5 gap-2 mb-4 w-full">
+          <TabsList className="grid grid-cols-3 gap-2 mb-4 w-full">
             <TabsTrigger value="achievements" className="flex items-center min-w-0 flex-1">
               <Medal className="inline-block mr-1" /> Achievements
-            </TabsTrigger>
-            <TabsTrigger value="nutrition" className="flex items-center min-w-0 flex-1">
-              <Apple className="inline-block mr-1" /> Nutrition
             </TabsTrigger>
             <TabsTrigger value="goliath" className="flex items-center min-w-0 flex-1">
               <Dumbbell className="inline-block mr-1" /> Goliath
@@ -274,11 +271,6 @@ export default function ProfileModal({ open, onOpenChange }) {
             <TabsTrigger value="profile" className="flex items-center min-w-0 flex-1">
               <User className="inline-block mr-1" /> Profile
             </TabsTrigger>
-            {isAdminUser && (
-              <TabsTrigger value="admin" className="flex items-center min-w-0 flex-1">
-                <Crown className="inline-block mr-1" /> Admin
-              </TabsTrigger>
-            )}
           </TabsList>
 
           {/* Achievements Tab */}
@@ -289,26 +281,6 @@ export default function ProfileModal({ open, onOpenChange }) {
               accountCreationDate={user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined}
               className="mb-4"
               userProfile={userProfile}
-            />
-            <DebugControls
-              onValidateXP={validateXP}
-              onFixXP={handleFixXP}
-              onSyncXP={handleSyncXP}
-              onMigrateMuscleScores={handleMigrateMuscleScores}
-              xpValidation={xpValidation}
-              loading={exerciseHistory.loading || foodHistory.loading || exerciseLibrary.loading}
-              userProfile={userProfile}
-              exerciseHistory={exerciseHistory}
-              foodHistory={foodHistory}
-            />
-          </TabsContent>
-
-          {/* Nutrition Tab */}
-          <TabsContent value="nutrition">
-            <NutritionGoalsForm
-              userProfile={userProfile}
-              onSave={handleSaveGoals}
-              onCancel={() => onOpenChange(false)}
             />
           </TabsContent>
 
@@ -338,25 +310,59 @@ export default function ProfileModal({ open, onOpenChange }) {
                 user={user}
                 onSave={handleSaveProfile}
                 onCancel={() => onOpenChange(false)}
+                showActivityLevel={true}
               />
-              
-              {/* Subscription Management */}
+              {/* Auto-calculated Nutrition Goals (not editable) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Nutrition Goals (Auto-calculated)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><strong>Calories:</strong> {currentGoals.calories}</div>
+                    <div><strong>Protein:</strong> {currentGoals.protein}g</div>
+                    <div><strong>Carbs:</strong> {currentGoals.carbs}g</div>
+                    <div><strong>Fat:</strong> {currentGoals.fat}g</div>
+                    <div><strong>Fiber:</strong> {currentGoals.fiber}g</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">To change your goals, update your activity level or body stats above.</div>
+                </CardContent>
+              </Card>
+              {/* Subscription Management (all users) */}
               <SubscriptionManagement />
+              {/* Admin Info (only for admins) */}
+              {isAdminUser && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      <span>Admin Details</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Subscription Status:</span>
+                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Plan:</span>
+                        <span className="text-sm">{userProfile?.subscription?.plan || 'admin'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Features:</span>
+                        <span className="text-sm">{userProfile?.subscription?.features?.join(', ') || 'all_features'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Expires:</span>
+                        <span className="text-sm">{userProfile?.subscription?.expiresAt || 'Never'}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
-
-          {/* Admin Tab */}
-          {isAdminUser && (
-            <TabsContent value="admin">
-              <SubscriptionStatus status={userProfile?.subscription?.status || 'basic'} />
-              <AdminControlsModal
-                user={user}
-                userProfile={userProfile}
-                onToggleSubscription={handleToggleSubscription}
-                onEnsureSubscription={handleEnsureSubscription}
-              />
-            </TabsContent>
-          )}
         </Tabs>
       </div>
     </AnimatedModal>
