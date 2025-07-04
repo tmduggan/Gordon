@@ -453,6 +453,20 @@ const useAuthStore = create((set, get) => ({
     await get().saveUserProfile(newProfile);
   },
 
+  // Update a recipe
+  updateRecipe: async (updatedRecipe) => {
+    const { userProfile } = get();
+    if (!userProfile) return;
+    
+    const currentRecipes = userProfile.recipes || [];
+    const newRecipes = currentRecipes.map(recipe => 
+      recipe.id === updatedRecipe.id ? updatedRecipe : recipe
+    );
+    
+    const newProfile = { ...userProfile, recipes: newRecipes };
+    await get().saveUserProfile(newProfile);
+  },
+
   // Delete a recipe
   deleteRecipe: async (recipeId) => {
     const { userProfile } = get();

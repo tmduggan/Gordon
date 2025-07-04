@@ -61,20 +61,57 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
                 const recipeServings = item.recipe.servings || 1;
                 for (const ingredient of item.recipe.items) {
                     const scaledQuantity = (ingredient.quantity / recipeServings) * servingsToLog;
-                    const food = foodLibrary.items.find(f => f.id === ingredient.id);
-                    if (!food) continue;
-                    try {
-                        const loggedEntry = await logFoodEntry(
-                            food,
-                            user,
-                            scaledQuantity,
-                            timestamp,
-                            ingredient.unit,
-                            { recipeId: item.recipe.id, recipeName: item.recipe.name, recipeServings: item.recipe.servings, recipeLoggedServings: servingsToLog }
-                        );
-                        totalXP += loggedEntry.xp || 0;
-                    } catch (error) {
-                        console.error("Error logging recipe ingredient:", error, ingredient);
+                    
+                    // Check if this ingredient is itself a recipe
+                    if (ingredient.isRecipe) {
+                        const nestedRecipe = userProfile?.recipes?.find(r => r.id === ingredient.id);
+                        if (nestedRecipe) {
+                            // Recursively log the nested recipe
+                            const nestedServingsToLog = scaledQuantity;
+                            const nestedRecipeServings = nestedRecipe.servings || 1;
+                            for (const nestedIngredient of nestedRecipe.items) {
+                                const nestedScaledQuantity = (nestedIngredient.quantity / nestedRecipeServings) * nestedServingsToLog;
+                                const food = foodLibrary.items.find(f => f.id === nestedIngredient.id);
+                                if (!food) continue;
+                                try {
+                                    const loggedEntry = await logFoodEntry(
+                                        food,
+                                        user,
+                                        nestedScaledQuantity,
+                                        timestamp,
+                                        nestedIngredient.unit,
+                                        { 
+                                            recipeId: item.recipe.id, 
+                                            recipeName: item.recipe.name, 
+                                            recipeServings: item.recipe.servings, 
+                                            recipeLoggedServings: servingsToLog,
+                                            nestedRecipeId: nestedRecipe.id,
+                                            nestedRecipeName: nestedRecipe.name
+                                        }
+                                    );
+                                    totalXP += loggedEntry.xp || 0;
+                                } catch (error) {
+                                    console.error("Error logging nested recipe ingredient:", error, nestedIngredient);
+                                }
+                            }
+                        }
+                    } else {
+                        // Regular food ingredient
+                        const food = foodLibrary.items.find(f => f.id === ingredient.id);
+                        if (!food) continue;
+                        try {
+                            const loggedEntry = await logFoodEntry(
+                                food,
+                                user,
+                                scaledQuantity,
+                                timestamp,
+                                ingredient.unit,
+                                { recipeId: item.recipe.id, recipeName: item.recipe.name, recipeServings: item.recipe.servings, recipeLoggedServings: servingsToLog }
+                            );
+                            totalXP += loggedEntry.xp || 0;
+                        } catch (error) {
+                            console.error("Error logging recipe ingredient:", error, ingredient);
+                        }
                     }
                 }
             } else {

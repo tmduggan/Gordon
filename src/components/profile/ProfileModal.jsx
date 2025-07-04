@@ -310,7 +310,7 @@ export default function ProfileModal({ open, onOpenChange }) {
                 user={user}
                 onSave={handleSaveProfile}
                 onCancel={() => onOpenChange(false)}
-                showActivityLevel={true}
+                showActivityLevel={false}
               />
               {/* Auto-calculated Nutrition Goals (not editable) */}
               <Card>
@@ -328,7 +328,6 @@ export default function ProfileModal({ open, onOpenChange }) {
                   <div className="text-xs text-gray-500 mt-2">To change your goals, update your activity level or body stats above.</div>
                 </CardContent>
               </Card>
-              {/* Subscription Management (all users, with admin details for admins) */}
               <SubscriptionManagement adminDetails={isAdminUser ? {
                 status: userProfile?.subscription?.status,
                 plan: userProfile?.subscription?.plan,

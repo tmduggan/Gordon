@@ -17,7 +17,8 @@ export default function SaveCartAsRecipe({ cart, onRecipeCreated, disabled = fal
       const recipeItems = cart.map(item => ({
         id: item.id,
         quantity: item.quantity || 1,
-        unit: item.serving_unit || item.units || 'serving'
+        unit: item.serving_unit || item.units || 'serving',
+        isRecipe: item.type === 'recipe' || item.isRecipe || false
       }));
       const recipe = {
         id: `recipe_${Date.now()}`,

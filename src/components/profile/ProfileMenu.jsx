@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import useAuthStore from '@/store/useAuthStore';
 import ProfileModal from './ProfileModal';
 import HiddenExercisesModal from './HiddenExercisesModal';
+import RecipeManagementModal from './RecipeManagementModal';
 import ExerciseLibraryModal from '../admin/ExerciseLibraryModal';
 import { auth } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from '../../hooks/useToast';
-import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell } from 'lucide-react';
+import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell, ChefHat } from 'lucide-react';
 import { getPendingSubmissions, approveExerciseSubmission, rejectExerciseSubmission } from '../../services/exercise/exerciseSubmissionService';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,6 +30,7 @@ export default function ProfileMenu() {
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
+  const [showRecipesModal, setShowRecipesModal] = useState(false);
 
   if (!user || !userProfile) return null;
 
@@ -57,6 +59,9 @@ export default function ProfileMenu() {
   const subscriptionInfo = getSubscriptionStatus();
   const remainingHides = simulatedStatus === 'basic' ? 2 : simulatedStatus === 'premium' ? '∞' : getRemainingHides();
   const isAdminUser = isAdmin();
+  
+  // Calculate recipe count with max of 99
+  const recipeCount = Math.min((userProfile.recipes?.length || 0), 99);
 
   React.useEffect(() => {
     if (isAdminUser) {
@@ -291,6 +296,21 @@ export default function ProfileMenu() {
 
                   <Button
                     variant="ghost"
+                    onClick={() => {
+                      setShowRecipesModal(true);
+                      setShowDropdown(false);
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <ChefHat className="h-4 w-4 mr-2" />
+                    Recipes
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {recipeCount}
+                    </Badge>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
                     onClick={() => auth.signOut()}
                     className="w-full justify-start"
                   >
@@ -338,6 +358,13 @@ export default function ProfileMenu() {
         <HiddenExercisesModal
           open={showHiddenExercises}
           onOpenChange={setShowHiddenExercises}
+        />
+      )}
+      
+      {showRecipesModal && (
+        <RecipeManagementModal
+          open={showRecipesModal}
+          onOpenChange={setShowRecipesModal}
         />
       )}
 

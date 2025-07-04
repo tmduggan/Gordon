@@ -30,7 +30,8 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
         name: currentFood.food_name || currentFood.name,
         quantity: currentQuantity,
         unit: currentFood.serving_unit || 'serving',
-        macros: getFoodMacros(currentFood)
+        macros: getFoodMacros(currentFood),
+        isRecipe: currentFood.isRecipe || false
       };
       
       setRecipeItems([...recipeItems, newItem]);
@@ -54,7 +55,8 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
         items: recipeItems.map(item => ({
           id: item.id,
           quantity: item.quantity,
-          unit: item.unit
+          unit: item.unit,
+          isRecipe: item.isRecipe || false
         }))
       };
       onRecipeCreated(recipe);
@@ -73,7 +75,32 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
 
   const calculateTotalMacros = () => {
     return recipeItems.reduce((total, item) => {
-      const macros = item.macros;
+      let macros = item.macros;
+      
+      // If this is a recipe ingredient, calculate its macros based on the recipe
+      if (item.isRecipe) {
+        const recipe = userProfile?.recipes?.find(r => r.id === item.id);
+        if (recipe) {
+          const recipeMacros = recipe.items.reduce((recipeTotal, ingredient) => {
+            const food = foodLibrary.items.find(f => f.id === ingredient.id);
+            if (!food) return recipeTotal;
+            
+            const foodMacros = getFoodMacros(food);
+            const scaledQty = (ingredient.quantity / (recipe.servings || 1)) * item.quantity;
+            
+            return {
+              calories: recipeTotal.calories + (foodMacros.calories * scaledQty),
+              protein: recipeTotal.protein + (foodMacros.protein * scaledQty),
+              carbs: recipeTotal.carbs + (foodMacros.carbs * scaledQty),
+              fat: recipeTotal.fat + (foodMacros.fat * scaledQty),
+              fiber: recipeTotal.fiber + (foodMacros.fiber * scaledQty)
+            };
+          }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+          
+          macros = recipeMacros;
+        }
+      }
+      
       return {
         calories: (total.calories || 0) + (macros.calories || 0),
         protein: (total.protein || 0) + (macros.protein || 0),

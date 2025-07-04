@@ -17,24 +17,53 @@ import { calculateStreakBonuses } from '../../../services/gamification/levelServ
 import { calculateFoodXP, calculateFoodGroupMultiplier } from '../../../services/gamification/foodScoringService';
 import { calculateExerciseScore } from '../../../services/exercise/exerciseService';
 import useLibrary from '../../../hooks/useLibrary';
+import useAuthStore from '../../../store/useAuthStore';
 
 const CartMacroSummary = ({ items }) => {
   const foodLibrary = useLibrary('food');
-  const totals = items.reduce((acc, item) => {
-    if (item.type === 'recipe' && item.recipe && item.recipe.items && item.recipe.servings) {
-      // Expand recipe ingredients
-      const servings = item.servings || 1;
-      const recipeServings = item.recipe.servings || 1;
-      item.recipe.items.forEach(ingredient => {
+  const { userProfile } = useAuthStore();
+  
+  const calculateRecipeMacros = (recipe, servings) => {
+    const recipeServings = recipe.servings || 1;
+    let totalMacros = { calories: 0, fat: 0, carbs: 0, protein: 0 };
+    
+    recipe.items.forEach(ingredient => {
+      if (ingredient.isRecipe) {
+        // Handle nested recipe
+        const nestedRecipe = userProfile?.recipes?.find(r => r.id === ingredient.id);
+        if (nestedRecipe) {
+          const nestedScaledQty = (ingredient.quantity / recipeServings) * servings;
+          const nestedMacros = calculateRecipeMacros(nestedRecipe, nestedScaledQty);
+          totalMacros.calories += nestedMacros.calories;
+          totalMacros.fat += nestedMacros.fat;
+          totalMacros.carbs += nestedMacros.carbs;
+          totalMacros.protein += nestedMacros.protein;
+        }
+      } else {
+        // Regular food ingredient
         const food = foodLibrary.items.find(f => f.id === ingredient.id);
         if (!food) return;
         const macros = getFoodMacros(food);
         const scaledQty = (ingredient.quantity / recipeServings) * servings;
-        acc.calories += (macros.calories || 0) * scaledQty;
-        acc.fat += (macros.fat || 0) * scaledQty;
-        acc.carbs += (macros.carbs || 0) * scaledQty;
-        acc.protein += (macros.protein || 0) * scaledQty;
-      });
+        totalMacros.calories += (macros.calories || 0) * scaledQty;
+        totalMacros.fat += (macros.fat || 0) * scaledQty;
+        totalMacros.carbs += (macros.carbs || 0) * scaledQty;
+        totalMacros.protein += (macros.protein || 0) * scaledQty;
+      }
+    });
+    
+    return totalMacros;
+  };
+  
+  const totals = items.reduce((acc, item) => {
+    if (item.type === 'recipe' && item.recipe && item.recipe.items && item.recipe.servings) {
+      // Expand recipe ingredients (including nested recipes)
+      const servings = item.servings || 1;
+      const recipeMacros = calculateRecipeMacros(item.recipe, servings);
+      acc.calories += recipeMacros.calories;
+      acc.fat += recipeMacros.fat;
+      acc.carbs += recipeMacros.carbs;
+      acc.protein += recipeMacros.protein;
     } else {
       // Regular food item
       acc.calories += item.calories || 0;

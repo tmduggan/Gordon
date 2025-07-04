@@ -160,17 +160,17 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
       </form>
 
       {/* Body Update Button and Modal */}
-      <div className="mt-6">
+      <div className="flex justify-center mt-6">
         <Button onClick={() => setShowBodyModal(true)} variant="secondary">
-          Body Update
+          ⚙️ Profile
         </Button>
       </div>
       {showBodyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold mb-4">Update Body Stats</h2>
+            <h2 className="text-lg font-bold mb-4 text-center">⚙️</h2>
             {/* Unit toggle */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 justify-center">
               <Button variant={unitSystem === 'imperial' ? 'default' : 'outline'} onClick={() => handleUnitToggle('imperial')}>Imperial</Button>
               <Button variant={unitSystem === 'metric' ? 'default' : 'outline'} onClick={() => handleUnitToggle('metric')}>Metric</Button>
             </div>
@@ -216,10 +216,40 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
                 <label className="block text-sm font-medium">Body Fat (%)</label>
                 <input type="number" value={bodyStats.bodyFat} onChange={e => setBodyStats({ ...bodyStats, bodyFat: e.target.value })} className="border rounded px-2 py-1 w-full" />
               </div>
+              {/* Move Time Zone and Activity Level here */}
+              <div className="col-span-2">
+                <label htmlFor="timeZone" className="text-sm font-medium">Time Zone</label>
+                <select
+                  id="timeZone"
+                  value={bodyStats.timeZone || userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || ''}
+                  onChange={e => setBodyStats({ ...bodyStats, timeZone: e.target.value })}
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  {timeZones.map(tz => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label} {tz.flag} (GMT{tz.gmtOffset})
+                      {`  ${getCurrentTimeInZone(tz.value)}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label htmlFor="activityLevel" className="text-sm font-medium">Activity Level</label>
+                <select
+                  id="activityLevel"
+                  value={bodyStats.activityLevel || userProfile?.activityLevel || 'moderate'}
+                  onChange={e => setBodyStats({ ...bodyStats, activityLevel: e.target.value })}
+                  className="border rounded px-2 py-1 w-full"
+                >
+                  {activityLevels.map(level => (
+                    <option key={level.value} value={level.value}>{level.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-2 mt-6 justify-end">
               <Button variant="outline" onClick={() => setShowBodyModal(false)}>Cancel</Button>
-              <Button onClick={handleBodySave}>Save Body Stats</Button>
+              <Button onClick={handleBodySave}>Save</Button>
             </div>
           </div>
         </div>

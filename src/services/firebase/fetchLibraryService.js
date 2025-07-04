@@ -114,12 +114,12 @@ export async function searchNutritionix(searchQuery, existingItems = []) {
         const newBranded = results
             .filter(item => item.is_branded)
             .filter(item => !existingItems.some(f => f.id === generateFoodId(item)))
-            .slice(0, 2);
+            .slice(0, 4);
 
         const newCommon = results
             .filter(item => !item.is_branded)
             .filter(item => !existingItems.some(f => f.id === generateFoodId(item)))
-            .slice(0, 2);
+            .slice(0, 4);
         
         const itemsToSave = [...newBranded, ...newCommon];
         console.log('[searchNutritionix] Items to save:', itemsToSave);

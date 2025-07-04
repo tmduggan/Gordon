@@ -17,6 +17,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
 import { Input } from '@/components/ui/input';
+import useAuthStore from '../../../store/useAuthStore';
 
 // Mobile detection (same as WorkoutSuggestions)
 function useIsMobile() {
@@ -72,6 +73,7 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
   const isMobile = useIsMobile();
   const [showConfirm, setShowConfirm] = useState(false);
   const isRecipe = item.type === 'recipe';
+  const { userProfile } = useAuthStore();
 
   const InfoDialog = ({ item, isFood }) => {
     if (isFood) {
@@ -112,34 +114,76 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
     removeFromCart(item.id);
   };
 
+  // Helper to calculate calories for food
+  const getFoodCalories = (food) => {
+    const macros = getFoodMacros(food);
+    // If the food has a quantity and calories, scale accordingly
+    if (food.calories && food.quantity) {
+      return Math.round(food.calories * food.quantity);
+    }
+    return macros.calories ? Math.round(macros.calories * (food.quantity || 1)) : 0;
+  };
+
+  // Helper to calculate calories for a recipe (including nested)
+  const getRecipeCalories = (recipe, servings) => {
+    if (!recipe || !recipe.items) return 0;
+    const recipeServings = recipe.servings || 1;
+    let total = 0;
+    recipe.items.forEach(ingredient => {
+      if (ingredient.isRecipe) {
+        const nestedRecipe = userProfile?.recipes?.find(r => r.id === ingredient.id);
+        if (nestedRecipe) {
+          const nestedCals = getRecipeCalories(nestedRecipe, (ingredient.quantity / recipeServings) * servings);
+          total += nestedCals;
+        }
+      } else {
+        // Find food in library or use calories on ingredient
+        total += getFoodCalories({ ...ingredient, quantity: (ingredient.quantity / recipeServings) * servings });
+      }
+    });
+    return Math.round(total);
+  };
+
   if (isRecipe) {
-    // Render recipe row: show name and servings input only
+    // Render recipe row: servings input, then name/calories row, then remove button
+    const servings = item.servings || 1;
+    const recipe = item.recipe || userProfile?.recipes?.find(r => r.id === item.id);
+    const calories = recipe ? getRecipeCalories(recipe, servings) : 0;
     return (
       <Card className="border">
         <CardContent className="p-4">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            {/* First row: servings input */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={servings}
+                onChange={e => updateCartItem(item.id, { servings: parseFloat(e.target.value) || 1 })}
+                className="w-20"
+              />
+              <span className="text-sm text-gray-500">servings</span>
+            </div>
+            {/* Second row: name left, calories right */}
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">{item.name}</span>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={item.servings}
-                  onChange={e => updateCartItem(item.id, { servings: parseFloat(e.target.value) || 1 })}
-                  className="w-20"
-                />
-                <span className="text-sm text-gray-500">servings</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => removeFromCart(item.id)} 
-                  title="Remove recipe"
-                  className="h-8 w-8"
-                >
-                  <XCircle className="h-5 w-5 text-red-500" />
-                </Button>
-              </div>
+              <span className="font-semibold text-sm flex items-center gap-1">
+                <ChefHat className="h-4 w-4 text-orange-500" />
+                {item.name}
+              </span>
+              <span className="text-sm font-mono text-gray-700">Cal: {calories}</span>
+            </div>
+            {/* Remove button row */}
+            <div className="flex justify-end">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeFromCart(item.id)} 
+                title="Remove recipe"
+                className="h-8 w-8"
+              >
+                <XCircle className="h-5 w-5 text-red-500" />
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -154,14 +198,14 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
       updateCartItem(item.id, { quantity, units, ...scaledNutrition });
     }, [updateCartItem, item.id]);
     
+    const calories = getFoodCalories(item);
     return (
       <Card className="border">
         <CardContent className="p-4">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {/* Serving Size Editor */}
             <ServingSizeEditor food={item} onUpdate={handleServingChange} />
-            
-            {/* Food Info Row */}
+            {/* Food Info Row: name left, calories right */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-sm">{item.label}</span>
@@ -173,8 +217,10 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
                 )}
                 <InfoDialog item={item} isFood={true} />
               </div>
-              
-              {/* Remove Button */}
+              <span className="text-sm font-mono text-gray-700">Cal: {calories}</span>
+            </div>
+            {/* Remove Button Row */}
+            <div className="flex justify-end">
               <Button 
                 variant="ghost" 
                 size="icon" 
