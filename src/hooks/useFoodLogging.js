@@ -27,9 +27,9 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
 
     const handleNutrientsAdd = async (foods) => {
         console.log('[handleNutrientsAdd] Adding foods to cart:', foods.length);
-        // Add all foods to cart with default quantities
+        // Add all foods to cart with correct quantities and units
         foods.forEach(food => {
-            cart.addToCart(food);
+            cart.addToCart(food, food.quantity, food.units);
         });
         
         // Show success toast

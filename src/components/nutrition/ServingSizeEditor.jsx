@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { convertToGrams } from '../../utils/dataUtils';
@@ -14,6 +14,14 @@ const ServingSizeEditor = ({ food, onUpdate }) => {
     // Store quantity as a string to allow empty input
     const [quantity, setQuantity] = useState((food.quantity !== undefined ? food.quantity : (food.serving_qty || 1)).toString());
     const [unit, setUnit] = useState(food.units || food.serving_unit || 'g');
+
+    // Sync state with props if food.quantity or food.units change
+    useEffect(() => {
+        setQuantity((food.quantity !== undefined ? food.quantity : (food.serving_qty || 1)).toString());
+    }, [food.quantity, food.serving_qty]);
+    useEffect(() => {
+        setUnit(food.units || food.serving_unit || 'g');
+    }, [food.units, food.serving_unit]);
 
     // Calculate macros per gram once
     const macrosPerGram = useMemo(() => {
