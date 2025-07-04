@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import timeZones, { getCurrentTimeInZone } from '../../utils/timeZones';
+import useAuthStore from '../../store/useAuthStore';
 
 const activityLevels = [
   { value: 'sedentary', label: 'Sedentary (little or no exercise)' },
@@ -19,6 +20,8 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
       activityLevel: userProfile?.activityLevel || 'moderate',
     }
   });
+
+  const { saveUserProfile } = useAuthStore();
 
   // Body Update modal state
   const [showBodyModal, setShowBodyModal] = useState(false);
@@ -39,7 +42,7 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
     heightIn: userProfile?.heightIn || defaultBody.heightIn,
     weightKg: userProfile?.weightKg || defaultBody.weightKg,
     weightLbs: userProfile?.weightLbs || defaultBody.weightLbs,
-    age: userProfile?.age || defaultBody.age,
+    dob: userProfile?.dob || '',
     gender: userProfile?.gender || defaultBody.gender,
     bodyFat: userProfile?.bodyFat || defaultBody.bodyFat,
   });
@@ -89,14 +92,16 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
       heightCm = metric.heightCm;
       weightKg = metric.weightKg;
     }
-    onSave({
+    const updatedProfile = {
       ...userProfile,
       heightCm,
       weightKg,
-      age: bodyStats.age,
+      dob: bodyStats.dob,
       gender: bodyStats.gender,
       bodyFat: bodyStats.bodyFat,
-    });
+    };
+    saveUserProfile(updatedProfile);
+    onSave(updatedProfile);
     setShowBodyModal(false);
   };
 
@@ -197,8 +202,8 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
                 </>
               )}
               <div>
-                <label className="block text-sm font-medium">Age</label>
-                <input type="number" value={bodyStats.age} onChange={e => setBodyStats({ ...bodyStats, age: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                <label className="block text-sm font-medium">Date of Birth</label>
+                <input type="date" value={bodyStats.dob} onChange={e => setBodyStats({ ...bodyStats, dob: e.target.value })} className="border rounded px-2 py-1 w-full" />
               </div>
               <div>
                 <label className="block text-sm font-medium">Gender</label>

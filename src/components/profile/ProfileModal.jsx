@@ -315,7 +315,7 @@ export default function ProfileModal({ open, onOpenChange }) {
               {/* Auto-calculated Nutrition Goals (not editable) */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Nutrition Goals (Auto-calculated)</CardTitle>
+                  <CardTitle>Daily 🎯</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">

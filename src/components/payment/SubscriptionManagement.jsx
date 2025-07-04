@@ -80,6 +80,18 @@ export default function SubscriptionManagement({ adminDetails }) {
             </Badge>
           </div>
 
+          {/* Features (right-aligned) */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Features:</span>
+            <span className="text-sm">{Array.isArray(subscription?.features) ? subscription.features.join(', ').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'All Features'}</span>
+          </div>
+
+          {/* Expires (right-aligned) */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Expires:</span>
+            <span className="text-sm">{subscription?.expiresAt ? formatDate(subscription.expiresAt) : 'Never'}</span>
+          </div>
+
           {/* Plan Details */}
           {isPremium && (
             <>
@@ -87,25 +99,8 @@ export default function SubscriptionManagement({ adminDetails }) {
                 <span className="text-sm font-medium">Plan:</span>
                 <span className="text-sm">{subscription?.plan === 'monthly' ? 'Monthly Premium' : 'Yearly Premium'}</span>
               </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Expires:</span>
-                <span className="text-sm">{formatDate(subscription?.expiresAt)}</span>
-              </div>
             </>
           )}
-
-          {/* Features */}
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Features:</h4>
-            <div className="space-y-1">
-              {subscription?.features?.map((feature, index) => (
-                <div key={index} className="text-xs text-gray-600">
-                  • {feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Actions */}
           <div className="mt-6 space-y-3">
@@ -118,7 +113,6 @@ export default function SubscriptionManagement({ adminDetails }) {
                 Upgrade to Premium
               </Button>
             )}
-
             {isPremium && (
               <Button 
                 onClick={handleCancelSubscription}
@@ -139,7 +133,6 @@ export default function SubscriptionManagement({ adminDetails }) {
                 )}
               </Button>
             )}
-
             {isAdmin && (
               <div className="text-center text-sm text-gray-500">
                 Admin accounts have access to all features
@@ -162,36 +155,8 @@ export default function SubscriptionManagement({ adminDetails }) {
               </div>
             </div>
           )}
-
-          {/* Admin Details Section */}
-          {adminDetails && (
-            <div className="mt-8 border-t pt-4">
-              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                <Crown className="h-4 w-4 text-purple-600" /> Admin Details
-              </h4>
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Subscription Status:</span>
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">{adminDetails.status || 'Admin'}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Plan:</span>
-                  <span className="text-sm">{adminDetails.plan || 'admin'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Features:</span>
-                  <span className="text-sm">{Array.isArray(adminDetails.features) ? adminDetails.features.join(', ') : adminDetails.features || 'all_features'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Expires:</span>
-                  <span className="text-sm">{adminDetails.expiresAt || 'Never'}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
-
       <PremiumUpgradeModal 
         open={showUpgradeModal} 
         onOpenChange={setShowUpgradeModal} 
