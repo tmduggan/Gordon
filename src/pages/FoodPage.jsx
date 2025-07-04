@@ -131,6 +131,7 @@ export default function FoodPage() {
                     foodLog={todayLogs}
                     nutritionGoals={userProfile?.goals || { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 }}
                     onAddFoods={handleRecipeCreated}
+                    handleNutrientsAdd={handleNutrientsAdd}
                     usage={aiUsage}
                     onUsage={handleUsage}
                     isAdmin={isAdmin}

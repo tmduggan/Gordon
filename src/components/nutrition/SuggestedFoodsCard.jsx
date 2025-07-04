@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getNextMealSuggestion } from '@/services/AISuggestionService';
+import { parseNutritionString } from '@/services/nutrition/nutritionStringParser';
 
-export default function SuggestedFoodsCard({ foodLog, nutritionGoals, onAddFoods, usage, onUsage, isAdmin, onResetUsage }) {
+export default function SuggestedFoodsCard({ foodLog, nutritionGoals, onAddFoods, handleNutrientsAdd, usage, onUsage, isAdmin, onResetUsage }) {
   const [suggestion, setSuggestion] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,8 +19,12 @@ export default function SuggestedFoodsCard({ foodLog, nutritionGoals, onAddFoods
 
   const handleAddToCart = () => {
     if (!suggestion) return;
-    const foods = suggestion.split(',').map(item => item.trim());
-    onAddFoods(foods);
+    const parsedFoods = parseNutritionString(suggestion);
+    if (handleNutrientsAdd) {
+      handleNutrientsAdd(parsedFoods);
+    } else {
+      onAddFoods(parsedFoods);
+    }
   };
 
   return (

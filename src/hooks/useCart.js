@@ -91,7 +91,7 @@ const useCart = (type) => {
   
   // Bind the actions to the specific cart type
   const boundActions = {
-    addToCart: (item, quantity) => actions.addToCart(type, item, quantity),
+    addToCart: (item, quantity, unitsOverride) => actions.addToCart(type, item, quantity, unitsOverride),
     removeFromCart: (itemId) => actions.removeFromCart(type, itemId),
     updateCartItem: (itemId, updateObj) => actions.updateCartItem(type, itemId, updateObj),
     clearCart: () => actions.clearCart(type),

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import useAuthStore from '../store/useAuthStore';
 import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 import { useToast } from './useToast';
+import { parseNutritionString } from '../services/nutrition/nutritionStringParser';
 
 export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker) {
     const { user, addXP } = useAuthStore();
@@ -25,18 +26,21 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
         }
     };
 
-    const handleNutrientsAdd = async (foods) => {
+    const handleNutrientsAdd = async (foodsOrString) => {
+        let foods = foodsOrString;
+        if (typeof foodsOrString === 'string') {
+            foods = parseNutritionString(foodsOrString);
+        }
         console.log('[handleNutrientsAdd] Adding foods to cart:', foods.length);
         // Add all foods to cart with correct quantities and units
         foods.forEach(food => {
             cart.addToCart(food, food.quantity, food.units);
         });
-        
         // Show success toast
         if (foods.length === 1) {
             toast({
                 title: "Food Added",
-                description: `Added ${foods[0].food_name || foods[0].label} to your cart`,
+                description: `Added ${foods[0].food_name || foods[0].label || foods[0].name} to your cart`,
             });
         } else {
             toast({
@@ -44,7 +48,6 @@ export default function useFoodLogging(foodLibrary, cart, search, dateTimePicker
                 description: `Added ${foods.length} foods to your cart`,
             });
         }
-        
         if (search && search.clearSearch) {
             search.clearSearch();
         }
