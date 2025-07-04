@@ -224,6 +224,9 @@ export default function Search({
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
     const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+    const { toast } = useToast();
+
+    // NOTE: The search logic here is getting quite complex and could benefit from refactoring into smaller, more maintainable hooks or utility functions, especially as more features are added (filters, fuzzy matching, etc).
 
     useEffect(() => {
         if (searchQuery.length > 0) {
@@ -285,6 +288,12 @@ export default function Search({
                                     if (e.target.value.length <= 100) {
                                         setSearchQuery(e.target.value);
                                         setVisibleCount(10);
+                                    } else {
+                                        toast({
+                                            title: "Query Too Long",
+                                            description: "Please limit your input to 100 characters.",
+                                            variant: "destructive"
+                                        });
                                     }
                                 }}
                                 onFocus={() => setIsOpen(true)}
