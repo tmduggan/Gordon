@@ -9,6 +9,8 @@ import { useToast } from '../../hooks/useToast';
 import useAuthStore from '../../store/useAuthStore';
 import useLibrary from '../../hooks/useLibrary';
 import { getFoodMacros } from '../../utils/dataUtils';
+import FoodCartRow from '../shared/Cart/FoodCartRow';
+import { isValidFoodItem } from '../../utils/isValidFoodItem';
 
 export default function RecipeManagementModal({ open, onOpenChange }) {
   const { userProfile, updateRecipe, deleteRecipe } = useAuthStore();
@@ -252,49 +254,26 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Macro Summary */}
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">Nutrition (per serving)</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{Math.round(recipe.totalMacros.calories)}</span> cal
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{Math.round(recipe.totalMacros.protein)}g</span> protein
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{Math.round(recipe.totalMacros.carbs)}g</span> carbs
-                      </div>
-                      <div className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{Math.round(recipe.totalMacros.fat)}g</span> fat
-                      </div>
-                      {recipe.totalMacros.fiber > 0 && (
-                        <div className="bg-gray-50 p-2 rounded">
-                          <span className="font-medium">{Math.round(recipe.totalMacros.fiber)}g</span> fiber
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Ingredients */}
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">Ingredients</h4>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {recipe.items.map((item, index) => (
-                        <div key={index} className="text-sm text-gray-600 flex justify-between items-center">
-                          <span className="truncate flex items-center gap-1">
-                            {item.isRecipe && <ChefHat className="h-3 w-3 text-orange-500" />}
-                            {item.name}
-                          </span>
-                          <span className="text-gray-500 ml-2">
-                            {item.quantity} {item.unit}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              <CardContent>
+                <div className="space-y-2">
+                  {/* Render each ingredient using FoodCartRow for consistent display */}
+                  {recipe.items
+                    .filter(ingredient => isValidFoodItem(ingredient, foodLibrary))
+                    .map((ingredient, idx) => (
+                      <FoodCartRow
+                        key={ingredient.id || idx}
+                        item={ingredient}
+                        updateCartItem={undefined}
+                        removeFromCart={undefined}
+                        logData={undefined}
+                        onLogDataChange={undefined}
+                        userWorkoutHistory={undefined}
+                      />
+                    ))}
+                </div>
+                {/* Optionally, display total macros here */}
+                <div className="mt-2 text-xs text-gray-600">
+                  Total: {Math.round(recipe.totalMacros.calories)} cal, {Math.round(recipe.totalMacros.protein)}g protein, {Math.round(recipe.totalMacros.carbs)}g carbs, {Math.round(recipe.totalMacros.fat)}g fat
                 </div>
               </CardContent>
             </Card>

@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import CartRow from './CartRow';
+import FoodCartRow from './FoodCartRow';
+import ExerciseCartRow from './ExerciseCartRow';
 import SaveCartAsRecipe from '../../nutrition/SaveCartAsRecipe';
 import { getFoodMacros } from '../../../utils/dataUtils';
 import { analyzeLaggingMuscles, calculateLaggingMuscleBonus } from '../../../services/gamification/suggestionService';
@@ -298,15 +299,27 @@ export default function CartContainer({
       <CardContent className="pt-0">
         <div className="space-y-4">
           {items.map((item, index) => (
-            <CartRow
-              key={item.id || `${item.label}-${item.units}-${index}`}
-              item={item}
-              type={type}
-              logData={logData}
-              onLogDataChange={onLogDataChange}
-              isRecipe={item.type === 'recipe'}
-              {...rest}
-            />
+            type === 'food' || item.type === 'recipe' || 'label' in item ? (
+              <FoodCartRow
+                key={item.id || `${item.label}-${item.units}-${index}`}
+                item={item}
+                type={type}
+                logData={logData}
+                onLogDataChange={onLogDataChange}
+                isRecipe={item.type === 'recipe'}
+                {...rest}
+              />
+            ) : (
+              <ExerciseCartRow
+                key={item.id || `${item.name}-${index}`}
+                item={item}
+                type={type}
+                logData={logData}
+                onLogDataChange={onLogDataChange}
+                userWorkoutHistory={userWorkoutHistory}
+                {...rest}
+              />
+            )
           ))}
         </div>
       </CardContent>

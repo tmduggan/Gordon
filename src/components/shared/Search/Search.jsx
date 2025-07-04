@@ -226,8 +226,12 @@ export default function Search({
     const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
 
     useEffect(() => {
-        setIsOpen(searchQuery.length > 0 && searchResults.length > 0);
-    }, [searchResults, searchQuery]);
+        if (searchQuery.length > 0) {
+            setIsOpen(true);
+        } else {
+            setIsOpen(false);
+        }
+    }, [searchQuery]);
 
     const handleFilterChange = (filterType, value) => {
         setFilters[filterType](value);
@@ -277,8 +281,14 @@ export default function Search({
                                 type="text"
                                 placeholder={placeholder}
                                 value={searchQuery}
-                                onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(10); }}
+                                onChange={(e) => {
+                                    if (e.target.value.length <= 100) {
+                                        setSearchQuery(e.target.value);
+                                        setVisibleCount(10);
+                                    }
+                                }}
                                 onFocus={() => setIsOpen(true)}
+                                maxLength={100}
                                 className={`${nutrientsLoading ? 'border-equipment bg-equipment' : ''}`}
                             />
                             {nutrientsLoading && (
@@ -391,6 +401,7 @@ export default function Search({
                               onPinToggle={() => togglePin(item.id)}
                               onClick={() => {
                                 handleSelect(item);
+                                setSearchQuery('');
                                 setIsOpen(false);
                               }}
                               userProfile={userProfile}
@@ -407,6 +418,7 @@ export default function Search({
                             item={item}
                             onSelect={(selectedItem) => {
                               handleSelect(selectedItem);
+                              setSearchQuery('');
                               setIsOpen(false);
                             }}
                             userProfile={userProfile}

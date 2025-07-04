@@ -1,12 +1,12 @@
 // Groq API Configuration
 // Add your Groq API key to your environment variables or Firebase Functions config
 
-const GROQ_CONFIG = {
+module.exports = {
   // API Base URL
-  BASE_URL: 'https://api.groq.com/openai/v1',
+  BASE_URL: "https://api.groq.com/openai/v1",
   
   // Model to use (Llama-3.1-8B-Instruct is most cost-effective)
-  MODEL: 'llama3-8b-8192',
+  MODEL: "llama3-70b-8192",
   
   // Alternative models you can use:
   // 'llama3-70b-8192' - More powerful but more expensive
@@ -20,10 +20,8 @@ const GROQ_CONFIG = {
   },
   
   // Request timeout (in milliseconds)
-  TIMEOUT: 30000,
+  TIMEOUT: 20000,
   
   // Maximum tokens for responses
-  MAX_TOKENS: 2000
-};
-
-export default GROQ_CONFIG; 
+  MAX_TOKENS: 512
+}; 

@@ -41,8 +41,8 @@ export default function SuggestedFoodsCard({ foodLog, nutritionGoals, onAddFoods
               <Button onClick={handleAddToCart}>Add to cart</Button>
             </div>
           ) : (
-            <Button onClick={handleBuildNextMeal} loading={loading ? true : undefined} disabled={usage >= 3}>
-              Build next meal
+            <Button onClick={handleBuildNextMeal} disabled={usage >= 3} {...(loading ? { 'data-loading': true } : {})}>
+              {loading ? 'Building...' : 'Build next meal'}
             </Button>
           )}
           {usage >= 3 && <div style={{ color: 'red', marginTop: 8 }}>Daily limit reached</div>}

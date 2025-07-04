@@ -3,12 +3,13 @@ const GROQ_CONFIG = require('./groq-config.js');
 
 class GroqService {
   constructor() {
+    // Only use process.env for the API key in Cloud Functions v2
     this.apiKey = process.env.GROQ_API_KEY;
     this.baseURL = GROQ_CONFIG.BASE_URL;
     this.model = GROQ_CONFIG.MODEL;
     this.timeout = GROQ_CONFIG.TIMEOUT;
     this.maxTokens = GROQ_CONFIG.MAX_TOKENS;
-    
+
     if (!this.apiKey) {
       console.warn('GROQ_API_KEY not found in environment variables');
     }

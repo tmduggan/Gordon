@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchInstantResults as fetchNutritionixSearch, fetchNutrients } from '../api/nutritionixAPI';
+import { fetchInstantResults as fetchNutritionixSearch, fetchNutrients, fetchFullNutrition } from '../api/nutritionixAPI';
 import { generateFoodId } from '../services/foodService';
 import { useToast } from './useToast';
 import { exerciseTargetsMuscleCategory } from '../services/svgMappingService';
+import { parseNutritionString } from '../services/nutrition/nutritionStringParser';
 
 // Helper function to normalize strings for fuzzy matching
-const normalize = str => (str || '').toLowerCase().replace(/['’`]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const normalize = str => (str || '').toLowerCase().replace(/[''`]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
 // Helper function to check if an item matches the search query (food)
 const itemMatchesFoodQuery = (item, query) => {
@@ -21,6 +22,53 @@ const itemMatchesFoodQuery = (item, query) => {
         searchTerm.split(' ').every(word => foodName.includes(word) || brandName.includes(word))
     );
 };
+
+// Helper: Normalize string for matching
+function normalizeName(str) {
+  return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Helper: Simple two-way includes fuzzy match
+function isFuzzyMatch(a, b) {
+  a = normalizeName(a);
+  b = normalizeName(b);
+  return a.includes(b) || b.includes(a);
+}
+
+// Helper: Try to convert quantity to available unit
+function convertToAvailableUnit(food, qty, unit) {
+  // If requested unit is available, use it
+  const availableUnits = new Set();
+  if (food.serving_unit) availableUnits.add(food.serving_unit.toLowerCase());
+  if (food.serving_weight_grams) availableUnits.add('g');
+  if (food.alt_measures && Array.isArray(food.alt_measures)) {
+    food.alt_measures.forEach(m => m.measure && availableUnits.add(m.measure.toLowerCase()));
+  }
+  if (availableUnits.has(unit)) {
+    return { quantity: qty, units: unit, converted: false };
+  }
+  // Try to convert grams to another unit
+  if (unit === 'g' && food.alt_measures && Array.isArray(food.alt_measures)) {
+    // Find closest alt_measure in grams
+    let best = null;
+    let minDiff = Infinity;
+    for (const m of food.alt_measures) {
+      if (m.serving_weight && m.measure) {
+        const diff = Math.abs(qty - m.serving_weight);
+        if (diff < minDiff) {
+          minDiff = diff;
+          best = m;
+        }
+      }
+    }
+    if (best) {
+      const convertedQty = qty / best.serving_weight * best.qty;
+      return { quantity: convertedQty, units: best.measure, converted: true, conversionText: `Converted ${qty}g to ${convertedQty.toFixed(2)} ${best.measure}` };
+    }
+  }
+  // Fallback to default unit
+  return { quantity: 1, units: food.serving_unit || 'serving', converted: true, conversionText: `Used default unit for '${food.food_name || food.label || food.name}'` };
+}
 
 export default function useSearch(type, library, userProfile, options = {}) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -203,59 +251,89 @@ export default function useSearch(type, library, userProfile, options = {}) {
 
     const handleNutrientsSearch = async () => {
         if (searchQuery.trim() === '' || type !== 'food') return;
-        
+        if (searchQuery.length > 100) {
+            toast({
+                title: "Query Too Long",
+                description: "Please limit your input to 100 characters.",
+                variant: "destructive",
+            });
+            return;
+        }
         setNutrientsLoading(true);
         try {
             console.log('[handleNutrientsSearch] Processing query:', searchQuery);
-            const nutrientsResults = await fetchNutrients(searchQuery);
-            
-            if (nutrientsResults.length === 0) {
-                console.log('[handleNutrientsSearch] No foods found for query:', searchQuery);
+            // Use the nutrition string parser
+            const parsedItems = parseNutritionString(searchQuery);
+            if (parsedItems.length === 0) {
                 toast({
-                    title: "No Foods Found",
-                    description: "Could not find any foods matching your query. Try a different description.",
+                    title: "No Foods Parsed",
+                    description: "Could not parse any foods from your input.",
                     variant: "destructive",
                 });
                 return;
             }
-            
-            console.log('[handleNutrientsSearch] Found foods:', nutrientsResults);
-            
-            // Process each result: check if in library, save if not, add to cart
             const processedFoods = [];
-            for (const food of nutrientsResults) {
-                // Check if food already exists in library
-                const existingFood = library.items.find(item => 
-                    item.id === generateFoodId(food)
-                );
-                
-                if (existingFood) {
-                    // Use existing food from library
-                    processedFoods.push(existingFood);
-                    console.log('[handleNutrientsSearch] Using existing food:', existingFood.food_name);
-                } else {
-                    // Save new food to library
-                    if (library && typeof library.fetchAndSave === 'function') {
-                        const savedFood = await library.fetchAndSave(food);
-                        if (savedFood) {
-                            processedFoods.push(savedFood);
-                            console.log('[handleNutrientsSearch] Saved new food:', savedFood.food_name);
+            for (const { qty, unit, name } of parsedItems) {
+                // Fuzzy/case-insensitive match in library
+                let match = library.items.find(item => isFuzzyMatch(item.food_name || item.label || item.name || '', name));
+                let food = match;
+                let usedFuzzy = false;
+                if (!food) {
+                    // Try closest match by Levenshtein distance (optional, simple version)
+                    let minDist = Infinity;
+                    let bestMatch = null;
+                    for (const item of library.items) {
+                        const dist = Math.abs((item.food_name || item.label || item.name || '').length - name.length);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestMatch = item;
                         }
-                    } else {
-                        console.warn('[handleNutrientsSearch] Library fetchAndSave not available');
+                    }
+                    if (bestMatch && minDist <= 3) { // Allow small difference
+                        food = bestMatch;
+                        usedFuzzy = true;
                     }
                 }
+                if (!food) {
+                    // Fetch from Nutritionix if not found
+                    const fetched = await fetchFullNutrition({ food_name: name });
+                    if (fetched) {
+                        if (library && typeof library.fetchAndSave === 'function') {
+                            food = await library.fetchAndSave(fetched);
+                        } else {
+                            food = fetched;
+                        }
+                    }
+                }
+                if (food) {
+                    // Handle unit/quantity
+                    const { quantity, units, converted, conversionText } = convertToAvailableUnit(food, qty, unit);
+                    processedFoods.push({ ...food, quantity, units });
+                    if (usedFuzzy) {
+                        toast({
+                            title: "Closest Match Added",
+                            description: `Added closest match '${food.food_name || food.label || food.name}' for '${name}'`,
+                        });
+                    }
+                    if (converted && conversionText) {
+                        toast({
+                            title: "Unit Converted",
+                            description: conversionText,
+                        });
+                    }
+                } else {
+                    toast({
+                        title: "Food Not Found",
+                        description: `Could not find or fetch '${name}'.`,
+                        variant: "destructive",
+                    });
+                }
             }
-            
-            // Add all processed foods to cart
             if (options.onNutrientsAdd && processedFoods.length > 0) {
                 options.onNutrientsAdd(processedFoods);
                 console.log('[handleNutrientsSearch] Added foods to cart:', processedFoods.length);
             }
-            
-            // Clear search after successful processing
             clearSearch();
-            
         } catch (error) {
             console.error('[handleNutrientsSearch] Error processing nutrients:', error);
             toast({

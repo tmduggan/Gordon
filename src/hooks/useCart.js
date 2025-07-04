@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getInitialScaledNutrition } from '../utils/dataUtils';
+import { getInitialScaledNutrition, getFoodMacros } from '../utils/dataUtils';
 
 const useCartStore = create((set) => ({
   carts: {
@@ -7,7 +7,7 @@ const useCartStore = create((set) => ({
     exercise: [],
   },
 
-  addToCart: (type, item, quantity = 1) => set((state) => {
+  addToCart: (type, item, quantity = 1, unitsOverride) => set((state) => {
     // Debug: Log relevant fields when adding to cart
     // console.log('[Cart Add]', {...});
     const newCarts = { ...state.carts };
@@ -34,13 +34,14 @@ const useCartStore = create((set) => ({
       if (existingItemIndex > -1) {
         cart[existingItemIndex].quantity += quantity;
       } else {
-        // For food items, calculate initial scaled nutrition
+        // For food items, calculate initial scaled nutrition using actual quantity and units
         if (type === 'food' && item.label) {
-          const initialNutrition = getInitialScaledNutrition(item);
+          const units = unitsOverride || item.units || item.serving_unit || 'g';
+          const initialNutrition = getFoodMacros(item, quantity, units);
           cart.push({ 
             ...item, 
             quantity,
-            units: item.serving_unit || 'g',
+            units,
             ...initialNutrition
           });
         } else {

@@ -1,5 +1,3 @@
-// Add this as the very first line:
-process.env.FIREBASE_FUNCTIONS_RUNTIME = "nodejs18";
 /**
  * Import function triggers from their respective submodules:
  *
@@ -15,7 +13,7 @@ const logger = require("firebase-functions/logger");
 const axios = require('axios');
 const cors = require('cors')({origin: true});
 const express = require('express');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || functions.config().stripe.secret);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
@@ -498,9 +496,18 @@ exports.groqSuggestMeal = functions.https.onRequest(async (req, res) => {
     res.status(204).send('');
     return;
   }
+  
   try {
+    // First, let's test if the function can start at all
+    console.log('groqSuggestMeal function started');
+    
     const { foodLog, nutritionGoals } = req.body;
+    console.log('Received request with foodLog:', foodLog, 'nutritionGoals:', nutritionGoals);
+    
+    // Test if GroqService can be instantiated
     const groqService = new GroqService();
+    console.log('GroqService instantiated successfully');
+    
     const prompt = `
 You are a nutritionist. Based on the user's food log for today and their nutrition goals, suggest the next meal in the format: [qty,measurement,food], e.g. "100g oatmeal, 50g berries".
 Use grams for all quantities. Suggest 2-4 foods that help balance macros and fill gaps. Only output the meal suggestion, no extra text.
@@ -509,10 +516,16 @@ User food log so far: ${foodLog}
 Nutrition goals: ${nutritionGoals}
 Current time: ${new Date().toLocaleTimeString()}
     `;
+    
+    console.log('Making request to Groq API...');
     const response = await groqService.makeRequest(prompt, { maxTokens: 100 });
+    console.log('Groq API response received:', response);
+    
     if (!response.success) {
+      console.error('Groq API error:', response.error);
       return res.status(500).json({ error: response.error || 'GROQ API error' });
     }
+    
     res.json({ suggestion: response.content.trim() });
   } catch (error) {
     console.error('GROQ meal suggestion error:', error);
