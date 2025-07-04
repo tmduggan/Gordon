@@ -22,26 +22,72 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
 
   // Body Update modal state
   const [showBodyModal, setShowBodyModal] = useState(false);
+  const [unitSystem, setUnitSystem] = useState('imperial'); // 'imperial' or 'metric'
+  const defaultBody = {
+    heightCm: 178,
+    heightFt: 5,
+    heightIn: 10,
+    weightKg: 68,
+    weightLbs: 150,
+    age: 25,
+    gender: 'male',
+    bodyFat: '',
+  };
   const [bodyStats, setBodyStats] = useState({
-    heightCm: userProfile?.heightCm || '',
-    heightFt: userProfile?.heightFt || '',
-    heightIn: userProfile?.heightIn || '',
-    weightKg: userProfile?.weightKg || '',
-    weightLbs: userProfile?.weightLbs || '',
-    age: userProfile?.age || '',
-    gender: userProfile?.gender || 'male',
-    bodyFat: userProfile?.bodyFat || '',
+    heightCm: userProfile?.heightCm || defaultBody.heightCm,
+    heightFt: userProfile?.heightFt || defaultBody.heightFt,
+    heightIn: userProfile?.heightIn || defaultBody.heightIn,
+    weightKg: userProfile?.weightKg || defaultBody.weightKg,
+    weightLbs: userProfile?.weightLbs || defaultBody.weightLbs,
+    age: userProfile?.age || defaultBody.age,
+    gender: userProfile?.gender || defaultBody.gender,
+    bodyFat: userProfile?.bodyFat || defaultBody.bodyFat,
   });
 
-  const handleBodySave = () => {
-    // Convert to metric for storage
-    let heightCm = bodyStats.heightCm;
-    if (!heightCm && bodyStats.heightFt && bodyStats.heightIn) {
-      heightCm = Math.round((parseInt(bodyStats.heightFt) * 12 + parseInt(bodyStats.heightIn)) * 2.54);
+  // Conversion helpers
+  const toMetric = (ft, inch, lbs) => ({
+    heightCm: Math.round((parseInt(ft) * 12 + parseInt(inch)) * 2.54),
+    weightKg: Math.round(parseFloat(lbs) * 0.453592),
+  });
+  const toImperial = (cm, kg) => {
+    const totalInches = Math.round(parseFloat(cm) / 2.54);
+    return {
+      heightFt: Math.floor(totalInches / 12),
+      heightIn: totalInches % 12,
+      weightLbs: Math.round(parseFloat(kg) / 0.453592),
+    };
+  };
+
+  const handleUnitToggle = (unit) => {
+    if (unit === unitSystem) return;
+    if (unit === 'metric') {
+      // Convert imperial to metric
+      const { heightCm, weightKg } = toMetric(bodyStats.heightFt, bodyStats.heightIn, bodyStats.weightLbs);
+      setBodyStats({
+        ...bodyStats,
+        heightCm,
+        weightKg,
+      });
+    } else {
+      // Convert metric to imperial
+      const { heightFt, heightIn, weightLbs } = toImperial(bodyStats.heightCm, bodyStats.weightKg);
+      setBodyStats({
+        ...bodyStats,
+        heightFt,
+        heightIn,
+        weightLbs,
+      });
     }
+    setUnitSystem(unit);
+  };
+
+  const handleBodySave = () => {
+    let heightCm = bodyStats.heightCm;
     let weightKg = bodyStats.weightKg;
-    if (!weightKg && bodyStats.weightLbs) {
-      weightKg = Math.round(parseFloat(bodyStats.weightLbs) * 0.453592);
+    if (unitSystem === 'imperial') {
+      const metric = toMetric(bodyStats.heightFt, bodyStats.heightIn, bodyStats.weightLbs);
+      heightCm = metric.heightCm;
+      weightKg = metric.weightKg;
     }
     onSave({
       ...userProfile,
@@ -118,26 +164,38 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">Update Body Stats</h2>
+            {/* Unit toggle */}
+            <div className="flex gap-2 mb-4">
+              <Button variant={unitSystem === 'imperial' ? 'default' : 'outline'} onClick={() => handleUnitToggle('imperial')}>Imperial</Button>
+              <Button variant={unitSystem === 'metric' ? 'default' : 'outline'} onClick={() => handleUnitToggle('metric')}>Metric</Button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium">Height (cm)</label>
-                <input type="number" value={bodyStats.heightCm} onChange={e => setBodyStats({ ...bodyStats, heightCm: e.target.value })} className="border rounded px-2 py-1 w-full" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Height (ft/in)</label>
-                <div className="flex gap-2">
-                  <input type="number" placeholder="ft" value={bodyStats.heightFt} onChange={e => setBodyStats({ ...bodyStats, heightFt: e.target.value })} className="border rounded px-2 py-1 w-16" />
-                  <input type="number" placeholder="in" value={bodyStats.heightIn} onChange={e => setBodyStats({ ...bodyStats, heightIn: e.target.value })} className="border rounded px-2 py-1 w-16" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Weight (kg)</label>
-                <input type="number" value={bodyStats.weightKg} onChange={e => setBodyStats({ ...bodyStats, weightKg: e.target.value })} className="border rounded px-2 py-1 w-full" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Weight (lbs)</label>
-                <input type="number" value={bodyStats.weightLbs} onChange={e => setBodyStats({ ...bodyStats, weightLbs: e.target.value })} className="border rounded px-2 py-1 w-full" />
-              </div>
+              {unitSystem === 'metric' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium">Height (cm)</label>
+                    <input type="number" value={bodyStats.heightCm} onChange={e => setBodyStats({ ...bodyStats, heightCm: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Weight (kg)</label>
+                    <input type="number" value={bodyStats.weightKg} onChange={e => setBodyStats({ ...bodyStats, weightKg: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium">Height (ft/in)</label>
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="ft" value={bodyStats.heightFt} onChange={e => setBodyStats({ ...bodyStats, heightFt: e.target.value })} className="border rounded px-2 py-1 w-16" />
+                      <input type="number" placeholder="in" value={bodyStats.heightIn} onChange={e => setBodyStats({ ...bodyStats, heightIn: e.target.value })} className="border rounded px-2 py-1 w-16" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Weight (lbs)</label>
+                    <input type="number" value={bodyStats.weightLbs} onChange={e => setBodyStats({ ...bodyStats, weightLbs: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                  </div>
+                </>
+              )}
               <div>
                 <label className="block text-sm font-medium">Age</label>
                 <input type="number" value={bodyStats.age} onChange={e => setBodyStats({ ...bodyStats, age: e.target.value })} className="border rounded px-2 py-1 w-full" />
