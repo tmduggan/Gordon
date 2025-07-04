@@ -19,7 +19,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || functions.conf
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
-import GroqService from './groq-service.js';
+const GroqService = require('./groq-service');
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -381,7 +381,7 @@ exports.refreshExerciseDbGifs = functions.https.onRequest(async (req, res) => {
       const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?offset=${offset}&limit=${limit}`, {
         method: 'GET',
         headers: {
-          'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
+          'X-RapidAPI-Key': 'YOUR_EXERCISEDB_API_KEY',
           'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
         }
       });
@@ -489,3 +489,33 @@ exports.scheduledGifRefresh = onSchedule(
     return null;
   }
 );
+
+exports.groqSuggestMeal = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  try {
+    const { foodLog, nutritionGoals } = req.body;
+    const groqService = new GroqService();
+    const prompt = `
+You are a nutritionist. Based on the user's food log for today and their nutrition goals, suggest the next meal in the format: [qty,measurement,food], e.g. "100g oatmeal, 50g berries".
+Use grams for all quantities. Suggest 2-4 foods that help balance macros and fill gaps. Only output the meal suggestion, no extra text.
+
+User food log so far: ${foodLog}
+Nutrition goals: ${nutritionGoals}
+Current time: ${new Date().toLocaleTimeString()}
+    `;
+    const response = await groqService.makeRequest(prompt, { maxTokens: 100 });
+    if (!response.success) {
+      return res.status(500).json({ error: response.error || 'GROQ API error' });
+    }
+    res.json({ suggestion: response.content.trim() });
+  } catch (error) {
+    console.error('GROQ meal suggestion error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});

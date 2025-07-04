@@ -1,5 +1,5 @@
-import axios from 'axios';
-import GROQ_CONFIG from './groq-config.js';
+const axios = require('axios');
+const GROQ_CONFIG = require('./groq-config.js');
 
 class GroqService {
   constructor() {
@@ -269,4 +269,4 @@ OUTPUT FORMAT:
   }
 }
 
-export default GroqService; 
+module.exports = GroqService; 
