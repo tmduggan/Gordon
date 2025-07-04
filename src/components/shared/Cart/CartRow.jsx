@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
 import { Input } from '@/components/ui/input';
 import useAuthStore from '../../../store/useAuthStore';
+import useLibrary from '../../../hooks/useLibrary';
 
 // Mobile detection (same as WorkoutSuggestions)
 function useIsMobile() {
@@ -74,6 +75,7 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
   const [showConfirm, setShowConfirm] = useState(false);
   const isRecipe = item.type === 'recipe';
   const { userProfile } = useAuthStore();
+  const foodLibrary = useLibrary('food');
 
   const InfoDialog = ({ item, isFood }) => {
     if (isFood) {
@@ -137,8 +139,11 @@ export default function CartRow({ item, updateCartItem, removeFromCart, logData,
           total += nestedCals;
         }
       } else {
-        // Find food in library or use calories on ingredient
-        total += getFoodCalories({ ...ingredient, quantity: (ingredient.quantity / recipeServings) * servings });
+        // Look up the full food object in the food library
+        const food = foodLibrary.items.find(f => f.id === ingredient.id);
+        if (food) {
+          total += getFoodCalories({ ...food, quantity: (ingredient.quantity / recipeServings) * servings });
+        }
       }
     });
     return Math.round(total);

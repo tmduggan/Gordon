@@ -9,6 +9,7 @@ import { useToast } from '../../../hooks/useToast';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
 import { getSvgGroupDisplayName } from '@/services/svgMappingService';
+import useLibrary from '../../../hooks/useLibrary';
 
 const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) => {
     // Show recipe name if isRecipe, otherwise food_name or label
@@ -18,6 +19,7 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
     const thumb = item.photo?.thumb;
     const macros = getFoodMacros(item);
     const isBranded = !!item.brand_name;
+    const foodLibrary = useLibrary('food');
 
     const formatQty = (qty) => {
         if (typeof qty === 'number') {
@@ -41,6 +43,32 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
         bgColorClass = "bg-status-success hover:bg-status-success/80 border-l-4 border-status-success";
     }
     
+    // Helper to calculate calories for a recipe (including nested)
+    const getRecipeCalories = (recipe, servings = 1) => {
+        if (!recipe || !recipe.items) return 0;
+        const recipeServings = recipe.servings || 1;
+        let total = 0;
+        recipe.items.forEach(ingredient => {
+            if (ingredient.isRecipe) {
+                const nestedRecipe = userProfile?.recipes?.find(r => r.id === ingredient.id);
+                if (nestedRecipe) {
+                    const nestedCals = getRecipeCalories(nestedRecipe, (ingredient.quantity / recipeServings) * servings);
+                    total += nestedCals;
+                }
+            } else {
+                const food = foodLibrary.items.find(f => f.id === ingredient.id);
+                if (food) {
+                    const macros = getFoodMacros(food);
+                    total += (macros.calories || 0) * ((ingredient.quantity / recipeServings) * servings);
+                }
+            }
+        });
+        return Math.round(total);
+    };
+
+    // For recipes, calculate calories from ingredients; for foods, use macros.calories
+    const calories = isRecipe ? getRecipeCalories(item, 1) : macros.calories;
+
     return (
         <div
             onClick={() => onSelect(item)}
@@ -73,7 +101,7 @@ const FoodResult = ({ item, onSelect, userProfile, togglePin, getFoodMacros }) =
                 {/* Calories only, right-aligned */}
                 <div className="flex flex-col items-end justify-center">
                     <span className="flex items-baseline">
-                        <span className="font-mono text-base text-right">{macros.calories}</span>
+                        <span className="font-mono text-base text-right">{calories}</span>
                         <span className="ml-1 text-xs text-gray-500">cal</span>
                     </span>
                 </div>

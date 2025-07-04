@@ -9,6 +9,7 @@ import HistoryView from '../components/shared/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
+import SuggestedFoodsCard from '../components/nutrition/SuggestedFoodsCard';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
@@ -22,7 +23,7 @@ import useFoodLogging from '../hooks/useFoodLogging';
 import { getFoodMacros } from '../utils/dataUtils';
 
 export default function FoodPage() {
-    const { userProfile, togglePinFood, addRecipe, deleteRecipe, user } = useAuthStore();
+    const { userProfile, togglePinFood, addRecipe, deleteRecipe, user, saveUserProfile } = useAuthStore();
     const dateTimePicker = useDateTimePicker('food');
     
     // Initialize hooks
@@ -80,6 +81,37 @@ export default function FoodPage() {
         return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     }, [user]);
 
+    const [aiUsage, setAiUsage] = useState(() => {
+        const today = new Date().toISOString().split('T')[0];
+        return userProfile?.aiFoodSuggestionUsage?.date === today
+            ? userProfile.aiFoodSuggestionUsage.count
+            : 0;
+    });
+
+    const isAdmin = userProfile?.subscription?.status === 'admin';
+    const isPremium = userProfile?.subscription?.status === 'premium';
+
+    const handleUsage = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const newUsage = aiUsage + 1;
+        setAiUsage(newUsage);
+        const updatedProfile = {
+            ...userProfile,
+            aiFoodSuggestionUsage: { date: today, count: newUsage }
+        };
+        await saveUserProfile(updatedProfile);
+    };
+
+    const handleResetUsage = async () => {
+        setAiUsage(0);
+        const today = new Date().toISOString().split('T')[0];
+        const updatedProfile = {
+            ...userProfile,
+            aiFoodSuggestionUsage: { date: today, count: 0 }
+        };
+        await saveUserProfile(updatedProfile);
+    };
+
     if (foodLibrary.loading || foodHistory.loading) {
         return <div>Loading food data...</div>;
     }
@@ -94,6 +126,17 @@ export default function FoodPage() {
                 className="mb-4"
                 userProfile={userProfile}
             />
+            {(isPremium || isAdmin) && (
+                <SuggestedFoodsCard
+                    foodLog={todayLogs}
+                    nutritionGoals={userProfile?.goals || { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 }}
+                    onAddFoods={handleRecipeCreated}
+                    usage={aiUsage}
+                    onUsage={handleUsage}
+                    isAdmin={isAdmin}
+                    onResetUsage={handleResetUsage}
+                />
+            )}
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
                 <Search
                     type="food"

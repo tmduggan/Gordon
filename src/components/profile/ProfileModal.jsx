@@ -251,6 +251,15 @@ export default function ProfileModal({ open, onOpenChange }) {
 
   const { icon: StatusIcon, label: statusLabel, color: statusColor } = getSubscriptionStatus();
 
+  const handleResetAIFoodUsage = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const updatedProfile = {
+      ...userProfile,
+      aiFoodSuggestionUsage: { date: today, count: 0 }
+    };
+    await saveUserProfile(updatedProfile);
+  };
+
   return (
     <AnimatedModal open={open} onOpenChange={onOpenChange}>
       <div className="max-w-2xl">
@@ -337,6 +346,11 @@ export default function ProfileModal({ open, onOpenChange }) {
             </div>
           </TabsContent>
         </Tabs>
+        {userProfile?.subscription?.status === 'admin' && (
+          <Button onClick={handleResetAIFoodUsage} style={{ marginTop: 16 }}>
+            Reset AI Food Suggestion Usage
+          </Button>
+        )}
       </div>
     </AnimatedModal>
   );
