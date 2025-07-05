@@ -2,9 +2,17 @@
 // Implements scoring based on food groups, unique foods, macro goals, and micronutrients
 
 import { convertToGrams } from '../../utils/dataUtils';
+import type { 
+  Food, 
+  FoodLog, 
+  NutritionGoals, 
+  DailyTotals,
+  MicronutrientData,
+  FoodXPBreakdown
+} from '../../types';
 
 // Food group multipliers based on nutritional value
-const FOOD_GROUP_MULTIPLIERS = {
+const FOOD_GROUP_MULTIPLIERS: Record<number, number> = {
   3: 1.5, // Fruits - high value
   4: 1.5, // Vegetables - high value
   7: 1.5, // Legumes & Nuts/Seeds - high value
@@ -19,7 +27,7 @@ const FOOD_GROUP_MULTIPLIERS = {
 };
 
 // Micronutrient tracking - FDA Daily Values for adults/children 4+
-export const MICRONUTRIENT_ATTRS = [
+export const MICRONUTRIENT_ATTRS: MicronutrientData[] = [
   { attr_id: 301, label: 'Calcium', unit: 'mg', rdv: 1300 },
   { attr_id: 303, label: 'Iron', unit: 'mg', rdv: 18 },
   { attr_id: 306, label: 'Potassium', unit: 'mg', rdv: 4700 },
@@ -45,23 +53,45 @@ export const MICRONUTRIENT_ATTRS = [
   { attr_id: 421, label: 'Choline', unit: 'mg', rdv: 550 },
 ];
 
+interface Nutrient {
+  attr_id: number;
+  value: number;
+}
+
+interface FoodData {
+  nf_calories?: number;
+  calories?: number;
+  nf_total_fat?: number;
+  fat?: number;
+  nf_total_carbohydrate?: number;
+  carbs?: number;
+  nf_protein?: number;
+  protein?: number;
+  nf_dietary_fiber?: number;
+  fiber?: number;
+  full_nutrients?: Nutrient[];
+  tags?: {
+    food_group?: number;
+  };
+}
+
 // Helper to get nutrient value from full_nutrients by attr_id
-function getNutrientValue(full_nutrients, attr_id) {
+function getNutrientValue(full_nutrients: Nutrient[] | undefined, attr_id: number): number {
   const found = full_nutrients?.find((n) => n.attr_id === attr_id);
   return found ? found.value : 0;
 }
 
 // Helper to get food group from food item
-function getFoodGroup(food) {
-  const data = food.nutritionix_data || food.nutrition || food;
+function getFoodGroup(food: Food): number | null {
+  const data = (food as any).nutritionix_data || (food as any).nutrition || food;
   return data.tags?.food_group || null;
 }
 
 // Helper to get unique food identifier for bonus tracking
-function getUniqueFoodId(food) {
-  const data = food.nutritionix_data || food.nutrition || food;
+function getUniqueFoodId(food: Food): string {
+  const data = (food as any).nutritionix_data || (food as any).nutrition || food;
   const foodGroup = getFoodGroup(food);
-  const foodName = food.food_name || food.label || '';
+  const foodName = food.food_name || (food as any).label || '';
 
   // For branded foods (no food group), use the food name
   if (!foodGroup) {
@@ -74,17 +104,13 @@ function getUniqueFoodId(food) {
 
 /**
  * Calculate base XP for a food item
- * @param {object} food - The food item
- * @param {number} serving - The serving size
- * @param {string} units - The unit (optional)
- * @returns {number} Base XP points
  */
-export function calculateFoodBaseXP(food, serving = 1, units = undefined) {
+export function calculateFoodBaseXP(food: Food, serving: number = 1, units?: string): number {
   // If the food object already has a .calories property, use it directly (already scaled)
-  if (typeof food.calories === 'number' && !isNaN(food.calories)) {
-    return Math.round(food.calories * 2);
+  if (typeof (food as any).calories === 'number' && !isNaN((food as any).calories)) {
+    return Math.round((food as any).calories * 2);
   }
-  const data = food.nutritionix_data || food.nutrition || food;
+  const data = (food as any).nutritionix_data || (food as any).nutrition || food;
   const servingWeightGrams = food.serving_weight_grams || 1;
   // Use convertToGrams for correct scaling
   const grams = convertToGrams(food, serving, units || food.serving_unit);
@@ -96,22 +122,20 @@ export function calculateFoodBaseXP(food, serving = 1, units = undefined) {
 
 /**
  * Calculate food group multiplier bonus
- * @param {object} food - The food item
- * @returns {number} Multiplier bonus (1.0 = no bonus, 1.5 = 50% bonus)
  */
-export function calculateFoodGroupMultiplier(food) {
+export function calculateFoodGroupMultiplier(food: Food): number {
   const foodGroup = getFoodGroup(food);
-  return FOOD_GROUP_MULTIPLIERS[foodGroup] || 1.0;
+  return FOOD_GROUP_MULTIPLIERS[foodGroup || 0] || 1.0;
 }
 
 /**
  * Calculate daily totals for macros and micronutrients
- * @param {Array} logs - Array of food logs for the day
- * @param {Function} getFoodById - Function to get food details by ID
- * @returns {object} Daily totals
  */
-export function calculateDailyTotals(logs, getFoodById) {
-  const totals = {
+export function calculateDailyTotals(
+  logs: FoodLog[], 
+  getFoodById: (id: string) => Food | undefined
+): DailyTotals {
+  const totals: DailyTotals = {
     calories: 0,
     fat: 0,
     carbs: 0,
@@ -123,7 +147,7 @@ export function calculateDailyTotals(logs, getFoodById) {
   logs.forEach((log) => {
     const food = getFoodById(log.foodId);
     if (food) {
-      const data = food.nutritionix_data || food.nutrition || food;
+      const data = (food as any).nutritionix_data || (food as any).nutrition || food;
       const serving = log.serving || 1;
       const units = log.units || food.serving_unit;
       const servingWeightGrams = food.serving_weight_grams || 1;
@@ -161,15 +185,12 @@ export function calculateDailyTotals(logs, getFoodById) {
 
 /**
  * Calculate macro goal bonuses
- * @param {object} totals - Daily totals
- * @param {object} goals - User's daily goals
- * @returns {number} Macro goal bonus points
  */
-export function calculateMacroGoalBonus(totals, goals) {
+export function calculateMacroGoalBonus(totals: DailyTotals, goals: NutritionGoals): number {
   let bonus = 0;
 
   // Check each macro for 80-120% range
-  const macros = ['calories', 'protein', 'carbs', 'fat'];
+  const macros = ['calories', 'protein', 'carbs', 'fat'] as const;
   macros.forEach((macro) => {
     const total = totals[macro] || 0;
     const goal = goals[macro] || 0;
@@ -207,10 +228,8 @@ export function calculateMacroGoalBonus(totals, goals) {
 
 /**
  * Calculate micronutrient bonuses
- * @param {object} totals - Daily totals including micronutrients
- * @returns {number} Micronutrient bonus points
  */
-export function calculateMicronutrientBonus(totals) {
+export function calculateMicronutrientBonus(totals: DailyTotals): number {
   let bonus = 0;
   let micronutrientsHit = 0;
 
@@ -233,12 +252,12 @@ export function calculateMicronutrientBonus(totals) {
 
 /**
  * Calculate unique food bonus
- * @param {Array} logs - Array of food logs for the day
- * @param {Function} getFoodById - Function to get food details by ID
- * @returns {number} Unique food bonus points
  */
-export function calculateUniqueFoodBonus(logs, getFoodById) {
-  const uniqueFoods = new Set();
+export function calculateUniqueFoodBonus(
+  logs: FoodLog[], 
+  getFoodById: (id: string) => Food | undefined
+): number {
+  const uniqueFoods = new Set<string>();
 
   logs.forEach((log) => {
     const food = getFoodById(log.foodId);
@@ -254,12 +273,8 @@ export function calculateUniqueFoodBonus(logs, getFoodById) {
 
 /**
  * Calculate total XP for a single food item
- * @param {object} food - The food item
- * @param {number} serving - The serving size
- * @param {string} units - The unit (optional)
- * @returns {number} Total XP for this food item
  */
-export function calculateFoodXP(food, serving = 1, units = undefined) {
+export function calculateFoodXP(food: Food, serving: number = 1, units?: string): number {
   const baseXP = calculateFoodBaseXP(food, serving, units);
   const multiplier = calculateFoodGroupMultiplier(food);
 
@@ -268,12 +283,12 @@ export function calculateFoodXP(food, serving = 1, units = undefined) {
 
 /**
  * Calculate total daily food XP including all bonuses
- * @param {Array} logs - Array of food logs for the day
- * @param {Function} getFoodById - Function to get food details by ID
- * @param {object} goals - User's daily goals
- * @returns {object} XP breakdown
  */
-export function calculateDailyFoodXP(logs, getFoodById, goals) {
+export function calculateDailyFoodXP(
+  logs: FoodLog[], 
+  getFoodById: (id: string) => Food | undefined, 
+  goals: NutritionGoals
+): FoodXPBreakdown {
   let totalXP = 0;
   let baseXP = 0;
   let foodGroupBonus = 0;
@@ -318,4 +333,4 @@ export function calculateDailyFoodXP(logs, getFoodById, goals) {
     },
     totals,
   };
-}
+} 

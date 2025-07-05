@@ -31,6 +31,34 @@ export interface NutritionGoals {
   fiber: number;
 }
 
+export interface DailyTotals {
+  calories: number;
+  fat: number;
+  carbs: number;
+  protein: number;
+  fiber: number;
+  micronutrients: Record<string, number>;
+}
+
+export interface MicronutrientData {
+  attr_id: number;
+  label: string;
+  unit: string;
+  rdv?: number;
+}
+
+export interface FoodXPBreakdown {
+  totalXP: number;
+  breakdown: {
+    baseXP: number;
+    foodGroupBonus: number;
+    uniqueFoodBonus: number;
+    macroGoalBonus: number;
+    micronutrientBonus: number;
+  };
+  totals: DailyTotals;
+}
+
 export interface PersonalBests {
   current?: PersonalBest;
   quarter?: PersonalBest;
