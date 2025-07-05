@@ -31,18 +31,108 @@ import SaveCartAsRecipe from '../../nutrition/SaveCartAsRecipe';
 import ExerciseCartRow from './ExerciseCartRow';
 import FoodCartRow from './FoodCartRow';
 
-const CartMacroSummary = ({ items }) => {
+interface FoodItem {
+  id: string;
+  label: string;
+  quantity?: number;
+  units?: string;
+  serving_unit?: string;
+  calories?: number;
+  fat?: number;
+  carbs?: number;
+  protein?: number;
+  type?: string;
+  recipe?: any;
+  servings?: number;
+  food_name?: string;
+}
+
+interface ExerciseItem {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+interface Recipe {
+  id: string;
+  servings?: number;
+  items?: Array<{
+    id: string;
+    quantity: number;
+    isRecipe?: boolean;
+  }>;
+}
+
+interface UserProfile {
+  recipes?: Recipe[];
+}
+
+interface WorkoutSet {
+  weight?: number;
+  reps?: number;
+  duration?: number;
+}
+
+interface LogData {
+  [key: string]: {
+    sets?: WorkoutSet[];
+    duration?: number;
+  };
+}
+
+interface MacroPillProps {
+  label: string;
+  value: number;
+  unit: string;
+  className: string;
+}
+
+interface CartMacroSummaryProps {
+  items: FoodItem[];
+}
+
+interface CartFoodSummaryProps {
+  items: FoodItem[];
+}
+
+interface CartExerciseSummaryProps {
+  items: ExerciseItem[];
+  logData: LogData;
+  history: any;
+  library: any[];
+  userProfile: UserProfile;
+}
+
+interface CartContainerProps {
+  title?: string;
+  type: 'food' | 'exercise';
+  items: (FoodItem | ExerciseItem)[];
+  footerControls?: React.ReactNode;
+  logCart: () => void;
+  clearCart: () => void;
+  icon?: React.ReactNode;
+  logData?: LogData;
+  userWorkoutHistory?: any;
+  exerciseLibrary?: any[];
+  library?: any[];
+  userProfile?: UserProfile;
+  onRecipeCreated?: (recipe: any) => void;
+  onLogDataChange?: (id: string, data: any) => void;
+  [key: string]: any;
+}
+
+const CartMacroSummary = ({ items }: CartMacroSummaryProps) => {
   const foodLibrary = useLibrary('food');
   const { userProfile } = useAuthStore();
 
-  const calculateRecipeMacros = (recipe, servings) => {
+  const calculateRecipeMacros = (recipe: Recipe, servings: number) => {
     const recipeServings = recipe.servings || 1;
     let totalMacros = { calories: 0, fat: 0, carbs: 0, protein: 0 };
 
-    recipe.items.forEach((ingredient) => {
+    recipe.items?.forEach((ingredient) => {
       if (ingredient.isRecipe) {
         // Handle nested recipe
-        const nestedRecipe = userProfile?.recipes?.find(
+        const nestedRecipe = (userProfile as UserProfile)?.recipes?.find(
           (r) => r.id === ingredient.id
         );
         if (nestedRecipe) {
@@ -59,7 +149,7 @@ const CartMacroSummary = ({ items }) => {
         }
       } else {
         // Regular food ingredient
-        const food = foodLibrary.items.find((f) => f.id === ingredient.id);
+        const food = foodLibrary.items.find((f: any) => f.id === ingredient.id);
         if (!food) return;
         const macros = getFoodMacros(food);
         const scaledQty = (ingredient.quantity / recipeServings) * servings;
@@ -100,7 +190,7 @@ const CartMacroSummary = ({ items }) => {
     { calories: 0, fat: 0, carbs: 0, protein: 0 }
   );
 
-  const MacroPill = ({ label, value, unit, className }) => (
+  const MacroPill = ({ label, value, unit, className }: MacroPillProps) => (
     <div
       className={`text-center rounded-full px-3 py-1 text-xs font-medium ${className}`}
     >
@@ -145,7 +235,7 @@ const CartMacroSummary = ({ items }) => {
   );
 };
 
-const CartFoodSummary = ({ items }) => {
+const CartFoodSummary = ({ items }: CartFoodSummaryProps) => {
   const totalXP = items.reduce((acc, item) => {
     const xp = calculateFoodXP(
       item,
@@ -242,7 +332,7 @@ const CartExerciseSummary = ({
   history,
   library = [],
   userProfile,
-}) => {
+}: CartExerciseSummaryProps) => {
   // Ensure library is always an array to prevent undefined.find errors
   const safeLibrary = Array.isArray(library) ? library : [];
   
@@ -251,7 +341,7 @@ const CartExerciseSummary = ({
   const scoreBreakdown = items.map((item) => {
     const workoutData = logData[item.id] || {};
     const exerciseDetails = safeLibrary.find((e) => e.id === item.id) || {};
-    let lines = [];
+    let lines: Array<{ xp: number; label: string }> = [];
     let hasData = false;
     if (workoutData.sets && Array.isArray(workoutData.sets)) {
       hasData = workoutData.sets.some(
@@ -270,7 +360,7 @@ const CartExerciseSummary = ({
     }
 
     // Calculate XP for each set or duration
-    let xpLines = [];
+    let xpLines: Array<{ xp: number; label: string }> = [];
     let exerciseScore = 0;
     if (workoutData.sets && workoutData.sets.length > 0) {
       workoutData.sets.forEach((set, idx) => {
@@ -380,7 +470,7 @@ export default function CartContainer({
   onRecipeCreated,
   onLogDataChange,
   ...rest
-}) {
+}: CartContainerProps) {
   if (items.length === 0) {
     return null;
   }
@@ -399,14 +489,14 @@ export default function CartContainer({
           )}
           {type === 'exercise' && (
             <CartExerciseSummary
-              items={items}
+              items={items as ExerciseItem[]}
               logData={logData}
               history={userWorkoutHistory}
               library={exerciseLibraryData}
               userProfile={userProfile}
             />
           )}
-          {type === 'food' && <CartFoodSummary items={items} />}
+          {type === 'food' && <CartFoodSummary items={items as FoodItem[]} />}
         </div>
       </CardHeader>
       <CardContent className="pt-0">
@@ -414,8 +504,8 @@ export default function CartContainer({
           {items.map((item, index) =>
             type === 'food' || item.type === 'recipe' || 'label' in item ? (
               <FoodCartRow
-                key={item.id || `${item.label}-${item.units}-${index}`}
-                item={item}
+                key={item.id || `${(item as FoodItem).label}-${(item as FoodItem).units}-${index}`}
+                item={item as FoodItem}
                 type={type}
                 logData={logData}
                 onLogDataChange={onLogDataChange}
@@ -424,8 +514,8 @@ export default function CartContainer({
               />
             ) : (
               <ExerciseCartRow
-                key={item.id || `${item.name}-${index}`}
-                item={item}
+                key={item.id || `${(item as ExerciseItem).name}-${index}`}
+                item={item as ExerciseItem}
                 type={type}
                 logData={logData}
                 onLogDataChange={onLogDataChange}
@@ -436,12 +526,12 @@ export default function CartContainer({
           )}
         </div>
       </CardContent>
-      {type === 'food' && <CartMacroSummary items={items} />}
+      {type === 'food' && <CartMacroSummary items={items as FoodItem[]} />}
       <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4">
         <div className="flex items-center gap-2">
           {footerControls}
           {type === 'food' && onRecipeCreated && (
-            <SaveCartAsRecipe cart={items} onRecipeCreated={onRecipeCreated} />
+            <SaveCartAsRecipe cart={items as FoodItem[]} onRecipeCreated={onRecipeCreated} />
           )}
         </div>
         <div className="flex w-full sm:w-auto gap-2">
@@ -459,4 +549,4 @@ export default function CartContainer({
       </CardFooter>
     </Card>
   );
-}
+} 

@@ -10,28 +10,89 @@ import React, { useEffect, useState } from 'react';
 import useLibrary from '../../../hooks/useLibrary';
 import { useToast } from '../../../hooks/useToast';
 
+interface FoodItem {
+  id?: string;
+  food_name?: string;
+  label?: string;
+  name?: string;
+  isRecipe?: boolean;
+  isPinned?: boolean;
+  photo?: {
+    thumb?: string;
+  };
+  brand_name?: string;
+  serving_qty?: number;
+  serving_unit?: string;
+  tags?: {
+    food_group?: number;
+  };
+  food_group?: number;
+  items?: Array<{
+    id: string;
+    quantity: number;
+    isRecipe?: boolean;
+  }>;
+  servings?: number;
+}
+
+interface UserProfile {
+  pinnedFoods?: string[];
+  recipes?: Array<{
+    id: string;
+    servings?: number;
+    items?: Array<{
+      id: string;
+      quantity: number;
+      isRecipe?: boolean;
+    }>;
+  }>;
+}
+
+interface FoodResultProps {
+  item: FoodItem;
+  onSelect: (item: FoodItem) => void;
+  userProfile?: UserProfile;
+  togglePin: (id: string) => void;
+  getFoodMacros: (item: FoodItem) => any;
+}
+
+interface FoodSearchProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults?: FoodItem[];
+  handleApiSearch: () => void;
+  handleNutrientsSearch: () => void;
+  handleSelect: (item: FoodItem) => void;
+  isLoading: boolean;
+  nutrientsLoading: boolean;
+  userProfile?: UserProfile;
+  togglePin: (id: string) => void;
+  getFoodMacros: (item: FoodItem) => any;
+  placeholder?: string;
+}
+
 const FoodResult = ({
   item,
   onSelect,
   userProfile,
   togglePin,
   getFoodMacros,
-}) => {
+}: FoodResultProps) => {
   const foodName = item.isRecipe ? item.name : item.food_name || item.label;
-  const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id);
+  const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id || '');
   const isRecipe = item.isRecipe;
   const thumb = item.photo?.thumb;
   const macros = getFoodMacros(item);
   const isBranded = !!item.brand_name;
   const foodLibrary = useLibrary('food');
 
-  const formatQty = (qty) => {
+  const formatQty = (qty: any): string => {
     if (typeof qty === 'number') {
-      return qty % 1 === 0 ? qty : qty.toFixed(2);
+      return qty % 1 === 0 ? qty.toString() : qty.toFixed(2);
     }
     if (!isNaN(Number(qty))) {
       const num = Number(qty);
-      return num % 1 === 0 ? num : num.toFixed(2);
+      return num % 1 === 0 ? num.toString() : num.toFixed(2);
     }
     return qty || '';
   };
@@ -49,7 +110,7 @@ const FoodResult = ({
       'bg-status-success hover:bg-status-success/80 border-l-4 border-status-success';
   }
 
-  const getRecipeCalories = (recipe, servings = 1) => {
+  const getRecipeCalories = (recipe: FoodItem, servings: number = 1): number => {
     if (!recipe || !recipe.items) return 0;
     const recipeServings = recipe.servings || 1;
     let total = 0;
@@ -66,7 +127,7 @@ const FoodResult = ({
           total += nestedCals;
         }
       } else {
-        const food = foodLibrary.items.find((f) => f.id === ingredient.id);
+        const food = foodLibrary.items.find((f: any) => f.id === ingredient.id);
         if (food) {
           const macros = getFoodMacros(food);
           total +=
@@ -138,7 +199,7 @@ const FoodResult = ({
               className="h-7 w-7"
               onClick={(e) => {
                 e.stopPropagation();
-                togglePin(item.id);
+                togglePin(item.id!);
               }}
               title={isPinned ? 'Unpin food' : 'Pin food'}
             >
@@ -164,7 +225,7 @@ export default function FoodSearch({
   togglePin,
   getFoodMacros,
   placeholder = 'Search foods...',
-}) {
+}: FoodSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -178,7 +239,7 @@ export default function FoodSearch({
 
   const uniqueResults = searchResults
     .slice(0, 40)
-    .reduce((acc, item, index) => {
+    .reduce((acc: FoodItem[], item, index) => {
       const key = item.id || item.food_name || `food-${index}`;
       if (
         !acc.find((existing) => {
@@ -300,4 +361,4 @@ export default function FoodSearch({
       </Popover>
     </div>
   );
-}
+} 

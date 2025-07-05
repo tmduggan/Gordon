@@ -18,6 +18,68 @@ import React, { useEffect, useState } from 'react';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
 
+interface ExerciseItem {
+  id?: string;
+  name?: string;
+  target?: string;
+  secondaryMuscles?: string[];
+  equipment?: string;
+  bodyPart?: string;
+  category?: string;
+}
+
+interface FilterOptions {
+  targets?: string[];
+  equipmentCategories?: string[];
+}
+
+interface Filters {
+  targetCategory: string;
+  equipmentCategory: string;
+  [key: string]: string;
+}
+
+interface SetFilters {
+  [key: string]: (value: string) => void;
+}
+
+interface LaggingMuscle {
+  muscle: string;
+  laggingType: string;
+  bonus: number;
+}
+
+interface ExerciseFilterControlsProps {
+  options?: FilterOptions;
+  filters: Filters;
+  setFilters: SetFilters;
+  onFilterChange: (filterType: string, value: string) => void;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
+}
+
+interface FilterSelectProps {
+  placeholder: string;
+  value: string;
+  options?: string[];
+  onValueChange: (value: string) => void;
+  onClear: () => void;
+}
+
+interface ExerciseSearchProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults?: ExerciseItem[];
+  handleSelect: (item: ExerciseItem) => void;
+  userProfile?: any;
+  togglePin: (id: string) => void;
+  placeholder?: string;
+  filters: Filters;
+  setFilters: SetFilters;
+  filterOptions?: FilterOptions;
+  laggingMuscles?: LaggingMuscle[];
+}
+
 const ExerciseFilterControls = ({
   options = {},
   filters,
@@ -25,7 +87,7 @@ const ExerciseFilterControls = ({
   onFilterChange,
   isExpanded,
   onToggleExpanded,
-}) => {
+}: ExerciseFilterControlsProps) => {
   const seen = new Set();
   const uniqueSvgGroups = (options.targets || []).filter((svgGroup) => {
     const displayName = getSvgGroupDisplayName(svgGroup);
@@ -93,7 +155,7 @@ const FilterSelect = ({
   options = [],
   onValueChange,
   onClear,
-}) => (
+}: FilterSelectProps) => (
   <div className="flex items-center gap-1 w-full">
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger>
@@ -133,7 +195,7 @@ export default function ExerciseSearch({
   setFilters,
   filterOptions,
   laggingMuscles = [],
-}) {
+}: ExerciseSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
@@ -146,7 +208,7 @@ export default function ExerciseSearch({
     }
   }, [searchQuery]);
 
-  const handleFilterChange = (filterType, value) => {
+  const handleFilterChange = (filterType: string, value: string) => {
     setFilters[filterType](value);
     if (value) {
       setSearchQuery('');
@@ -159,7 +221,7 @@ export default function ExerciseSearch({
 
   const uniqueResults = searchResults
     .slice(0, 40)
-    .reduce((acc, item, index) => {
+    .reduce((acc: ExerciseItem[], item, index) => {
       const key = item.id || `exercise-${index}`;
       if (!acc.find((existing) => existing.id === key)) {
         acc.push(item);
@@ -224,11 +286,11 @@ export default function ExerciseSearch({
               </div>
             )}
             {uniqueResults.map((item, index) => {
-              let laggingType, bonusXP;
+              let laggingType: string | undefined, bonusXP: number | undefined;
               if (item.target) {
                 const match = laggingMuscles.find(
                   (lag) =>
-                    lag.muscle && item.target.toLowerCase().includes(lag.muscle)
+                    lag.muscle && item.target!.toLowerCase().includes(lag.muscle)
                 );
                 if (match) {
                   laggingType = match.laggingType;
@@ -257,7 +319,7 @@ export default function ExerciseSearch({
                   showCategory={true}
                   showBodyPart={true}
                   showSecondaryMuscles={true}
-                  onPinToggle={() => togglePin(item.id)}
+                  onPinToggle={() => togglePin(item.id!)}
                   onClick={() => {
                     handleSelect(item);
                     setSearchQuery('');
@@ -275,4 +337,4 @@ export default function ExerciseSearch({
       </Popover>
     </div>
   );
-}
+} 

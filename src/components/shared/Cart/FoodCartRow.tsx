@@ -12,19 +12,66 @@ import MacroDisplay from '../../nutrition/MacroDisplay';
 import NutritionLabel from '../../nutrition/NutritionLabel';
 import ServingSizeEditor from '../../nutrition/ServingSizeEditor';
 
+interface FoodItem {
+  id: string;
+  label: string;
+  quantity?: number;
+  units?: string;
+  serving_unit?: string;
+  serving_weight_grams?: number;
+  nutritionix_data?: any;
+  nutrition?: any;
+  calories?: number;
+  isRecipeItem?: boolean;
+  recipeName?: string;
+  type?: string;
+}
+
+interface RecipeItem {
+  id: string;
+  name: string;
+  servings?: number;
+  recipe?: any;
+  type: 'recipe';
+  items?: Array<{
+    id: string;
+    quantity: number;
+    isRecipe?: boolean;
+  }>;
+}
+
+interface UserProfile {
+  recipes?: Array<{
+    id: string;
+    servings?: number;
+    items?: Array<{
+      id: string;
+      quantity: number;
+      isRecipe?: boolean;
+    }>;
+  }>;
+}
+
+interface FoodCartRowProps {
+  item: FoodItem | RecipeItem;
+  updateCartItem?: (id: string, updates: any) => void;
+  removeFromCart?: (id: string) => void;
+  userWorkoutHistory?: any;
+}
+
 export default function FoodCartRow({
   item,
   updateCartItem = () => {},
   removeFromCart = () => {},
   userWorkoutHistory,
-}) {
+}: FoodCartRowProps) {
   // Check if the item is a food item by looking for a unique property like 'label'.
   const isFoodItem = 'label' in item;
   const isRecipe = item.type === 'recipe';
   const { userProfile } = useAuthStore();
   const foodLibrary = useLibrary('food');
 
-  const InfoDialog = ({ item }) => (
+  const InfoDialog = ({ item }: { item: FoodItem }) => (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -37,7 +84,7 @@ export default function FoodCartRow({
     </Dialog>
   );
 
-  const getFoodCalories = (food) => {
+  const getFoodCalories = (food: FoodItem): number => {
     const macros = getFoodMacros(food);
     const quantity = food.quantity || 1;
     const units = food.units || food.serving_unit || 'g';
@@ -53,13 +100,13 @@ export default function FoodCartRow({
     return Math.round(caloriesPerGram * grams);
   };
 
-  const getRecipeCalories = (recipe, servings = 1) => {
+  const getRecipeCalories = (recipe: any, servings: number = 1): number => {
     if (!recipe || !recipe.items) return 0;
     const recipeServings = recipe.servings || 1;
     let total = 0;
-    recipe.items.forEach((ingredient) => {
+    recipe.items.forEach((ingredient: any) => {
       if (ingredient.isRecipe) {
-        const nestedRecipe = userProfile?.recipes?.find(
+        const nestedRecipe = (userProfile as UserProfile)?.recipes?.find(
           (r) => r.id === ingredient.id
         );
         if (nestedRecipe) {
@@ -70,7 +117,7 @@ export default function FoodCartRow({
           total += nestedCals;
         }
       } else {
-        const food = foodLibrary.items.find((f) => f.id === ingredient.id);
+        const food = foodLibrary.items.find((f: any) => f.id === ingredient.id);
         if (food) {
           total += getFoodCalories({
             ...food,
@@ -84,9 +131,9 @@ export default function FoodCartRow({
 
   if (isRecipe) {
     // Always default to 1 serving (per serving) unless user changes it
-    const servings = item.servings || 1;
+    const servings = (item as RecipeItem).servings || 1;
     const recipe =
-      item.recipe || userProfile?.recipes?.find((r) => r.id === item.id);
+      (item as RecipeItem).recipe || (userProfile as UserProfile)?.recipes?.find((r) => r.id === item.id);
     // If user hasn't changed servings, show per-serving nutrition
     const calories = recipe ? getRecipeCalories(recipe, servings) : 0;
     return (
@@ -113,7 +160,7 @@ export default function FoodCartRow({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm flex items-center gap-1">
                 <ChefHat className="h-4 w-4 text-orange-500" />
-                {item.name}
+                {(item as RecipeItem).name}
               </span>
               <span className="text-sm font-mono text-gray-700">
                 Cal: {calories}
@@ -136,34 +183,34 @@ export default function FoodCartRow({
       </Card>
     );
   } else if (isFoodItem) {
-    const currentUnitRef = useRef(item.units);
+    const currentUnitRef = useRef((item as FoodItem).units);
     useEffect(() => {
-      currentUnitRef.current = item.units;
-    }, [item.units]);
+      currentUnitRef.current = (item as FoodItem).units;
+    }, [(item as FoodItem).units]);
     const handleServingChange = useCallback(
-      ({ quantity, units }) => {
+      ({ quantity, units }: { quantity: number; units: string }) => {
         updateCartItem(item.id, { quantity, units });
       },
       [updateCartItem, item.id]
     );
-    const calories = getFoodCalories(item);
+    const calories = getFoodCalories(item as FoodItem);
     return (
       <Card className="border">
         <CardContent className="p-4">
           <div className="flex flex-col gap-2">
             {/* Serving Size Editor */}
-            <ServingSizeEditor food={item} onUpdate={handleServingChange} />
+            <ServingSizeEditor food={item as FoodItem} onUpdate={handleServingChange} />
             {/* Food Info Row: name left, calories right */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm">{item.label}</span>
-                {item.isRecipeItem && (
+                <span className="font-semibold text-sm">{(item as FoodItem).label}</span>
+                {(item as FoodItem).isRecipeItem && (
                   <Badge variant="outline" className="text-xs">
                     <ChefHat className="h-3 w-3 mr-1" />
-                    {item.recipeName}
+                    {(item as FoodItem).recipeName}
                   </Badge>
                 )}
-                <InfoDialog item={item} />
+                <InfoDialog item={item as FoodItem} />
               </div>
               <span className="text-sm font-mono text-gray-700">
                 Cal: {calories}
@@ -189,4 +236,4 @@ export default function FoodCartRow({
     // Defensive: if not a food or recipe, render nothing
     return null;
   }
-}
+} 
