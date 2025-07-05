@@ -7,14 +7,41 @@ import {
   searchExercises,
   searchNutritionix,
 } from '../services/firebase/fetchLibraryService';
+import type { Food, Exercise } from '../types';
 
-export default function useLibrary(libraryType, options = {}) {
-  const [items, setItems] = useState([]);
-  const [apiResults, setApiResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+export type LibraryType = 'food' | 'exercise';
+
+interface LibraryOptions {
+  onExerciseAdd?: (exercise: any) => void;
+  [key: string]: any;
+}
+
+interface UseLibraryReturn {
+  items: Food[] | Exercise[];
+  loading: boolean;
+  query: string;
+  setQuery: (query: string) => void;
+  results: Food[] | Exercise[];
+  showDropdown: boolean;
+  setShowDropdown: (show: boolean) => void;
+  // Food-specific
+  apiResults: Food[];
+  searchNutritionix: (searchQuery: string) => Promise<Food[]>;
+  fetchAndSave: (item: any) => Promise<Food | null>;
+  // Exercise-specific
+  handleSelectExercise: (exercise: Exercise) => any;
+}
+
+export default function useLibrary(
+  libraryType: LibraryType,
+  options: LibraryOptions = {}
+): UseLibraryReturn {
+  const [items, setItems] = useState<Food[] | Exercise[]>([]);
+  const [apiResults, setApiResults] = useState<Food[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [query, setQuery] = useState<string>('');
+  const [results, setResults] = useState<Food[] | Exercise[]>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
 
   // Load initial library from Firestore on mount
   useEffect(() => {
@@ -39,7 +66,7 @@ export default function useLibrary(libraryType, options = {}) {
 
   // Search functionality
   const searchItems = useCallback(
-    (searchQuery) => {
+    (searchQuery: string) => {
       if (!searchQuery.trim()) {
         setShowDropdown(false);
         setResults([]);
@@ -47,7 +74,7 @@ export default function useLibrary(libraryType, options = {}) {
       }
 
       if (libraryType === 'exercise') {
-        const filtered = searchExercises(items, searchQuery);
+        const filtered = searchExercises(items as Exercise[], searchQuery);
         setResults(filtered);
         setShowDropdown(true);
       }
@@ -63,10 +90,10 @@ export default function useLibrary(libraryType, options = {}) {
   }, [query, searchItems, libraryType]);
 
   // Food-specific functions
-  const handleFetchAndSaveFood = async (item) => {
+  const handleFetchAndSaveFood = async (item: any): Promise<Food | null> => {
     if (libraryType !== 'food') return null;
 
-    const savedFood = await fetchAndSaveFood(item, items);
+    const savedFood = await fetchAndSaveFood(item, items as Food[]);
     if (savedFood) {
       // Instead of just adding to local state, reload the full library from Firestore
       try {
@@ -81,10 +108,10 @@ export default function useLibrary(libraryType, options = {}) {
     return savedFood;
   };
 
-  const handleSearchNutritionix = async (searchQuery) => {
+  const handleSearchNutritionix = async (searchQuery: string): Promise<Food[]> => {
     if (libraryType !== 'food') return [];
 
-    const results = await searchNutritionix(searchQuery, items);
+    const results = await searchNutritionix(searchQuery, items as Food[]);
     setApiResults(results);
     // After API search and saves, reload the food library from Firestore
     try {
@@ -101,7 +128,7 @@ export default function useLibrary(libraryType, options = {}) {
 
   // Exercise-specific functions
   const handleSelectExercise = useCallback(
-    (exercise) => {
+    (exercise: Exercise) => {
       if (libraryType !== 'exercise') return;
 
       const exerciseForCart = prepareExerciseForCart(exercise);
@@ -137,4 +164,4 @@ export default function useLibrary(libraryType, options = {}) {
     // Exercise-specific
     handleSelectExercise,
   };
-}
+} 
