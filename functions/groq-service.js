@@ -1,3 +1,6 @@
+// Environment Setup for Cloud Functions v2:
+// Set GROQ_API_KEY in Google Cloud Console or use --set-env-vars flag:
+// gcloud functions deploy [function-name] --set-env-vars GROQ_API_KEY=your_key_here
 const axios = require('axios');
 const GROQ_CONFIG = require('./groq-config.js');
 

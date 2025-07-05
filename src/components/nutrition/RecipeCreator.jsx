@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Save, ChefHat } from 'lucide-react';
-import Search from '../shared/Search/Search';
+import FoodSearch from '../shared/Search/FoodSearch';
 import useLibrary from '../../hooks/useLibrary';
-import useSearch from '../../hooks/useSearch';
+import useFoodSearch from '../../hooks/useFoodSearch';
 import { getFoodMacros } from '../../utils/dataUtils';
 import useCart from '../../hooks/useCart';
 
@@ -20,7 +20,7 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
   const [servings, setServings] = useState(1);
   
   const foodLibrary = useLibrary('food');
-  const search = useSearch('food', foodLibrary, userProfile);
+  const search = useFoodSearch(foodLibrary, userProfile);
   const foodCart = useCart('food');
 
   const handleAddFood = () => {
@@ -141,21 +141,18 @@ export default function RecipeCreator({ onRecipeCreated, userProfile }) {
           <div className="space-y-3">
             <label className="text-sm font-medium">Add Ingredients</label>
             
-            {/* Food Search */}
-            <Search
-              type="food"
-              searchQuery={search.searchQuery}
-              setSearchQuery={search.setSearchQuery}
-              searchResults={search.searchResults}
-              handleApiSearch={search.handleApiSearch}
-              handleSelect={handleFoodSelect}
-              isLoading={search.searchLoading}
-              userProfile={userProfile}
-              togglePin={() => {}}
-              getFoodMacros={getFoodMacros}
-              placeholder="Search for foods to add..."
-              filters={search.filters}
-              setFilters={search.setFilters}
+                        {/* Food Search */}
+            <FoodSearch
+                searchQuery={search.searchQuery}
+                setSearchQuery={search.setSearchQuery}
+                searchResults={search.searchResults}
+                handleApiSearch={search.handleApiSearch}
+                handleSelect={handleFoodSelect}
+                isLoading={search.searchLoading}
+                userProfile={userProfile}
+                togglePin={() => {}}
+                getFoodMacros={getFoodMacros}
+                placeholder="Search for foods to add..."
             />
 
             {/* Current Food Selection */}

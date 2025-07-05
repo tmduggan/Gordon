@@ -12,6 +12,7 @@ const DailyTotalsCard = ({ logs, goals, getFoodById }) => {
     const dailyXP = calculateDailyFoodXP(logs, getFoodById, goals);
     
     const macroBars = [
+        { key: 'calories', label: '🔥 Calories', goal: goals.calories, color: 'bg-primary' },
         { key: 'protein', label: '🥩 Protein', goal: goals.protein, color: 'bg-status-success' },
         { key: 'carbs', label: '🍞 Carbs', goal: goals.carbs, color: 'bg-equipment' },
         { key: 'fat', label: '🥑 Fat', goal: goals.fat, color: 'bg-status-warning' },

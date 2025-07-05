@@ -2,11 +2,7 @@ import React from 'react';
 import FoodSearch from './FoodSearch';
 import ExerciseSearch from './ExerciseSearch';
 
-/**
- * @deprecated Use FoodSearch or ExerciseSearch instead
- * This wrapper maintains backward compatibility but uses the new efficient components internally
- */
-export default function Search({
+export default function SearchWrapper({
     type,
     searchQuery,
     setSearchQuery,
@@ -62,6 +58,5 @@ export default function Search({
         );
     }
 
-    console.warn(`Search: Unknown type "${type}". Use FoodSearch or ExerciseSearch instead.`);
     return null;
 } 

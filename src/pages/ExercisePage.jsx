@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 
 // Component Imports
 import CartContainer from '../components/shared/Cart/CartContainer';
-import Search from '../components/shared/Search/Search';
+import ExerciseSearch from '../components/shared/Search/ExerciseSearch';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import MuscleChart from '../components/exercise/muscleData/MuscleChart';
 import LevelDisplay from '../components/gamification/LevelDisplay';
@@ -14,7 +14,7 @@ import PaywalledMuscleChart from '../components/exercise/PaywalledMuscleChart';
 import useCart from '../hooks/useCart';
 import useHistory from "../hooks/useHistory";
 import useLibrary from '../hooks/useLibrary';
-import useSearch from '../hooks/useSearch';
+import useExerciseSearch from '../hooks/useExerciseSearch';
 import useAuthStore from "../store/useAuthStore";
 import useExerciseLogging from '../hooks/useExerciseLogging';
 import { ensureAvailableEquipment } from '../utils/dataUtils';
@@ -42,7 +42,7 @@ export default function ExercisePage() {
     // Initialize hooks
     const exerciseLibrary = useLibrary('exercise');
     const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
-    const search = useSearch('exercise', exerciseLibrary, userProfile);
+    const search = useExerciseSearch(exerciseLibrary, userProfile);
     const cart = useCart('exercise');
     
     // Use custom exercise logging hook
@@ -121,24 +121,17 @@ export default function ExercisePage() {
                 className="mb-6 w-full"
                 userProfile={userProfile}
             />
-            <Search
-                type="exercise"
+            <ExerciseSearch
                 searchQuery={search.searchQuery}
                 setSearchQuery={search.setSearchQuery}
                 searchResults={search.searchResults}
-                handleApiSearch={search.handleApiSearch}
                 handleSelect={handleSelect}
-                isLoading={search.searchLoading}
                 userProfile={userProfile}
                 togglePin={togglePinExercise}
                 placeholder="Search for an exercise..."
                 filters={search.filters}
                 setFilters={search.setFilters}
                 filterOptions={exerciseFilterOptions}
-                exerciseCategory={selectedFilter}
-                selectedBodyweight={availableEquipment.bodyweight}
-                selectedGym={availableEquipment.gym}
-                selectedCardio={availableEquipment.cardio}
                 laggingMuscles={laggingMuscles}
             />
             {cart.cart.length > 0 && (

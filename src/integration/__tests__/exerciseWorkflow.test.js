@@ -71,13 +71,14 @@ vi.mock('../../hooks/useCart', () => ({
   }))
 }))
 
-vi.mock('../../hooks/useSearch', () => ({
+vi.mock('../../hooks/useExerciseSearch', () => ({
   default: vi.fn(() => ({
-    query: '',
-    results: [],
-    loading: false,
-    search: vi.fn(),
-    clearSearch: vi.fn()
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    searchResults: [],
+    clearSearch: vi.fn(),
+    filters: { targetCategory: '', equipmentCategory: '' },
+    setFilters: { targetCategory: vi.fn(), equipmentCategory: vi.fn() }
   }))
 }))
 

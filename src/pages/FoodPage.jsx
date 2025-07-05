@@ -4,7 +4,7 @@ import LevelDisplay from '../components/gamification/LevelDisplay';
 
 // Component Imports
 import CartContainer from '../components/shared/Cart/CartContainer';
-import Search from '../components/shared/Search/Search';
+import FoodSearch from '../components/shared/Search/FoodSearch';
 import HistoryView from '../components/shared/HistoryView';
 import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
@@ -15,7 +15,7 @@ import SuggestedFoodsCard from '../components/nutrition/SuggestedFoodsCard';
 import useCart from '../hooks/useCart';
 import useHistory from "../hooks/useHistory";
 import useLibrary from '../hooks/useLibrary';
-import useSearch from '../hooks/useSearch';
+import useFoodSearch from '../hooks/useFoodSearch';
 import useAuthStore from "../store/useAuthStore";
 import useFoodLogging from '../hooks/useFoodLogging';
 
@@ -36,8 +36,8 @@ export default function FoodPage() {
         foodLibrary, cart, null, dateTimePicker
     );
     
-    // Initialize search with nutrients callback
-    const search = useSearch('food', foodLibrary, userProfile, {
+    // Use dedicated food search hook
+    const search = useFoodSearch(foodLibrary, userProfile, {
         onNutrientsAdd: handleNutrientsAdd
     });
 
@@ -139,8 +139,7 @@ export default function FoodPage() {
                 />
             )}
             <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
-                <Search
-                    type="food"
+                <FoodSearch
                     searchQuery={search.searchQuery}
                     setSearchQuery={search.setSearchQuery}
                     searchResults={search.searchResults}
@@ -153,8 +152,6 @@ export default function FoodPage() {
                     togglePin={togglePinFood}
                     getFoodMacros={getFoodMacros}
                     placeholder="e.g., 1 cup of oatmeal"
-                    filters={search.filters}
-                    setFilters={search.setFilters}
                 />
                 {cart.cart.length > 0 && (
                     <CartContainer
