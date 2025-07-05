@@ -1,4 +1,4 @@
-export const muscleMapping = {
+export const muscleMapping: Record<string, string[]> = {
   // MAPPING STRUCTURE: {SVG_muscle_group}: [library_muscle_names]
   //
   // This maps SVG muscle groups (used in the visual chart) to exercise library muscle names.
@@ -73,10 +73,10 @@ export const muscleMapping = {
 
 // Special muscle groups that don't map to SVG but need to be tracked
 // These will be stored in the user profile but not visualized on the muscle chart
-export const specialMuscleGroups = {
+export const specialMuscleGroups: Record<string, string[]> = {
   cardiovascular: ['cardiovascular system'],
   spine: ['spine'],
   serratus_anterior: ['serratus anterior'],
 };
 
-export default muscleMapping;
+export default muscleMapping; 

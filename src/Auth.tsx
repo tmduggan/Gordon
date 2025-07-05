@@ -3,8 +3,8 @@ import { Chrome } from 'lucide-react';
 import React from 'react';
 import { auth, googleProvider, signInWithPopup } from './firebase';
 
-export default function Auth() {
-  const handleGoogleSignIn = async () => {
+export default function Auth(): JSX.Element {
+  const handleGoogleSignIn = async (): Promise<void> => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
@@ -32,4 +32,4 @@ export default function Auth() {
       </div>
     </div>
   );
-}
+} 

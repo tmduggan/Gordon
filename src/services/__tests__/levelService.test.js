@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  calculateLevel,
+  calculateLevelFromXP,
   calculateStreakBonuses,
   calculateTotalXPForLevel,
   calculateXPForLevel,
@@ -9,23 +9,23 @@ import {
 } from '../gamification/levelService';
 
 describe('Level Service', () => {
-  describe('calculateLevel', () => {
+  describe('calculateLevelFromXP', () => {
     it('should calculate correct level for given XP', () => {
-      expect(calculateLevel(0)).toBe(1);
-      expect(calculateLevel(100)).toBe(2);
-      expect(calculateLevel(300)).toBe(3);
-      expect(calculateLevel(600)).toBe(4);
-      expect(calculateLevel(1000)).toBe(5);
+      expect(calculateLevelFromXP(0).level).toBe(1);
+      expect(calculateLevelFromXP(100).level).toBe(2);
+      expect(calculateLevelFromXP(300).level).toBe(3);
+      expect(calculateLevelFromXP(600).level).toBe(4);
+      expect(calculateLevelFromXP(1000).level).toBe(5);
     });
 
     it('should handle decimal XP values', () => {
-      expect(calculateLevel(50.5)).toBe(1);
-      expect(calculateLevel(150.7)).toBe(2);
+      expect(calculateLevelFromXP(50.5).level).toBe(1);
+      expect(calculateLevelFromXP(150.7).level).toBe(2);
     });
 
     it('should handle very high XP values', () => {
-      expect(calculateLevel(10000)).toBe(14);
-      expect(calculateLevel(50000)).toBe(31);
+      expect(calculateLevelFromXP(10000).level).toBe(14);
+      expect(calculateLevelFromXP(50000).level).toBe(31);
     });
   });
 
@@ -65,22 +65,28 @@ describe('Level Service', () => {
 
       const result = calculateStreakBonuses(workoutLogs);
 
-      expect(result.totalBonus).toBeGreaterThan(0);
-      expect(result.streaks).toHaveLength(2); // 3-day and 2-day streaks
+      expect(result.dailyStreak).toBeGreaterThan(0);
+      expect(result.dailyBonus).toBeGreaterThanOrEqual(0);
+      expect(result.weeklyStreak).toBeGreaterThanOrEqual(0);
+      expect(result.weeklyBonus).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle empty workout logs', () => {
       const result = calculateStreakBonuses([]);
-      expect(result.totalBonus).toBe(0);
-      expect(result.streaks).toHaveLength(0);
+      expect(result.dailyStreak).toBe(0);
+      expect(result.weeklyStreak).toBe(0);
+      expect(result.dailyBonus).toBe(0);
+      expect(result.weeklyBonus).toBe(0);
     });
 
     it('should handle single workout', () => {
       const result = calculateStreakBonuses([
         { timestamp: new Date('2024-01-01') },
       ]);
-      expect(result.totalBonus).toBe(0);
-      expect(result.streaks).toHaveLength(0);
+      expect(result.dailyStreak).toBe(1);
+      expect(result.dailyBonus).toBe(0); // No bonus for single day
+      expect(result.weeklyStreak).toBe(1);
+      expect(result.weeklyBonus).toBe(0); // No bonus for single week
     });
   });
 

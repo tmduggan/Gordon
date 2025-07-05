@@ -1,14 +1,15 @@
 import { getAuth } from 'firebase/auth';
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import type { Food } from '../types';
 
 /**
  * A utility to create a URL-friendly "slug" from a string.
  * Used for generating consistent, readable document IDs.
- * @param {string} str - The input string.
- * @returns {string} The slugified string.
+ * @param str - The input string.
+ * @returns The slugified string.
  */
-function slugify(str) {
+function slugify(str: string): string {
   return (str || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
@@ -19,10 +20,10 @@ function slugify(str) {
 /**
  * Generates a unique and consistent ID for a food object.
  * Uses the NIX ID for branded, NDB number for USDA, or a slug of the name for common foods.
- * @param {object} food - The food object.
- * @returns {string|null} The generated ID, or null if no identifier can be found.
+ * @param food - The food object.
+ * @returns The generated ID, or null if no identifier can be found.
  */
-export function generateFoodId(food) {
+export function generateFoodId(food: Partial<Food>): string | null {
   const foodName = food.food_name || food.label;
   if (food.nix_item_id) {
     return `branded_${food.nix_item_id}`;
@@ -38,9 +39,9 @@ export function generateFoodId(food) {
 
 /**
  * Loads all food documents from the 'foods' collection in Firestore.
- * @returns {Promise<Array>} A promise that resolves to an array of food objects.
+ * @returns A promise that resolves to an array of food objects.
  */
-export async function loadLocalFoods() {
+export async function loadLocalFoods(): Promise<Food[]> {
   const querySnapshot = await getDocs(collection(db, 'foods'));
   console.log(
     '[loadLocalFoods] Loaded foods count:',
@@ -49,16 +50,16 @@ export async function loadLocalFoods() {
   return querySnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
-  }));
+  })) as Food[];
 }
 
 /**
  * Saves a new food object to the 'foods' collection in Firestore.
  * It generates a unique ID and adds metadata before saving.
- * @param {object} food - The full food object with nutrition data.
- * @returns {Promise<object>} A promise that resolves to the saved food object, including its new ID.
+ * @param food - The full food object with nutrition data.
+ * @returns A promise that resolves to the saved food object, including its new ID.
  */
-export async function saveFoodToLibrary(food) {
+export async function saveFoodToLibrary(food: Partial<Food>): Promise<Food> {
   const auth = getAuth();
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -72,13 +73,13 @@ export async function saveFoodToLibrary(food) {
     throw new Error('Cannot save food without a valid identifier.');
   }
 
-  const foodToSave = {
+  const foodToSave: Food = {
     ...food,
     id: foodId,
-    label: food.food_name || food.label,
+    label: food.food_name || food.label || '',
     created_at: new Date().toISOString(),
     source: 'nutritionix', // Or determine source based on data
-  };
+  } as Food;
 
   console.log('Attempting to save food to Firestore:', foodToSave);
   try {
@@ -90,4 +91,4 @@ export async function saveFoodToLibrary(food) {
     console.error('Error saving food to Firestore:', error, foodToSave);
     throw error;
   }
-}
+} 

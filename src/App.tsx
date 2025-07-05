@@ -10,8 +10,6 @@ import PaymentCancelPage from './pages/PaymentCancelPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import useAuthStore from './store/useAuthStore';
 
-// Component Imports
-
 // Add global debug functions for development
 if (process.env.NODE_ENV === 'development') {
   window.debugUserProfile = () => {
@@ -39,7 +37,19 @@ if (process.env.NODE_ENV === 'development') {
   };
 }
 
-export default function App() {
+type ActiveTab = 'exercise' | 'nutrition';
+type Theme = 'theme-exercise' | 'theme-nutrition';
+type PaymentStatus = 'success' | 'cancel' | null;
+
+interface NutritionGoals {
+  calories: number;
+  fat: number;
+  carbs: number;
+  protein: number;
+  fiber: number;
+}
+
+export default function App(): JSX.Element {
   const { user, init, loading } = useAuthStore();
 
   // --- Initialize Auth Listener ---
@@ -48,10 +58,10 @@ export default function App() {
   }, [init]);
 
   // --- UI State ---
-  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('exercise');
-  const [theme, setTheme] = useState('theme-exercise');
-  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [goalsModalOpen, setGoalsModalOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('exercise');
+  const [theme, setTheme] = useState<Theme>('theme-exercise');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null);
 
   // Check for payment result URLs
   useEffect(() => {
@@ -67,7 +77,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const favicon = document.getElementById('favicon');
+    const favicon = document.getElementById('favicon') as HTMLLinkElement | null;
     if (!favicon) return;
     if (activeTab === 'nutrition') {
       setTheme('theme-nutrition');
@@ -78,7 +88,7 @@ export default function App() {
     }
   }, [activeTab]);
 
-  const defaultGoals = {
+  const defaultGoals: NutritionGoals = {
     calories: 2300,
     fat: 65,
     carbs: 280,
@@ -111,7 +121,7 @@ export default function App() {
     return <PaymentCancelPage />;
   }
 
-  const Navigation = () => (
+  const Navigation = (): JSX.Element => (
     <div className="flex items-center space-x-3">
       <Button
         variant={activeTab === 'exercise' ? 'default' : 'outline'}
@@ -149,4 +159,4 @@ export default function App() {
       <Toaster />
     </div>
   );
-}
+} 

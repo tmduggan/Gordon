@@ -37,7 +37,7 @@ export const formatTimeForDisplay = (hours, minutes) => {
   return `${displayHours}:${displayMinutes} ${period}`;
 };
 
-export const parseTimeFromDisplay = (displayTime) => {
+export const parseTimeFromDisplay = (displayTime: string): { hours: number; minutes: number } => {
   const [time, period] = displayTime.split(' ');
   const [hours, minutes] = time.split(':').map(Number);
   let parsedHours = hours;
@@ -46,14 +46,14 @@ export const parseTimeFromDisplay = (displayTime) => {
   return { hours: parsedHours, minutes };
 };
 
-export const get24Hour = (hour12, ampm) => {
-  let h = parseInt(hour12, 10);
+export const get24Hour = (hour12: string | number, ampm: string): number => {
+  let h = parseInt(hour12.toString(), 10);
   if (ampm === 'PM' && h !== 12) h += 12;
   if (ampm === 'AM' && h === 12) h = 0;
   return h;
 };
 
-export const formatTimestampLocal = (dateStr, hour12, minute, ampm) => {
+export const formatTimestampLocal = (dateStr: string, hour12: string | number, minute: number, ampm: string): string => {
   const [year, month, day] = dateStr.split('-').map(Number);
   const hour24 = get24Hour(hour12, ampm);
 
@@ -66,7 +66,7 @@ export const formatTimestampLocal = (dateStr, hour12, minute, ampm) => {
   return localDate.toISOString();
 };
 
-export const formatIdTimestamp = (date) => {
+export const formatIdTimestamp = (date: Date): string => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
@@ -78,10 +78,10 @@ export const formatIdTimestamp = (date) => {
 
 /**
  * Parses an ISO 8601 string into its constituent date and time parts for display.
- * @param {string} isoString - The timestamp string from Firestore.
- * @returns {object} An object with date and time strings, e.g., { date: '2025-06-21', time: '19:00' }.
+ * @param isoString - The timestamp string from Firestore.
+ * @returns An object with date and time strings, e.g., { date: '2025-06-21', time: '19:00' }.
  */
-export const parseTimestamp = (isoString) => {
+export const parseTimestamp = (isoString: string): { date: string; time: string } => {
   if (!isoString) return { date: '', time: '' };
   const date = new Date(isoString);
   const year = date.getFullYear();
@@ -96,14 +96,19 @@ export const parseTimestamp = (isoString) => {
 };
 
 /**
- * Formats a date string (YYYY-MM-DD) for display in MM/DD/YYYY format.
+ * Formats a date string (YYYY-MM-DD) for display in Month Day, Year format.
  * @param {string} dateString - The date string in YYYY-MM-DD format.
- * @returns {string} The date formatted as MM/DD/YYYY.
+ * @returns {string} The date formatted as Month Day, Year.
  */
 export const formatDateForDisplay = (dateString) => {
   if (!dateString) return '';
   const [year, month, day] = dateString.split('-');
-  return `${month}/${day}/${year}`;
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 };
 
 export const groupAndEnrichLogs = (logs, exercises) => {
@@ -128,6 +133,44 @@ export const groupAndEnrichLogs = (logs, exercises) => {
 };
 
 /**
+ * Groups logs by date using a custom date formatter function
+ * @param {Array} logs - Array of log objects with timestamp property
+ * @param {Function} dateFormatter - Function to format dates (e.g., formatSmartDate)
+ * @returns {Object} Object with formatted date strings as keys and arrays of logs as values
+ */
+export const groupLogsByDate = (logs, dateFormatter) => {
+  if (!logs || !Array.isArray(logs) || logs.length === 0) {
+    return {};
+  }
+
+  return logs.reduce((acc, log) => {
+    let logDate;
+    
+    // Handle different timestamp formats
+    if (log.timestamp instanceof Date) {
+      logDate = log.timestamp;
+    } else if (log.timestamp && typeof log.timestamp === 'object' && log.timestamp.seconds) {
+      // Firestore timestamp format
+      logDate = new Date(log.timestamp.seconds * 1000);
+    } else if (typeof log.timestamp === 'string') {
+      logDate = new Date(log.timestamp);
+    } else {
+      // Skip logs with invalid timestamps
+      return acc;
+    }
+
+    const formattedDate = dateFormatter(logDate);
+    
+    if (!acc[formattedDate]) {
+      acc[formattedDate] = [];
+    }
+    
+    acc[formattedDate].push(log);
+    return acc;
+  }, {});
+};
+
+/**
  * Formats a date object into a readable string with relative terms like "Today" and "Yesterday".
  * - If the date is today, returns "Today".
  * - If the date is yesterday, returns "Yesterday".
@@ -145,8 +188,13 @@ export function formatSmartDate(date) {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  // Reset time components for accurate day comparison
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+  if (dateOnly.getTime() === todayOnly.getTime()) return 'Today';
+  if (dateOnly.getTime() === yesterdayOnly.getTime()) return 'Yesterday';
 
   const isCurrentYear = date.getFullYear() === today.getFullYear();
   const options = { month: 'long', day: 'numeric' };
@@ -173,13 +221,13 @@ export function isSameDayLocal(date1, date2) {
   );
 }
 
-export const exerciseTimePeriods = {
+export const exerciseTimePeriods: Record<string, number> = {
   Morning: 8, // 8:00 AM
   Midday: 13, // 1:00 PM
   Evening: 20, // 8:00 PM
 };
 
-export const foodTimePeriods = {
+export const foodTimePeriods: Record<string, number> = {
   'Early Morning': 5, // 5:00 AM
   Breakfast: 8, // 8:00 AM
   Brunch: 10, // 10:00 AM

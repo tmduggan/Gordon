@@ -1,5 +1,5 @@
 // Icon mappings for equipment types
-export const equipmentIconMap = {
+export const equipmentIconMap: Record<string, string> = {
   'smith machine': '/icons/smith.png',
   dumbbell: '/icons/dumbbell.png',
   barbell: '/icons/barbell.png',
@@ -10,7 +10,7 @@ export const equipmentIconMap = {
 };
 
 // Helper function to get equipment icon based on equipment name
-export const getEquipmentIcon = (equipmentName) => {
+export const getEquipmentIcon = (equipmentName: string | null | undefined): string | null => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
 
@@ -37,7 +37,7 @@ export const getEquipmentIcon = (equipmentName) => {
 };
 
 // Icon mappings for muscle groups
-export const muscleIconMap = {
+export const muscleIconMap: Record<string, string> = {
   quads: '/icons/Muscle-Quads.jpeg',
   abductors: '/icons/Muscle-Abductors.jpeg',
   abs: '/icons/Muscle-Abs.jpeg',
@@ -55,15 +55,15 @@ export const muscleIconMap = {
 };
 
 // Helper function to get muscle icon based on muscle name
-export const getMuscleIcon = (muscleName) => {
+export const getMuscleIcon = (muscleName: string | null | undefined): string | null => {
   if (!muscleName) return null;
   const lowerCaseMuscle = muscleName.toLowerCase();
   return muscleIconMap[lowerCaseMuscle] || null;
 };
 
 // Color mappings for difficulty levels
-export const difficultyColorMap = {
+export const difficultyColorMap: Record<string, string> = {
   beginner: 'bg-sky-500',
   intermediate: 'bg-emerald-600',
   advanced: 'bg-orange-500',
-};
+}; 

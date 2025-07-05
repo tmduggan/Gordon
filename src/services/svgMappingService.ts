@@ -1,18 +1,24 @@
 import { muscleMapping } from '../utils/muscleMapping';
+import type { Exercise } from '../types';
+
+interface ValidationResult {
+  isValid: boolean;
+  message: string;
+}
 
 /**
  * Automatically assign SVG mappings to exercises based on their target and secondary muscles
- * @param {Array} exercises - Array of exercise objects
- * @returns {Array} Exercises with auto-assigned SVG mappings
+ * @param exercises - Array of exercise objects
+ * @returns Exercises with auto-assigned SVG mappings
  */
-export function autoAssignSvgMappings(exercises) {
+export function autoAssignSvgMappings(exercises: Partial<Exercise>[]): Partial<Exercise>[] {
   return exercises.map((exercise) => {
     // Skip if exercise already has a manual SVG mapping
     if (exercise.svgMapping !== null && exercise.svgMapping !== undefined) {
       return exercise;
     }
 
-    const svgGroups = new Set();
+    const svgGroups = new Set<string>();
 
     // Check target muscle
     if (exercise.target) {
@@ -59,19 +65,19 @@ export function autoAssignSvgMappings(exercises) {
 
 /**
  * Get available SVG muscle groups for selection
- * @returns {Array} Array of SVG muscle group names
+ * @returns Array of SVG muscle group names
  */
-export function getAvailableSvgGroups() {
+export function getAvailableSvgGroups(): string[] {
   return Object.keys(muscleMapping).sort();
 }
 
 /**
  * Get SVG groups that would be auto-assigned for a given exercise
- * @param {Object} exercise - Exercise object
- * @returns {Array} Array of SVG group names that would be auto-assigned
+ * @param exercise - Exercise object
+ * @returns Array of SVG group names that would be auto-assigned
  */
-export function getAutoAssignedSvgGroups(exercise) {
-  const svgGroups = new Set();
+export function getAutoAssignedSvgGroups(exercise: Partial<Exercise>): string[] {
+  const svgGroups = new Set<string>();
 
   // Check target muscle
   if (exercise.target) {
@@ -112,10 +118,10 @@ export function getAutoAssignedSvgGroups(exercise) {
 
 /**
  * Validate SVG mapping for an exercise
- * @param {Array} svgMapping - Array of SVG group names
- * @returns {Object} Validation result with isValid and message
+ * @param svgMapping - Array of SVG group names
+ * @returns Validation result with isValid and message
  */
-export function validateSvgMapping(svgMapping) {
+export function validateSvgMapping(svgMapping: string[] | null | undefined): ValidationResult {
   if (!svgMapping || svgMapping.length === 0) {
     return {
       isValid: true,
@@ -140,11 +146,11 @@ export function validateSvgMapping(svgMapping) {
 
 /**
  * Get display name for SVG muscle group
- * @param {string} svgGroup - SVG group name
- * @returns {string} Human-readable display name
+ * @param svgGroup - SVG group name
+ * @returns Human-readable display name
  */
-export function getSvgGroupDisplayName(svgGroup) {
-  const displayNames = {
+export function getSvgGroupDisplayName(svgGroup: string): string {
+  const displayNames: Record<string, string> = {
     abs: 'Abs',
     obliques: 'Obliques',
     lower_abs: 'Lower Abs',
@@ -185,38 +191,38 @@ export function getSvgGroupDisplayName(svgGroup) {
 /**
  * Get available SVG muscle groups for filtering
  * Returns the actual SVG muscle groups from the system
- * @returns {Array} Array of SVG muscle group names
+ * @returns Array of SVG muscle group names
  */
-export function getMuscleGroupCategories() {
+export function getMuscleGroupCategories(): string[] {
   // Return the actual SVG muscle groups from muscleMapping
   return Object.keys(muscleMapping).sort();
 }
 
 /**
  * Get all muscle group names for filtering
- * @returns {Array} Array of muscle group names
+ * @returns Array of muscle group names
  */
-export function getMuscleGroupCategoryNames() {
+export function getMuscleGroupCategoryNames(): string[] {
   return getMuscleGroupCategories();
 }
 
 /**
- * Check if an exercise targets a specific muscle group
- * @param {Object} exercise - Exercise object
- * @param {string} muscleGroup - Muscle group name (e.g., 'abs', 'quads', 'biceps')
- * @returns {boolean} True if exercise targets the muscle group
+ * Check if an exercise targets a specific muscle category
+ * @param exercise - Exercise object
+ * @param muscleGroup - Muscle group to check
+ * @returns True if exercise targets the muscle group
  */
-export function exerciseTargetsMuscleCategory(exercise, muscleGroup) {
-  // Check if the muscle group exists in our mapping
-  const libraryMuscles = muscleMapping[muscleGroup];
-  if (!libraryMuscles) return false;
+export function exerciseTargetsMuscleCategory(
+  exercise: Partial<Exercise>,
+  muscleGroup: string
+): boolean {
+  if (!exercise) return false;
 
   // Check target muscle
   if (exercise.target) {
     const targetMuscle = exercise.target.toLowerCase().trim();
-    if (
-      libraryMuscles.some((muscle) => muscle.toLowerCase() === targetMuscle)
-    ) {
+    const groupMuscles = muscleMapping[muscleGroup] || [];
+    if (groupMuscles.some((muscle) => muscle.toLowerCase() === targetMuscle)) {
       return true;
     }
   }
@@ -227,19 +233,13 @@ export function exerciseTargetsMuscleCategory(exercise, muscleGroup) {
       ? exercise.secondaryMuscles
       : [exercise.secondaryMuscles];
 
-    for (const muscle of secondaryMuscles) {
-      if (muscle) {
-        const muscleName = muscle.toLowerCase().trim();
-        if (
-          libraryMuscles.some(
-            (libMuscle) => libMuscle.toLowerCase() === muscleName
-          )
-        ) {
-          return true;
-        }
-      }
-    }
+    const groupMuscles = muscleMapping[muscleGroup] || [];
+    return secondaryMuscles.some((muscle) => {
+      if (!muscle) return false;
+      const muscleName = muscle.toLowerCase().trim();
+      return groupMuscles.some((groupMuscle) => groupMuscle.toLowerCase() === muscleName);
+    });
   }
 
   return false;
-}
+} 

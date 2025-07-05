@@ -1,7 +1,14 @@
+interface TimeZone {
+  value: string;
+  label: string;
+  flag: string;
+  gmtOffset: string;
+}
+
 // List of major time zones with emoji flag, intuitive name, and GMT offset
 // Also includes a function to get the current time in each zone
 
-const timeZones = [
+const timeZones: TimeZone[] = [
   {
     value: 'Pacific/Auckland',
     label: 'New Zealand Time',
@@ -108,7 +115,7 @@ const timeZones = [
   { value: 'UTC', label: 'UTC', flag: '🌍', gmtOffset: '+0' },
 ];
 
-export function getCurrentTimeInZone(timeZone) {
+export function getCurrentTimeInZone(timeZone: string): string {
   try {
     const now = new Date();
     return now.toLocaleTimeString('en-US', {
@@ -122,4 +129,4 @@ export function getCurrentTimeInZone(timeZone) {
   }
 }
 
-export default timeZones;
+export default timeZones; 

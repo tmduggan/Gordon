@@ -1,6 +1,22 @@
+import type { Food, ExerciseLog } from '../types';
+
+interface Macros {
+  calories: number;
+  fat: number;
+  carbs: number;
+  protein: number;
+  fiber: number;
+}
+
+interface Equipment {
+  gym: string[];
+  bodyweight: string[];
+  cardio: string[];
+}
+
 // Helper to extract standardized macronutrient info from a food object.
 // This is the single source of truth for interpreting nutrition data.
-export const getFoodMacros = (food) => {
+export const getFoodMacros = (food: Partial<Food> | null): Macros => {
   if (!food) {
     return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
   }
@@ -29,7 +45,7 @@ export const getFoodMacros = (food) => {
 };
 
 // Utility: Convert any (qty, unit) pair to grams for a given food
-export function convertToGrams(food, qty, unit) {
+export function convertToGrams(food: Partial<Food> | null, qty: number, unit: string): number {
   if (!food) return 0;
   const servingWeightGrams = food.serving_weight_grams || 1;
   // If unit is grams, return qty directly
@@ -53,7 +69,7 @@ export function convertToGrams(food, qty, unit) {
 
 // Helper to calculate initial scaled nutrition for cart items
 // This replicates the logic from ServingSizeEditor for initial values
-export const getInitialScaledNutrition = (food) => {
+export const getInitialScaledNutrition = (food: Partial<Food> | null): Macros => {
   if (!food) {
     return { calories: 0, fat: 0, carbs: 0, protein: 0, fiber: 0 };
   }
@@ -78,7 +94,7 @@ export const getInitialScaledNutrition = (food) => {
   const grams = convertToGrams(food, quantity, unit);
 
   // Calculate scaled nutrition
-  const safe = (v) =>
+  const safe = (v: number): number =>
     isFinite(v) && !isNaN(v) ? Math.round(v * 100) / 100 : 0;
 
   return {
@@ -91,7 +107,7 @@ export const getInitialScaledNutrition = (food) => {
 };
 
 // Helper to slugify a string for generating consistent document IDs.
-export function slugify(str) {
+export function slugify(str: string): string {
   return (str || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
@@ -100,14 +116,14 @@ export function slugify(str) {
 }
 
 // Default equipment for each category
-export const DEFAULT_EQUIPMENT = {
+export const DEFAULT_EQUIPMENT: Equipment = {
   gym: ['barbell', 'dumbbell'],
   bodyweight: ['body weight'],
   cardio: [],
 };
 
 // Ensures availableEquipment is always a valid, non-empty object
-export function ensureAvailableEquipment(equipment) {
+export function ensureAvailableEquipment(equipment: Partial<Equipment> | null): Equipment {
   return {
     gym:
       Array.isArray(equipment?.gym) && equipment.gym.length > 0
@@ -125,7 +141,7 @@ export function ensureAvailableEquipment(equipment) {
 }
 
 // Returns the most recent log timestamp for a given exerciseId, or null if none exist
-export function getLastTrainedDate(logs, exerciseId) {
+export function getLastTrainedDate(logs: ExerciseLog[], exerciseId: string): Date | null {
   if (!Array.isArray(logs) || !exerciseId) return null;
   const filtered = logs.filter(
     (l) => String(l.exerciseId) === String(exerciseId)
@@ -154,7 +170,7 @@ export const CARDIO_MIN_MILESTONES = [
 ];
 
 // Returns the start of the current week (Monday)
-export function getStartOfWeek(date = new Date()) {
+export function getStartOfWeek(date: Date = new Date()): Date {
   const d = new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
@@ -164,7 +180,7 @@ export function getStartOfWeek(date = new Date()) {
 }
 
 // Get total strength reps for the current week
-export function getWeeklyStrengthReps(logs) {
+export function getWeeklyStrengthReps(logs: ExerciseLog[]): number {
   const startOfWeek = getStartOfWeek();
   return logs
     .filter(
@@ -188,7 +204,7 @@ export function getWeeklyStrengthReps(logs) {
 }
 
 // Get total cardio minutes for the current week
-export function getWeeklyCardioMinutes(logs) {
+export function getWeeklyCardioMinutes(logs: ExerciseLog[]): number {
   const startOfWeek = getStartOfWeek();
   return logs
     .filter(
@@ -198,99 +214,36 @@ export function getWeeklyCardioMinutes(logs) {
           l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp
         ) >= startOfWeek &&
         l.duration &&
-        (!l.sets || l.sets.length === 0)
+        l.duration > 0
     )
-    .reduce((sum, l) => {
-      const mins = parseInt(l.duration);
-      return sum + (isNaN(mins) ? 0 : mins);
-    }, 0);
+    .reduce((sum, l) => sum + (l.duration || 0), 0);
 }
 
-// Get current milestone tier and progress for a value and milestone array
-export function getMilestoneProgress(value, milestones) {
-  let tier = 0;
-  while (tier < milestones.length && value >= milestones[tier]) tier++;
-  const prev = tier === 0 ? 0 : milestones[tier - 1];
-  const next = milestones[tier] || milestones[milestones.length - 1];
-  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
-  return { tier, prev, next, progress };
-}
+// Get milestone progress for a given value
+export function getMilestoneProgress(value: number, milestones: number[]): number {
+  if (value <= 0) return 0;
+  if (value >= milestones[milestones.length - 1]) return 100;
 
-// Greek prestige symbols (lowercase)
-const GREEK_LETTERS = [
-  'α',
-  'β',
-  'γ',
-  'δ',
-  'ε',
-  'ζ',
-  'η',
-  'θ',
-  'ι',
-  'κ',
-  'λ',
-  'μ',
-  'ν',
-  'ξ',
-  'ο',
-  'π',
-  'ρ',
-  'σ',
-  'τ',
-  'υ',
-  'φ',
-  'χ',
-  'ψ',
-  'ω',
-];
-
-/**
- * Returns prestige tier info for milestone progress with Greek symbols.
- * @param {number} value - The current value (reps or minutes)
- * @param {number[]} milestones - The base milestone array
- * @param {number} baseIncrement - The increment after the last milestone
- * @returns {object} { prestigeSymbol, prestigeIndex, baseTier, prev, next, progress, tier, displayTier }
- */
-export function getPrestigeMilestoneProgress(value, milestones, baseIncrement) {
-  let tier = 0;
-  while (tier < milestones.length && value >= milestones[tier]) tier++;
-
-  // After base milestones, use consistent increment
-  let prestigeIndex = 0;
-  let baseTier = tier + 1; // 1-based for display
-  let prev, next;
-
-  if (tier < milestones.length) {
-    prev = tier === 0 ? 0 : milestones[tier - 1];
-    next = milestones[tier];
-    prestigeIndex = 0;
-    baseTier = tier + 1;
-  } else {
-    // Calculate prestige tier
-    const extra = value - milestones[milestones.length - 1];
-    const extraTier = Math.floor(extra / baseIncrement) + 1;
-    prestigeIndex = Math.floor((extraTier - 1) / 10) + 1; // 1-based prestige
-    baseTier = ((extraTier - 1) % 10) + 1;
-    prev = milestones[milestones.length - 1] + (extraTier - 1) * baseIncrement;
-    next = prev + baseIncrement;
+  for (let i = 0; i < milestones.length; i++) {
+    if (value < milestones[i]) {
+      const prevMilestone = i > 0 ? milestones[i - 1] : 0;
+      const currentMilestone = milestones[i];
+      const progress = ((value - prevMilestone) / (currentMilestone - prevMilestone)) * 100;
+      return Math.min(100, Math.max(0, progress));
+    }
   }
 
-  const progress = Math.min(100, ((value - prev) / (next - prev)) * 100);
-  const prestigeSymbol =
-    prestigeIndex > 0
-      ? GREEK_LETTERS[(prestigeIndex - 1) % GREEK_LETTERS.length]
-      : '';
-  const displayTier =
-    prestigeIndex > 0 ? `${prestigeSymbol}-${baseTier}` : `${baseTier}`;
-
-  return {
-    prestigeSymbol,
-    prestigeIndex,
-    baseTier,
-    prev,
-    next,
-    progress,
-    tier,
-    displayTier,
-  };
+  return 100;
 }
+
+// Get prestige milestone progress with base increment
+export function getPrestigeMilestoneProgress(
+  value: number, 
+  milestones: number[], 
+  baseIncrement: number
+): number {
+  if (value <= 0) return 0;
+  
+  const adjustedValue = value / baseIncrement;
+  return getMilestoneProgress(adjustedValue, milestones);
+} 
