@@ -185,7 +185,10 @@ export default function ExercisePage() {
           {...cartProps}
         />
       )}
-      <PaywalledMuscleChart className="mt-4 px-4" />
+      <PaywalledMuscleChart className="mt-4 px-4" 
+        exerciseLibrary={exerciseLibrary.items}
+        onSuggestExercise={handleSelect}
+      />
     </div>
   );
 }

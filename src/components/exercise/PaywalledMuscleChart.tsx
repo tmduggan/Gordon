@@ -6,9 +6,12 @@ import React, { useMemo, useState } from 'react';
 import useAuthStore from '../../store/useAuthStore';
 import PremiumUpgradeModal from '../payment/PremiumUpgradeModal';
 import MuscleChart from './muscleData/MuscleChart';
+import { muscleMapping } from '../../utils/muscleMapping';
 
 interface PaywalledMuscleChartProps {
   className?: string;
+  exerciseLibrary?: any[];
+  onSuggestExercise?: (exercise: any) => void;
 }
 
 // Your hardcoded preview muscle scores (based on your current state)
@@ -27,7 +30,7 @@ const PREVIEW_MUSCLE_SCORES: Record<string, number> = {
   forearms: 0.3,
 };
 
-const PaywalledMuscleChart: React.FC<PaywalledMuscleChartProps> = ({ className = '' }) => {
+const PaywalledMuscleChart: React.FC<PaywalledMuscleChartProps> = ({ className = '', exerciseLibrary = [], onSuggestExercise = () => {} }) => {
   const { userProfile, isPremium, isAdmin } = useAuthStore();
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
 
@@ -36,6 +39,24 @@ const PaywalledMuscleChart: React.FC<PaywalledMuscleChartProps> = ({ className =
 
   const handleUpgrade = (): void => {
     setShowUpgradeModal(true);
+  };
+
+  // Handler for muscle click
+  const handleMuscleClick = (svgMuscleId: string) => {
+    if (!exerciseLibrary || exerciseLibrary.length === 0) return;
+    // Map SVG id to library muscle names
+    const libraryMuscles = muscleMapping[svgMuscleId] || [];
+    // Find an exercise that targets this muscle
+    const match = exerciseLibrary.find(
+      (ex) =>
+        ex.target &&
+        libraryMuscles.some((m) =>
+          ex.target.toLowerCase().includes(m.toLowerCase())
+        )
+    );
+    if (match) {
+      onSuggestExercise(match);
+    }
   };
 
   return (
@@ -78,7 +99,7 @@ const PaywalledMuscleChart: React.FC<PaywalledMuscleChartProps> = ({ className =
             <div
               className={`w-full aspect-[5/3] ${isPreview ? 'opacity-90' : ''}`}
             >
-              <MuscleChart />
+              <MuscleChart onMuscleClick={handleMuscleClick} />
             </div>
 
             {isPreview && (

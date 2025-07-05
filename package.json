@@ -15,7 +15,11 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "lint:check": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
-    "organize-imports": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
+    "organize-imports": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "analyze": "vite build --mode analyze",
+    "bundle-report": "npx vite-bundle-analyzer dist",
+    "type-check": "tsc --noEmit",
+    "pre-commit": "npm run lint:check && npm run type-check && npm run test -- --run"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.2",

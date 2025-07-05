@@ -10,7 +10,8 @@ export const equipmentIconMap: Record<string, string> = {
 };
 
 // Helper function to get equipment icon based on equipment name
-export function getEquipmentIcon(equipment: string): string | undefined {
+export function getEquipmentIcon(equipment: string | null | undefined): string | undefined {
+  if (!equipment) return undefined;
   return equipmentIconMap[equipment.toLowerCase()] || undefined;
 }
 
