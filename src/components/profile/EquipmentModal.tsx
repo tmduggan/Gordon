@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import React from 'react';
 
+type EquipmentCategory = 'bodyweight' | 'gym' | 'cardio';
+
 const bodyweightOptions = [
   'body weight',
   'band',
@@ -8,7 +10,8 @@ const bodyweightOptions = [
   'roller',
   'wheel roller',
   'stability ball',
-];
+] as const;
+
 const gymOptions = [
   'dumbbell',
   'barbell',
@@ -22,15 +25,35 @@ const gymOptions = [
   'roller',
   'wheel roller',
   'stability ball',
-];
+] as const;
+
 const cardioOptions = [
   'stationary bike',
   'upper body ergometer',
   'elliptical machine',
   'skierg machine',
-];
+] as const;
 
-export default function EquipmentModal({
+type BodyweightOption = typeof bodyweightOptions[number];
+type GymOption = typeof gymOptions[number];
+type CardioOption = typeof cardioOptions[number];
+
+interface EquipmentModalProps {
+  equipmentCategory: EquipmentCategory;
+  setEquipmentCategory: (category: EquipmentCategory) => void;
+  selectedBodyweight: BodyweightOption[];
+  setSelectedBodyweight: (equipment: BodyweightOption[]) => void;
+  selectedGym: GymOption[];
+  setSelectedGym: (equipment: GymOption[]) => void;
+  selectedCardio: CardioOption[];
+  setSelectedCardio: (equipment: CardioOption[]) => void;
+  gymInvalid: boolean;
+  cardioInvalid: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+const EquipmentModal: React.FC<EquipmentModalProps> = ({
   equipmentCategory,
   setEquipmentCategory,
   selectedBodyweight,
@@ -43,28 +66,31 @@ export default function EquipmentModal({
   cardioInvalid,
   onSave,
   onCancel,
-}) {
-  const handleBodyweightCheckboxChange = (option) => {
+}) => {
+  const handleBodyweightCheckboxChange = (option: BodyweightOption) => {
     if (selectedBodyweight.includes(option)) {
       setSelectedBodyweight(selectedBodyweight.filter((e) => e !== option));
     } else {
       setSelectedBodyweight([...selectedBodyweight, option]);
     }
   };
-  const handleGymCheckboxChange = (option) => {
+  
+  const handleGymCheckboxChange = (option: GymOption) => {
     if (selectedGym.includes(option)) {
       setSelectedGym(selectedGym.filter((e) => e !== option));
     } else {
       setSelectedGym([...selectedGym, option]);
     }
   };
-  const handleCardioCheckboxChange = (option) => {
+  
+  const handleCardioCheckboxChange = (option: CardioOption) => {
     if (selectedCardio.includes(option)) {
       setSelectedCardio(selectedCardio.filter((e) => e !== option));
     } else {
       setSelectedCardio([...selectedCardio, option]);
     }
   };
+  
   return (
     <div className="mb-4">
       <h3 className="font-semibold mb-2">Available Equipment</h3>
@@ -164,4 +190,6 @@ export default function EquipmentModal({
       </div>
     </div>
   );
-}
+};
+
+export default EquipmentModal; 

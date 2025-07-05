@@ -1,8 +1,29 @@
 import { Button } from '@/components/ui/button';
 import { Bug, Target } from 'lucide-react';
 import React from 'react';
+import type { UserProfile, XPValidationResult } from '../../types';
 
-export default function DebugControls({
+interface ExerciseHistory {
+  logs?: any[];
+}
+
+interface FoodHistory {
+  logs?: any[];
+}
+
+interface DebugControlsProps {
+  onValidateXP: () => void;
+  onFixXP: () => void;
+  onSyncXP: () => void;
+  onMigrateMuscleScores: () => void;
+  xpValidation?: XPValidationResult;
+  loading: boolean;
+  userProfile?: UserProfile;
+  exerciseHistory?: ExerciseHistory;
+  foodHistory?: FoodHistory;
+}
+
+const DebugControls: React.FC<DebugControlsProps> = ({
   onValidateXP,
   onFixXP,
   onSyncXP,
@@ -12,7 +33,7 @@ export default function DebugControls({
   userProfile,
   exerciseHistory,
   foodHistory,
-}) {
+}) => {
   return (
     <div className="border rounded-lg p-4 bg-gray-50">
       <div className="flex items-center gap-2 mb-3">
@@ -99,4 +120,6 @@ export default function DebugControls({
       </Button>
     </div>
   );
-}
+};
+
+export default DebugControls; 
