@@ -1,16 +1,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, TrendingUp, Trophy } from 'lucide-react';
 import React from 'react';
+import type { Exercise, UserProfile } from '../../types';
 
-const PersonalBestsDisplay = ({ exerciseId, exerciseDetails, userProfile }) => {
+interface PersonalBest {
+  type: '1rm' | 'reps' | 'duration' | 'pace';
+  value: number;
+  date?: string | Date;
+}
+
+interface PersonalBests {
+  current?: PersonalBest;
+  quarter?: PersonalBest;
+  year?: PersonalBest;
+  allTime?: PersonalBest;
+}
+
+interface PersonalBestsDisplayProps {
+  exerciseId: string;
+  exerciseDetails: Exercise;
+  userProfile: UserProfile | null;
+}
+
+const PersonalBestsDisplay: React.FC<PersonalBestsDisplayProps> = ({ 
+  exerciseId, 
+  exerciseDetails, 
+  userProfile 
+}) => {
   if (!userProfile?.personalBests?.[exerciseId]) {
     return null;
   }
 
-  const bests = userProfile.personalBests[exerciseId];
+  const bests: PersonalBests = userProfile.personalBests[exerciseId];
   const { name } = exerciseDetails;
 
-  const formatValue = (best) => {
+  const formatValue = (best: PersonalBest | undefined): string => {
     if (!best) return 'N/A';
 
     switch (best.type) {
@@ -27,7 +51,7 @@ const PersonalBestsDisplay = ({ exerciseId, exerciseDetails, userProfile }) => {
     }
   };
 
-  const formatDate = (date) => {
+  const formatDate = (date: string | Date | undefined): string => {
     if (!date) return '';
     return new Date(date).toLocaleDateString();
   };
@@ -105,4 +129,4 @@ const PersonalBestsDisplay = ({ exerciseId, exerciseDetails, userProfile }) => {
   );
 };
 
-export default PersonalBestsDisplay;
+export default PersonalBestsDisplay; 

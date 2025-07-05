@@ -7,8 +7,12 @@ import useAuthStore from '../../store/useAuthStore';
 import PremiumUpgradeModal from '../payment/PremiumUpgradeModal';
 import MuscleChart from './muscleData/MuscleChart';
 
+interface PaywalledMuscleChartProps {
+  className?: string;
+}
+
 // Your hardcoded preview muscle scores (based on your current state)
-const PREVIEW_MUSCLE_SCORES = {
+const PREVIEW_MUSCLE_SCORES: Record<string, number> = {
   quads: 0.8,
   hamstrings: 0.6,
   calves: 0.7,
@@ -23,14 +27,14 @@ const PREVIEW_MUSCLE_SCORES = {
   forearms: 0.3,
 };
 
-export default function PaywalledMuscleChart({ className = '' }) {
+const PaywalledMuscleChart: React.FC<PaywalledMuscleChartProps> = ({ className = '' }) => {
   const { userProfile, isPremium, isAdmin } = useAuthStore();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
 
   const subscriptionStatus = userProfile?.subscription?.status || 'basic';
   const isPreview = !isPremium();
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (): void => {
     setShowUpgradeModal(true);
   };
 
@@ -115,4 +119,6 @@ export default function PaywalledMuscleChart({ className = '' }) {
       />
     </>
   );
-}
+};
+
+export default PaywalledMuscleChart; 

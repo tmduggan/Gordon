@@ -10,9 +10,17 @@ import {
 } from '@/components/ui/tooltip';
 import { CheckCircle, Target, Zap } from 'lucide-react';
 import React from 'react';
+import type { Exercise } from '../../types';
+
+interface CompletedExerciseBarProps {
+  exercise: Exercise;
+  completedAt?: string | Date;
+  bonus?: number;
+  className?: string;
+}
 
 // Equipment icon mapping (same as WorkoutSuggestions)
-const equipmentIconMap = {
+const equipmentIconMap: Record<string, string> = {
   'smith machine': '/icons/smith.png',
   dumbbell: '/icons/dumbbell.png',
   barbell: '/icons/barbell.png',
@@ -22,7 +30,7 @@ const equipmentIconMap = {
   machine: '/icons/machine.png',
 };
 
-const getEquipmentIcon = (equipmentName) => {
+const getEquipmentIcon = (equipmentName: string | null | undefined): string | null => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
 
@@ -48,7 +56,7 @@ const getEquipmentIcon = (equipmentName) => {
 };
 
 // Muscle icon mapping (same as WorkoutSuggestions)
-const muscleIconMap = {
+const muscleIconMap: Record<string, string> = {
   quads: '/icons/Muscle-Quads.jpeg',
   abductors: '/icons/Muscle-Abductors.jpeg',
   abs: '/icons/Muscle-Abs.jpeg',
@@ -65,13 +73,13 @@ const muscleIconMap = {
   glutes: '/icons/Muscle-glutes.jpeg',
 };
 
-const getMuscleIcon = (muscleName) => {
+const getMuscleIcon = (muscleName: string | null | undefined): string | null => {
   if (!muscleName) return null;
   const lowerCaseMuscle = muscleName.toLowerCase();
   return muscleIconMap[lowerCaseMuscle] || null;
 };
 
-const CompletedExerciseBar = ({
+const CompletedExerciseBar: React.FC<CompletedExerciseBarProps> = ({
   exercise,
   completedAt,
   bonus,
@@ -81,7 +89,7 @@ const CompletedExerciseBar = ({
   const equipmentIcon = getEquipmentIcon(equipment);
   const muscleIcon = getMuscleIcon(target);
 
-  const renderTooltipContent = () => (
+  const renderTooltipContent = (): JSX.Element => (
     <div className="max-w-xs">
       <div className="font-semibold text-base mb-2">{exercise.name}</div>
       <div className="mb-2">
@@ -161,4 +169,4 @@ const CompletedExerciseBar = ({
   );
 };
 
-export default CompletedExerciseBar;
+export default CompletedExerciseBar; 
