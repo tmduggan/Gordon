@@ -1,7 +1,24 @@
+import type { LevelData, StreakBonuses, LevelInfo, XPValidationResult, ExerciseLog, FoodLog } from '../../types';
+
 // Level-up system for Goliath
 // Implements a hybrid approach with time-based decay to encourage long-term engagement
 
-const LEVEL_CONFIG = {
+interface LevelConfig {
+  baseXP: number;
+  scalingFactor: number;
+  timeDecay: {
+    decayStartDays: number;
+    maxDecayMultiplier: number;
+    decayRate: number;
+  };
+  streakBonuses: {
+    dailyStreak: Record<number, number>;
+    weeklyStreak: Record<number, number>;
+  };
+  levelTitles: Record<number, string>;
+}
+
+const LEVEL_CONFIG: LevelConfig = {
   // Base XP required for level 1 (starting point)
   baseXP: 1000,
 
@@ -55,20 +72,19 @@ const LEVEL_CONFIG = {
 
 /**
  * Calculate XP required for a specific level
- * @param {number} level - The target level
- * @param {Date} accountCreationDate - When the user's account was created
- * @returns {number} XP required for that level
+ * @param level - The target level
+ * @param accountCreationDate - When the user's account was created
+ * @returns XP required for that level
  */
-export function calculateXPForLevel(level, accountCreationDate = new Date()) {
+export function calculateXPForLevel(level: number, accountCreationDate: Date = new Date()): number {
   if (level <= 1) return 0;
 
   // Base XP calculation using exponential growth
-  const baseXP =
-    LEVEL_CONFIG.baseXP * Math.pow(LEVEL_CONFIG.scalingFactor, level - 1);
+  const baseXP = LEVEL_CONFIG.baseXP * Math.pow(LEVEL_CONFIG.scalingFactor, level - 1);
 
   // Apply time decay if applicable
   const daysSinceCreation = Math.floor(
-    (new Date() - accountCreationDate) / (1000 * 60 * 60 * 24)
+    (new Date().getTime() - accountCreationDate.getTime()) / (1000 * 60 * 60 * 24)
   );
   const decayMultiplier = calculateTimeDecayMultiplier(daysSinceCreation);
 
@@ -77,10 +93,10 @@ export function calculateXPForLevel(level, accountCreationDate = new Date()) {
 
 /**
  * Calculate time decay multiplier based on account age
- * @param {number} daysSinceCreation - Days since account creation
- * @returns {number} Multiplier for XP requirements
+ * @param daysSinceCreation - Days since account creation
+ * @returns Multiplier for XP requirements
  */
-function calculateTimeDecayMultiplier(daysSinceCreation) {
+function calculateTimeDecayMultiplier(daysSinceCreation: number): number {
   if (daysSinceCreation < LEVEL_CONFIG.timeDecay.decayStartDays) {
     return 1.0; // No decay for new accounts
   }
@@ -93,16 +109,15 @@ function calculateTimeDecayMultiplier(daysSinceCreation) {
 
 /**
  * Calculate current level and progress from total XP
- * @param {number} totalXP - User's total accumulated XP
- * @param {Date} accountCreationDate - When the user's account was created
- * @returns {object} { level, currentLevelXP, nextLevelXP, progress, xpToNext }
+ * @param totalXP - User's total accumulated XP
+ * @param accountCreationDate - When the user's account was created
+ * @returns Level data with progress information
  */
 export function calculateLevelFromXP(
-  totalXP,
-  accountCreationDate = new Date()
-) {
+  totalXP: number,
+  accountCreationDate: Date = new Date()
+): LevelData {
   let level = 1;
-  let currentLevelXP = 0;
 
   // Find current level
   while (true) {
@@ -118,8 +133,7 @@ export function calculateLevelFromXP(
   const nextLevelXP = calculateXPForLevel(level + 1, accountCreationDate);
   const xpInCurrentLevel = totalXP - levelStartXP;
   const xpNeededForLevel = nextLevelXP - levelStartXP;
-  const progress =
-    xpNeededForLevel > 0 ? (xpInCurrentLevel / xpNeededForLevel) * 100 : 0;
+  const progress = xpNeededForLevel > 0 ? (xpInCurrentLevel / xpNeededForLevel) * 100 : 0;
   const xpToNext = nextLevelXP - totalXP;
 
   return {
@@ -134,10 +148,10 @@ export function calculateLevelFromXP(
 
 /**
  * Calculate streak bonuses for daily and weekly consistency
- * @param {Array} workoutLogs - Array of workout logs with timestamps
- * @returns {object} { dailyStreak, weeklyStreak, dailyBonus, weeklyBonus }
+ * @param workoutLogs - Array of workout logs with timestamps
+ * @returns Streak bonus information
  */
-export function calculateStreakBonuses(workoutLogs) {
+export function calculateStreakBonuses(workoutLogs: ExerciseLog[]): StreakBonuses {
   if (!workoutLogs || workoutLogs.length === 0) {
     return { dailyStreak: 0, weeklyStreak: 0, dailyBonus: 0, weeklyBonus: 0 };
   }
@@ -154,7 +168,9 @@ export function calculateStreakBonuses(workoutLogs) {
   while (true) {
     const hasWorkoutToday = workoutLogs.some((log) => {
       const logDate = new Date(
-        log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp
+        log.timestamp instanceof Date 
+          ? log.timestamp.getTime() 
+          : (log.timestamp as any).seconds * 1000
       );
       const logDay = new Date(logDate);
       logDay.setHours(0, 0, 0, 0);
@@ -180,7 +196,9 @@ export function calculateStreakBonuses(workoutLogs) {
 
     const hasWorkoutThisWeek = workoutLogs.some((log) => {
       const logDate = new Date(
-        log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp
+        log.timestamp instanceof Date 
+          ? log.timestamp.getTime() 
+          : (log.timestamp as any).seconds * 1000
       );
       return logDate >= weekStart && logDate <= weekEnd;
     });
@@ -223,44 +241,40 @@ export function calculateStreakBonuses(workoutLogs) {
 
 /**
  * Get level information for display
- * @param {number} level - Current level
- * @returns {object} Level display information
+ * @param level - Current level
+ * @returns Level display information
  */
-export function getLevelInfo(level) {
+export function getLevelInfo(level: number): LevelInfo {
   return {
     title: LEVEL_CONFIG.levelTitles[level] || `Level ${level}`,
-    isMilestone: Object.keys(LEVEL_CONFIG.levelTitles).includes(
-      level.toString()
-    ),
+    isMilestone: Object.keys(LEVEL_CONFIG.levelTitles).includes(level.toString()),
     nextMilestone: getNextMilestone(level),
   };
 }
 
 /**
  * Get the next milestone level
- * @param {number} currentLevel - Current level
- * @returns {number|null} Next milestone level or null if none
+ * @param currentLevel - Current level
+ * @returns Next milestone level or null if none
  */
-function getNextMilestone(currentLevel) {
+function getNextMilestone(currentLevel: number): number | null {
   const milestones = Object.keys(LEVEL_CONFIG.levelTitles)
     .map(Number)
     .sort((a, b) => a - b);
-  const nextMilestone = milestones.find(
-    (milestone) => milestone > currentLevel
-  );
+  const nextMilestone = milestones.find((milestone) => milestone > currentLevel);
   return nextMilestone || null;
 }
 
 /**
  * Calculate total XP needed for a specific level (cumulative)
- * @param {number} level - Target level
- * @param {Date} accountCreationDate - Account creation date
- * @returns {number} Total XP needed from level 1 to target level
+ * @param level - Target level
+ * @param accountCreationDate - Account creation date
+ * @returns Total XP needed from level 1 to target level
  */
 export function calculateTotalXPForLevel(
-  level,
-  accountCreationDate = new Date()
-) {
+  level: number,
+  accountCreationDate: Date = new Date()
+): number {
   let totalXP = 0;
   for (let i = 1; i <= level; i++) {
     totalXP += calculateXPForLevel(i, accountCreationDate);
@@ -271,11 +285,11 @@ export function calculateTotalXPForLevel(
 /**
  * Recalculate total XP from all user logs to ensure accuracy
  * This is useful for debugging or fixing XP discrepancies
- * @param {Array} exerciseLogs - Array of exercise log entries
- * @param {Array} foodLogs - Array of food log entries
- * @returns {number} Total calculated XP from all logs
+ * @param exerciseLogs - Array of exercise log entries
+ * @param foodLogs - Array of food log entries
+ * @returns Total calculated XP from all logs
  */
-export function recalculateTotalXPFromLogs(exerciseLogs = [], foodLogs = []) {
+export function recalculateTotalXPFromLogs(exerciseLogs: ExerciseLog[] = [], foodLogs: FoodLog[] = []): number {
   let totalXP = 0;
 
   // Sum XP from exercise logs
@@ -293,12 +307,16 @@ export function recalculateTotalXPFromLogs(exerciseLogs = [], foodLogs = []) {
 
 /**
  * Validate and fix user's total XP if there's a discrepancy
- * @param {object} userProfile - Current user profile
- * @param {Array} exerciseLogs - Array of exercise log entries
- * @param {Array} foodLogs - Array of food log entries
- * @returns {object} { isValid, calculatedXP, discrepancy } - Validation result
+ * @param userProfile - Current user profile
+ * @param exerciseLogs - Array of exercise log entries
+ * @param foodLogs - Array of food log entries
+ * @returns Validation result with discrepancy information
  */
-export function validateUserXP(userProfile, exerciseLogs = [], foodLogs = []) {
+export function validateUserXP(
+  userProfile: { totalXP?: number },
+  exerciseLogs: ExerciseLog[] = [],
+  foodLogs: FoodLog[] = []
+): XPValidationResult {
   const storedXP = userProfile?.totalXP || 0;
   const calculatedXP = recalculateTotalXPFromLogs(exerciseLogs, foodLogs);
   const discrepancy = Math.abs(storedXP - calculatedXP);
@@ -309,4 +327,4 @@ export function validateUserXP(userProfile, exerciseLogs = [], foodLogs = []) {
     discrepancy,
     storedXP,
   };
-}
+} 

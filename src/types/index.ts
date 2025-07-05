@@ -140,6 +140,26 @@ export interface LevelData {
   levelTitle: string;
 }
 
+export interface StreakBonuses {
+  dailyStreak: number;
+  weeklyStreak: number;
+  dailyBonus: number;
+  weeklyBonus: number;
+}
+
+export interface LevelInfo {
+  title: string;
+  isMilestone: boolean;
+  nextMilestone: number | null;
+}
+
+export interface XPValidationResult {
+  isValid: boolean;
+  calculatedXP: number;
+  discrepancy: number;
+  storedXP: number;
+}
+
 // Cart types
 export interface CartItem {
   id: string;
