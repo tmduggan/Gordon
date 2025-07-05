@@ -1,22 +1,34 @@
+import type { Exercise, WorkoutData, ExerciseSet } from '../../types';
+
 /**
  * Exercise service for handling exercise-related business logic
  */
 
+export interface ValidationResult {
+  isValid: boolean;
+  message: string;
+}
+
 /**
  * Calculate exercise score based on workout data and exercise details
- * @param {Object} workoutData - Workout data with sets and duration
- * @param {Object} exerciseDetails - Exercise details from library
- * @returns {number} Calculated score
+ * @param workoutData - Workout data with sets and duration
+ * @param exerciseDetails - Exercise details from library
+ * @returns Calculated score
  *
  * See ARCHITECTURE.md for the XP algorithm.
  */
-export function calculateExerciseScore(workoutData, exerciseDetails) {
+export function calculateExerciseScore(
+  workoutData: WorkoutData,
+  _exerciseDetails: Exercise
+): number {
   let score = 0;
+  
   // Sets-based scoring
   if (workoutData.sets && workoutData.sets.length > 0) {
-    score = workoutData.sets.reduce((total, set) => {
-      const reps = parseInt(set.reps) || 0;
-      const weight = parseFloat(set.weight) || 0;
+    score = workoutData.sets.reduce((total: number, set: ExerciseSet) => {
+      const reps = parseInt(String(set.reps)) || 0;
+      const weight = parseFloat(String(set.weight)) || 0;
+      
       if (weight > 0) {
         return total + reps * weight * 0.1;
       } else if (reps > 0) {
@@ -26,30 +38,38 @@ export function calculateExerciseScore(workoutData, exerciseDetails) {
       }
     }, 0);
   }
+  
   // Duration-based scoring
   if (workoutData.duration) {
-    score += parseInt(workoutData.duration) * 2; // 2 points per minute
+    score += parseInt(String(workoutData.duration)) * 2; // 2 points per minute
   }
+  
   return Math.round(score);
 }
 
 /**
  * Get exercise name by ID
- * @param {string} exerciseId - Exercise ID
- * @param {Array} exerciseLibrary - Exercise library array
- * @returns {string} Exercise name or 'Unknown Exercise'
+ * @param exerciseId - Exercise ID
+ * @param exerciseLibrary - Exercise library array
+ * @returns Exercise name or 'Unknown Exercise'
  */
-export function getExerciseName(exerciseId, exerciseLibrary) {
+export function getExerciseName(
+  exerciseId: string,
+  exerciseLibrary: Exercise[]
+): string {
   const exercise = exerciseLibrary.find((e) => e.id === exerciseId);
   return exercise ? exercise.name : 'Unknown Exercise';
 }
 
 /**
  * Validate exercise data before logging
- * @param {Object} exerciseData - Exercise data to validate
- * @returns {Object} Validation result with isValid and message
+ * @param exerciseData - Exercise data to validate
+ * @returns Validation result with isValid and message
  */
-export function validateExerciseData(exerciseData) {
+export function validateExerciseData(exerciseData: {
+  sets?: ExerciseSet[];
+  duration?: number | null;
+}): ValidationResult {
   if (!exerciseData.sets && !exerciseData.duration) {
     return {
       isValid: false,
@@ -69,4 +89,4 @@ export function validateExerciseData(exerciseData) {
   }
 
   return { isValid: true, message: 'Valid exercise data' };
-}
+} 
