@@ -5,9 +5,50 @@ import {
 } from '../api/nutritionixAPI';
 import { parseNutritionString } from '../services/nutrition/nutritionStringParser';
 import { useToast } from './useToast';
+import type { Food, UserProfile } from '../types';
+
+interface FoodLibrary {
+  items: Food[];
+  searchNutritionix?: (query: string) => Promise<Food[]>;
+  fetchAndSave?: (item: any) => Promise<Food>;
+}
+
+interface SearchOptions {
+  onNutrientsAdd?: (foods: Food[]) => void;
+  [key: string]: any;
+}
+
+interface ConvertedUnit {
+  quantity: number;
+  units: string;
+  converted: boolean;
+  conversionText?: string;
+}
+
+interface ParsedItem {
+  qty: number;
+  unit: string;
+  name: string;
+}
+
+interface SearchResult extends Food {
+  isPinned?: boolean;
+  isRecipe?: boolean;
+}
+
+interface UseFoodSearchReturn {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: SearchResult[];
+  searchLoading: boolean;
+  nutrientsLoading: boolean;
+  handleApiSearch: () => Promise<void>;
+  handleNutrientsSearch: () => Promise<void>;
+  clearSearch: () => void;
+}
 
 // Helper function to normalize strings for fuzzy matching
-const normalize = (str) =>
+const normalize = (str: string): string =>
   (str || '')
     .toLowerCase()
     .replace(/[''`]/g, '')
@@ -15,7 +56,7 @@ const normalize = (str) =>
     .trim();
 
 // Helper function to check if an item matches the search query
-const itemMatchesFoodQuery = (item, query) => {
+const itemMatchesFoodQuery = (item: Food, query: string): boolean => {
   if (!query.trim()) return false;
   const searchTerm = normalize(query);
   const foodName = normalize(item.food_name || item.label || item.name || '');
@@ -30,7 +71,7 @@ const itemMatchesFoodQuery = (item, query) => {
 };
 
 // Helper: Normalize string for matching
-function normalizeName(str) {
+function normalizeName(str: string): string {
   return (str || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
@@ -38,15 +79,15 @@ function normalizeName(str) {
 }
 
 // Helper: Simple two-way includes fuzzy match
-function isFuzzyMatch(a, b) {
+function isFuzzyMatch(a: string, b: string): boolean {
   a = normalizeName(a);
   b = normalizeName(b);
   return a.includes(b) || b.includes(a);
 }
 
 // Helper: Try to convert quantity to available unit
-function convertToAvailableUnit(food, qty, unit) {
-  const availableUnits = new Set();
+function convertToAvailableUnit(food: Food, qty: number, unit: string): ConvertedUnit {
+  const availableUnits = new Set<string>();
   if (food.serving_unit) availableUnits.add(food.serving_unit.toLowerCase());
   if (food.serving_weight_grams) availableUnits.add('g');
   if (food.alt_measures && Array.isArray(food.alt_measures)) {
@@ -60,7 +101,7 @@ function convertToAvailableUnit(food, qty, unit) {
   }
 
   if (unit === 'g' && food.alt_measures && Array.isArray(food.alt_measures)) {
-    let best = null;
+    let best: any = null;
     let minDiff = Infinity;
     for (const m of food.alt_measures) {
       if (m.serving_weight && m.measure) {
@@ -90,15 +131,19 @@ function convertToAvailableUnit(food, qty, unit) {
   };
 }
 
-export default function useFoodSearch(library, userProfile, options = {}) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [nutrientsLoading, setNutrientsLoading] = useState(false);
+export default function useFoodSearch(
+  library: FoodLibrary,
+  userProfile: UserProfile | null,
+  options: SearchOptions = {}
+): UseFoodSearchReturn {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+  const [nutrientsLoading, setNutrientsLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Get pinned items that match the query
-  const pinnedItems = useMemo(() => {
+  const pinnedItems = useMemo((): SearchResult[] => {
     if (!searchQuery.trim() || !userProfile?.pinnedFoods) return [];
 
     return library.items
@@ -108,7 +153,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
   }, [searchQuery, userProfile?.pinnedFoods, library.items]);
 
   // Get recipes that match the query
-  const recipes = useMemo(() => {
+  const recipes = useMemo((): SearchResult[] => {
     if (!searchQuery.trim() || !userProfile?.recipes) return [];
 
     return userProfile.recipes
@@ -117,7 +162,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
   }, [searchQuery, userProfile?.recipes]);
 
   // Get regular library items that match the query
-  const libraryItems = useMemo(() => {
+  const libraryItems = useMemo((): SearchResult[] => {
     if (!searchQuery.trim()) return [];
 
     const pinnedIds = new Set(
@@ -130,7 +175,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
   }, [searchQuery, library.items, pinnedItems]);
 
   // Combine all results
-  const combinedResults = useMemo(() => {
+  const combinedResults = useMemo((): SearchResult[] => {
     return [...pinnedItems, ...recipes, ...libraryItems];
   }, [pinnedItems, recipes, libraryItems]);
 
@@ -139,12 +184,12 @@ export default function useFoodSearch(library, userProfile, options = {}) {
     setSearchResults(combinedResults);
   }, [combinedResults]);
 
-  const handleApiSearch = useCallback(async () => {
+  const handleApiSearch = useCallback(async (): Promise<void> => {
     if (searchQuery.trim() === '') return;
 
     setSearchLoading(true);
     try {
-      let nutritionixResults = [];
+      let nutritionixResults: Food[] = [];
       if (library && typeof library.searchNutritionix === 'function') {
         nutritionixResults = await library.searchNutritionix(searchQuery);
       } else {
@@ -172,7 +217,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
     }
   }, [searchQuery, library, pinnedItems, recipes]);
 
-  const handleNutrientsSearch = useCallback(async () => {
+  const handleNutrientsSearch = useCallback(async (): Promise<void> => {
     if (searchQuery.trim() === '') return;
 
     if (searchQuery.length > 100) {
@@ -186,7 +231,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
 
     setNutrientsLoading(true);
     try {
-      const parsedItems = parseNutritionString(searchQuery);
+      const parsedItems: ParsedItem[] = parseNutritionString(searchQuery);
       if (parsedItems.length === 0) {
         toast({
           title: 'No Foods Parsed',
@@ -196,17 +241,17 @@ export default function useFoodSearch(library, userProfile, options = {}) {
         return;
       }
 
-      const processedFoods = [];
+      const processedFoods: Food[] = [];
       for (const { qty, unit, name } of parsedItems) {
         let match = library.items.find((item) =>
           isFuzzyMatch(item.food_name || item.label || item.name || '', name)
         );
-        let food = match;
+        let food: Food | null = match;
         let usedFuzzy = false;
 
         if (!food) {
           let minDist = Infinity;
-          let bestMatch = null;
+          let bestMatch: Food | null = null;
           for (const item of library.items) {
             const dist = Math.abs(
               (item.food_name || item.label || item.name || '').length -
@@ -280,7 +325,7 @@ export default function useFoodSearch(library, userProfile, options = {}) {
     }
   }, [searchQuery, library, options.onNutrientsAdd, toast]);
 
-  const clearSearch = useCallback(() => {
+  const clearSearch = useCallback((): void => {
     setSearchQuery('');
     setSearchResults([]);
   }, []);
@@ -295,4 +340,4 @@ export default function useFoodSearch(library, userProfile, options = {}) {
     handleNutrientsSearch,
     clearSearch,
   };
-}
+} 
