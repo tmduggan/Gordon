@@ -20,7 +20,7 @@ This document tracks the gradual migration from JavaScript to TypeScript for the
 ### 🔄 Phase 2: Core Infrastructure (IN PROGRESS)
 - [x] **Services** - Convert pure function services
   - [x] `src/services/exercise/exerciseService.js` → `exerciseService.ts`
-  - [ ] `src/services/gamification/levelService.js` → `levelService.ts`
+  - [x] `src/services/gamification/levelService.js` → `levelService.ts`
   - [ ] `src/services/gamification/exerciseScoringService.js` → `exerciseScoringService.ts`
   - [ ] `src/services/gamification/exerciseBestsService.js` → `exerciseBestsService.ts`
   - [ ] `src/services/gamification/suggestionService.js` → `suggestionService.ts`
@@ -87,6 +87,9 @@ This document tracks the gradual migration from JavaScript to TypeScript for the
 - `LaggingMuscle` - Gamification muscle tracking
 - `WorkoutSuggestion` - AI workout suggestions
 - `LevelData` - Level and XP data
+- `StreakBonuses` - Daily and weekly streak bonus data
+- `LevelInfo` - Level display information
+- `XPValidationResult` - XP validation and discrepancy data
 - `CartItem` - Shopping cart items
 - `SearchFilters` - Search filter options
 
