@@ -1,15 +1,46 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { exerciseTargetsMuscleCategory } from '../services/svgMappingService';
+import type { Exercise, UserProfile } from '../types';
 
-export default function useExerciseSearch(library, userProfile) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [targetCategoryFilter, setTargetCategoryFilter] = useState('');
-  const [equipmentCategoryFilter, setEquipmentCategoryFilter] = useState('');
+interface ExerciseLibrary {
+  items: Exercise[];
+}
+
+interface SearchFilters {
+  targetCategory: string;
+  equipmentCategory: string;
+}
+
+interface SetFilters {
+  targetCategory: (category: string) => void;
+  equipmentCategory: (category: string) => void;
+}
+
+interface SearchResult extends Exercise {
+  isPinned?: boolean;
+}
+
+interface UseExerciseSearchReturn {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: SearchResult[];
+  clearSearch: () => void;
+  filters: SearchFilters;
+  setFilters: SetFilters;
+}
+
+export default function useExerciseSearch(
+  library: ExerciseLibrary,
+  userProfile: UserProfile | null
+): UseExerciseSearchReturn {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [targetCategoryFilter, setTargetCategoryFilter] = useState<string>('');
+  const [equipmentCategoryFilter, setEquipmentCategoryFilter] = useState<string>('');
 
   // Helper function to check if exercise equipment matches the selected category
   const exerciseMatchesEquipmentCategory = useCallback(
-    (exercise, category, userProfile) => {
+    (exercise: Exercise, category: string, userProfile: UserProfile | null): boolean => {
       if (!category || !userProfile?.availableEquipment) return true;
 
       const availableEquipment = userProfile.availableEquipment;
@@ -43,13 +74,13 @@ export default function useExerciseSearch(library, userProfile) {
   );
 
   // Helper function to check if an exercise targets a specific muscle group
-  const exerciseTargetsMuscleGroup = useCallback((exercise, muscleGroup) => {
+  const exerciseTargetsMuscleGroup = useCallback((exercise: Exercise, muscleGroup: string): boolean => {
     if (!muscleGroup) return true;
     return exerciseTargetsMuscleCategory(exercise, muscleGroup);
   }, []);
 
   // Get pinned items that match the query and filters
-  const pinnedItems = useMemo(() => {
+  const pinnedItems = useMemo((): SearchResult[] => {
     if (!userProfile?.pinnedExercises) return [];
 
     return library.items
@@ -83,7 +114,7 @@ export default function useExerciseSearch(library, userProfile) {
   ]);
 
   // Get regular library items that match the query and filters
-  const libraryItems = useMemo(() => {
+  const libraryItems = useMemo((): SearchResult[] => {
     const pinnedIds = new Set(pinnedItems.map((item) => item.id));
 
     let exerciseResults = library.items;
@@ -123,7 +154,7 @@ export default function useExerciseSearch(library, userProfile) {
   ]);
 
   // Combine results
-  const combinedResults = useMemo(() => {
+  const combinedResults = useMemo((): SearchResult[] => {
     return [...pinnedItems, ...libraryItems];
   }, [pinnedItems, libraryItems]);
 
@@ -132,7 +163,7 @@ export default function useExerciseSearch(library, userProfile) {
     setSearchResults(combinedResults);
   }, [combinedResults]);
 
-  const clearSearch = useCallback(() => {
+  const clearSearch = useCallback((): void => {
     setSearchQuery('');
     setSearchResults([]);
     setTargetCategoryFilter('');
@@ -153,4 +184,4 @@ export default function useExerciseSearch(library, userProfile) {
       equipmentCategory: setEquipmentCategoryFilter,
     },
   };
-}
+} 
