@@ -3,30 +3,76 @@ import { logFoodEntry } from '../firebase/firestore/logFoodEntry';
 import { parseNutritionString } from '../services/nutrition/nutritionStringParser';
 import useAuthStore from '../store/useAuthStore';
 import { useToast } from './useToast';
+import type { 
+  Food, 
+  CartItem,
+  UserProfile,
+  Recipe
+} from '../types';
+
+interface FoodLibrary {
+  items: Food[];
+  fetchAndSave: (food: Food) => Promise<string | null>;
+}
+
+interface Cart {
+  cart: CartItem[];
+  addToCart: (item: Food | Recipe, quantity?: number, units?: string) => void;
+  clearCart: () => void;
+}
+
+interface Search {
+  clearSearch?: () => void;
+}
+
+interface DateTimePicker {
+  getLogTimestamp: () => Date;
+}
+
+interface ParsedFood extends Food {
+  quantity: number;
+  units: string;
+}
+
+interface RecipeIngredient {
+  id: string;
+  quantity: number;
+  unit: string;
+  isRecipe?: boolean;
+}
+
+interface RecipeItem extends Recipe {
+  items: RecipeIngredient[];
+  servings: number;
+}
+
+interface LoggedEntry {
+  xp: number;
+}
 
 export default function useFoodLogging(
-  foodLibrary,
-  cart,
-  search,
-  dateTimePicker
+  foodLibrary: FoodLibrary,
+  cart: Cart,
+  search?: Search,
+  dateTimePicker?: DateTimePicker
 ) {
-  const { user, addXP } = useAuthStore();
+  const { user, userProfile, addXP } = useAuthStore();
   const [showAllHistory, setShowAllHistory] = useState(false);
   const { toast } = useToast();
 
-  const handleSelect = async (food) => {
+  const handleSelect = async (food: Food): Promise<void> => {
     let foodToLog = food;
-    if (food.isPreview) {
+    if ((food as any).isPreview) {
       const savedFood = await foodLibrary.fetchAndSave(food);
-      if (savedFood) foodToLog = savedFood;
+      if (savedFood) foodToLog = { ...food, id: savedFood };
     }
     if (
-      foodToLog.items &&
-      Array.isArray(foodToLog.items) &&
-      foodToLog.servings
+      (foodToLog as any).items &&
+      Array.isArray((foodToLog as any).items) &&
+      (foodToLog as any).servings
     ) {
       // Add as recipe
-      cart.addToCart(foodToLog, 1);
+      cart.addToCart(foodToLog as RecipeItem, 1);
     } else {
       cart.addToCart(foodToLog);
     }
@@ -35,10 +81,10 @@ export default function useFoodLogging(
     }
   };
 
-  const handleNutrientsAdd = async (foodsOrString) => {
-    let foods = foodsOrString;
+  const handleNutrientsAdd = async (foodsOrString: ParsedFood[] | string): Promise<void> => {
+    let foods: ParsedFood[] = foodsOrString as ParsedFood[];
     if (typeof foodsOrString === 'string') {
-      foods = parseNutritionString(foodsOrString);
+      foods = parseNutritionString(foodsOrString) as ParsedFood[];
     }
     console.log('[handleNutrientsAdd] Adding foods to cart:', foods.length);
     // Add all foods to cart with correct quantities and units
@@ -49,7 +95,7 @@ export default function useFoodLogging(
     if (foods.length === 1) {
       toast({
         title: 'Food Added',
-        description: `Added ${foods[0].food_name || foods[0].label || foods[0].name} to your cart`,
+        description: `Added ${foods[0].food_name || (foods[0] as any).label || (foods[0] as any).name} to your cart`,
       });
     } else {
       toast({
@@ -62,21 +108,24 @@ export default function useFoodLogging(
     }
   };
 
-  const logCart = async () => {
+  const logCart = async (): Promise<void> => {
+    if (!dateTimePicker) return;
+    
     const timestamp = dateTimePicker.getLogTimestamp();
     let totalXP = 0;
 
     for (const item of cart.cart) {
       if (
         item.type === 'recipe' &&
-        item.recipe &&
-        item.recipe.items &&
-        item.recipe.servings
+        (item as any).recipe &&
+        (item as any).recipe.items &&
+        (item as any).recipe.servings
       ) {
         // Expand recipe into ingredients per serving
-        const servingsToLog = item.servings || 1;
-        const recipeServings = item.recipe.servings || 1;
-        for (const ingredient of item.recipe.items) {
+        const recipe = (item as any).recipe as RecipeItem;
+        const servingsToLog = (item as any).servings || 1;
+        const recipeServings = recipe.servings || 1;
+        for (const ingredient of recipe.items) {
           const scaledQuantity =
             (ingredient.quantity / recipeServings) * servingsToLog;
 
@@ -84,7 +133,7 @@ export default function useFoodLogging(
           if (ingredient.isRecipe) {
             const nestedRecipe = userProfile?.recipes?.find(
               (r) => r.id === ingredient.id
-            );
+            ) as RecipeItem | undefined;
             if (nestedRecipe) {
               // Recursively log the nested recipe
               const nestedServingsToLog = scaledQuantity;
@@ -105,14 +154,14 @@ export default function useFoodLogging(
                     timestamp,
                     nestedIngredient.unit,
                     {
-                      recipeId: item.recipe.id,
-                      recipeName: item.recipe.name,
-                      recipeServings: item.recipe.servings,
+                      recipeId: recipe.id,
+                      recipeName: recipe.name,
+                      recipeServings: recipe.servings,
                       recipeLoggedServings: servingsToLog,
                       nestedRecipeId: nestedRecipe.id,
                       nestedRecipeName: nestedRecipe.name,
                     }
-                  );
+                  ) as LoggedEntry;
                   totalXP += loggedEntry.xp || 0;
                 } catch (error) {
                   console.error(
@@ -135,12 +184,12 @@ export default function useFoodLogging(
                 timestamp,
                 ingredient.unit,
                 {
-                  recipeId: item.recipe.id,
-                  recipeName: item.recipe.name,
-                  recipeServings: item.recipe.servings,
+                  recipeId: recipe.id,
+                  recipeName: recipe.name,
+                  recipeServings: recipe.servings,
                   recipeLoggedServings: servingsToLog,
                 }
-              );
+              ) as LoggedEntry;
               totalXP += loggedEntry.xp || 0;
             } catch (error) {
               console.error(
@@ -153,16 +202,16 @@ export default function useFoodLogging(
         }
       } else {
         // Regular food item
-        let food = null;
-        if (item.originalFoodId) {
-          food = foodLibrary.items.find((f) => f.id === item.originalFoodId);
+        let food: Food | null = null;
+        if ((item as any).originalFoodId) {
+          food = foodLibrary.items.find((f) => f.id === (item as any).originalFoodId);
         }
         if (!food) {
           food = foodLibrary.items.find((f) => f.id === item.id);
         }
         if (!food) {
-          const newFoodId = await foodLibrary.fetchAndSave(item);
-          if (newFoodId) food = { ...item, id: newFoodId };
+          const newFoodId = await foodLibrary.fetchAndSave(item as Food);
+          if (newFoodId) food = { ...item as Food, id: newFoodId };
           else {
             console.warn('Could not save new food for cart item:', item);
             continue;
@@ -172,10 +221,10 @@ export default function useFoodLogging(
           const loggedEntry = await logFoodEntry(
             food,
             user,
-            item.quantity,
+            (item as any).quantity,
             timestamp,
-            item.units
-          );
+            (item as any).units
+          ) as LoggedEntry;
           totalXP += loggedEntry.xp || 0;
         } catch (error) {
           console.error('Error adding food log from cart:', error, item);
@@ -198,4 +247,4 @@ export default function useFoodLogging(
     showAllHistory,
     setShowAllHistory,
   };
-}
+} 

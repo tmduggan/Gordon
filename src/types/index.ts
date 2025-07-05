@@ -169,6 +169,16 @@ export interface FoodLog {
   xp: number;
 }
 
+export interface Recipe {
+  id: string;
+  name: string;
+  description?: string;
+  servings?: number;
+  items?: any[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 // Gamification types
 export interface LaggingMuscle {
   muscle: string;
