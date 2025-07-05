@@ -1,23 +1,22 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import MacroDisplay from '../../nutrition/MacroDisplay';
-import ServingSizeEditor from '../../nutrition/ServingSizeEditor';
-import { getFoodMacros } from '../../../utils/dataUtils';
-import { convertToGrams } from '../../../utils/dataUtils';
-import { Button } from '@/components/ui/button';
-import { XCircle, Info, ChefHat } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import NutritionLabel from '../../nutrition/NutritionLabel';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import useAuthStore from '../../../store/useAuthStore';
+import { ChefHat, Info, XCircle } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useLibrary from '../../../hooks/useLibrary';
+import useAuthStore from '../../../store/useAuthStore';
+import { convertToGrams, getFoodMacros } from '../../../utils/dataUtils';
+import MacroDisplay from '../../nutrition/MacroDisplay';
+import NutritionLabel from '../../nutrition/NutritionLabel';
+import ServingSizeEditor from '../../nutrition/ServingSizeEditor';
 
 export default function FoodCartRow({
   item,
   updateCartItem = () => {},
   removeFromCart = () => {},
-  userWorkoutHistory
+  userWorkoutHistory,
 }) {
   // Check if the item is a food item by looking for a unique property like 'label'.
   const isFoodItem = 'label' in item;
@@ -46,28 +45,37 @@ export default function FoodCartRow({
     let caloriesPerGram = 0;
     if (food.serving_weight_grams) {
       const data = food.nutritionix_data || food.nutrition || food;
-      caloriesPerGram = (data.nf_calories || data.calories || 0) / food.serving_weight_grams;
+      caloriesPerGram =
+        (data.nf_calories || data.calories || 0) / food.serving_weight_grams;
     } else {
       caloriesPerGram = macros.calories;
     }
     return Math.round(caloriesPerGram * grams);
   };
 
-  const getRecipeCalories = (recipe, servings) => {
+  const getRecipeCalories = (recipe, servings = 1) => {
     if (!recipe || !recipe.items) return 0;
     const recipeServings = recipe.servings || 1;
     let total = 0;
-    recipe.items.forEach(ingredient => {
+    recipe.items.forEach((ingredient) => {
       if (ingredient.isRecipe) {
-        const nestedRecipe = userProfile?.recipes?.find(r => r.id === ingredient.id);
+        const nestedRecipe = userProfile?.recipes?.find(
+          (r) => r.id === ingredient.id
+        );
         if (nestedRecipe) {
-          const nestedCals = getRecipeCalories(nestedRecipe, (ingredient.quantity / recipeServings) * servings);
+          const nestedCals = getRecipeCalories(
+            nestedRecipe,
+            (ingredient.quantity / recipeServings) * servings
+          );
           total += nestedCals;
         }
       } else {
-        const food = foodLibrary.items.find(f => f.id === ingredient.id);
+        const food = foodLibrary.items.find((f) => f.id === ingredient.id);
         if (food) {
-          total += getFoodCalories({ ...food, quantity: (ingredient.quantity / recipeServings) * servings });
+          total += getFoodCalories({
+            ...food,
+            quantity: (ingredient.quantity / recipeServings) * servings,
+          });
         }
       }
     });
@@ -75,9 +83,11 @@ export default function FoodCartRow({
   };
 
   if (isRecipe) {
-    // Render recipe row: servings input, then name/calories row, then remove button
+    // Always default to 1 serving (per serving) unless user changes it
     const servings = item.servings || 1;
-    const recipe = item.recipe || userProfile?.recipes?.find(r => r.id === item.id);
+    const recipe =
+      item.recipe || userProfile?.recipes?.find((r) => r.id === item.id);
+    // If user hasn't changed servings, show per-serving nutrition
     const calories = recipe ? getRecipeCalories(recipe, servings) : 0;
     return (
       <Card className="border">
@@ -90,7 +100,11 @@ export default function FoodCartRow({
                 min="0.1"
                 step="0.1"
                 value={servings}
-                onChange={e => updateCartItem(item.id, { servings: parseFloat(e.target.value) || 1 })}
+                onChange={(e) =>
+                  updateCartItem(item.id, {
+                    servings: parseFloat(e.target.value) || 1,
+                  })
+                }
                 className="w-20"
               />
               <span className="text-sm text-gray-500">servings</span>
@@ -101,14 +115,16 @@ export default function FoodCartRow({
                 <ChefHat className="h-4 w-4 text-orange-500" />
                 {item.name}
               </span>
-              <span className="text-sm font-mono text-gray-700">Cal: {calories}</span>
+              <span className="text-sm font-mono text-gray-700">
+                Cal: {calories}
+              </span>
             </div>
             {/* Remove button row */}
             <div className="flex justify-end">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => removeFromCart(item.id)} 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeFromCart(item.id)}
                 title="Remove recipe"
                 className="h-8 w-8"
               >
@@ -124,9 +140,12 @@ export default function FoodCartRow({
     useEffect(() => {
       currentUnitRef.current = item.units;
     }, [item.units]);
-    const handleServingChange = useCallback(({ quantity, units }) => {
-      updateCartItem(item.id, { quantity, units });
-    }, [updateCartItem, item.id]);
+    const handleServingChange = useCallback(
+      ({ quantity, units }) => {
+        updateCartItem(item.id, { quantity, units });
+      },
+      [updateCartItem, item.id]
+    );
     const calories = getFoodCalories(item);
     return (
       <Card className="border">
@@ -146,14 +165,16 @@ export default function FoodCartRow({
                 )}
                 <InfoDialog item={item} />
               </div>
-              <span className="text-sm font-mono text-gray-700">Cal: {calories}</span>
+              <span className="text-sm font-mono text-gray-700">
+                Cal: {calories}
+              </span>
             </div>
             {/* Remove Button Row */}
             <div className="flex justify-end">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => removeFromCart(item.id)} 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeFromCart(item.id)}
                 title="Remove item"
                 className="h-8 w-8"
               >
@@ -168,4 +189,4 @@ export default function FoodCartRow({
     // Defensive: if not a food or recipe, render nothing
     return null;
   }
-} 
+}

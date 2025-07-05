@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Check, Trash } from 'lucide-react';
+import { Check, Trash, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import SwipeToDelete from 'react-swipe-to-delete-component';
 import 'react-swipe-to-delete-component/dist/swipe-to-delete.css';
 
@@ -17,16 +17,22 @@ function useIsMobile() {
   return isMobile;
 }
 
-const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlaceholder }) => {
-  const isCardio = exercise.category && exercise.category.toLowerCase() === 'cardio';
+const ExerciseLogInputs = ({
+  exercise,
+  logData,
+  onLogDataChange,
+  lastSetPlaceholder,
+}) => {
+  const isCardio =
+    exercise.category && exercise.category.toLowerCase() === 'cardio';
   const isStrength = !isCardio;
   const isBodyweight = exercise.equipment === 'body weight';
   const isMobile = useIsMobile();
-  
+
   // Initialize sets from logData or with a default first set if none exist.
   const [sets, setSets] = useState(
     logData?.sets && logData.sets.length > 0
-      ? logData.sets.map(set => ({ ...set, completed: false }))
+      ? logData.sets.map((set) => ({ ...set, completed: false }))
       : [{ weight: '', reps: '', completed: false }]
   );
 
@@ -93,7 +99,9 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
           <input
             type="number"
             placeholder={
-              set.weight === '' && lastSetPlaceholder && lastSetPlaceholder.weight
+              set.weight === '' &&
+              lastSetPlaceholder &&
+              lastSetPlaceholder.weight
                 ? `${lastSetPlaceholder.weight}`
                 : 'e.g., 135'
             }
@@ -167,7 +175,13 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
           </SwipeToDelete>
         ))}
         <div className="pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={addSet} className="w-full">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addSet}
+            className="w-full"
+          >
             Add Set
           </Button>
         </div>
@@ -185,4 +199,4 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
   );
 };
 
-export default ExerciseLogInputs; 
+export default ExerciseLogInputs;

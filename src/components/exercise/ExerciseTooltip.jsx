@@ -1,13 +1,20 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import React, { useState, useMemo } from 'react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getLastTrainedDate } from '@/utils/dataUtils';
 import { formatSmartDate } from '@/utils/timeUtils';
+import React, { useMemo, useState } from 'react';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0)
   );
   React.useEffect(() => {
     const checkMobile = () => {
@@ -20,53 +27,79 @@ function useIsMobile() {
   return isMobile;
 }
 
-export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userProfile }) {
+export function ExerciseTooltipContent({
+  exercise,
+  bonusXP,
+  laggingType,
+  userProfile,
+}) {
   const [gifError, setGifError] = useState(false);
   const { logs: workoutLog } = useExerciseLogStore();
   if (!exercise) return null;
 
   // Debug logging
-  const logs = useMemo(() => workoutLog.filter(l => String(l.exerciseId) === String(exercise.id)), [workoutLog, exercise.id]);
+  const logs = useMemo(
+    () =>
+      workoutLog.filter((l) => String(l.exerciseId) === String(exercise.id)),
+    [workoutLog, exercise.id]
+  );
   const hasLogs = logs.length > 0;
   const lastTrainedTimestamp = getLastTrainedDate(workoutLog, exercise.id);
   const lastTrainedDate = lastTrainedTimestamp
-    ? (lastTrainedTimestamp.seconds
-        ? new Date(lastTrainedTimestamp.seconds * 1000)
-        : new Date(lastTrainedTimestamp))
+    ? lastTrainedTimestamp.seconds
+      ? new Date(lastTrainedTimestamp.seconds * 1000)
+      : new Date(lastTrainedTimestamp)
     : null;
   console.log('[ExerciseTooltipContent]', {
     workoutLog,
     logs,
     lastTrainedDate,
     laggingType,
-    hasLogs
+    hasLogs,
   });
 
   // Find the most recent log (by timestamp)
-  const lastLog = hasLogs ? logs.reduce((latest, l) => {
-    if (!latest) return l;
-    const latestTime = latest.timestamp?.seconds ? latest.timestamp.seconds : new Date(latest.timestamp).getTime() / 1000;
-    const lTime = l.timestamp?.seconds ? l.timestamp.seconds : new Date(l.timestamp).getTime() / 1000;
-    return lTime > latestTime ? l : latest;
-  }, null) : null;
+  const lastLog = hasLogs
+    ? logs.reduce((latest, l) => {
+        if (!latest) return l;
+        const latestTime = latest.timestamp?.seconds
+          ? latest.timestamp.seconds
+          : new Date(latest.timestamp).getTime() / 1000;
+        const lTime = l.timestamp?.seconds
+          ? l.timestamp.seconds
+          : new Date(l.timestamp).getTime() / 1000;
+        return lTime > latestTime ? l : latest;
+      }, null)
+    : null;
 
   // Best duration (cardio)
-  const bestDuration = logs.reduce((max, l) => (l.duration && (!max || l.duration > max.duration)) ? l : max, null);
+  const bestDuration = logs.reduce(
+    (max, l) => (l.duration && (!max || l.duration > max.duration) ? l : max),
+    null
+  );
   // Best 1RM (strength)
-  const best1RM = logs.reduce((max, l) => (l.oneRepMax && (!max || l.oneRepMax > max.oneRepMax)) ? l : max, null);
+  const best1RM = logs.reduce(
+    (max, l) =>
+      l.oneRepMax && (!max || l.oneRepMax > max.oneRepMax) ? l : max,
+    null
+  );
 
   // Format time ago
   const timeAgo = (timestamp) => {
     if (!timestamp) return '';
-    const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+    const date = timestamp.seconds
+      ? new Date(timestamp.seconds * 1000)
+      : new Date(timestamp);
     const now = new Date();
     const diffMs = now - date;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffHours > 0)
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    if (diffMinutes > 0) return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffMinutes > 0)
+      return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`;
     return 'just now';
   };
 
@@ -99,7 +132,8 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
   };
 
   // Cardio: Last Logged & Best Duration
-  let lastLoggedCardio = null, bestCardio = null;
+  let lastLoggedCardio = null,
+    bestCardio = null;
   if (exercise.category && exercise.category.toLowerCase() === 'cardio') {
     if (lastLog && lastLog.duration) {
       lastLoggedCardio = `${lastLog.duration} minutes ${formatAgo(lastLog.timestamp)}`;
@@ -109,7 +143,8 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
     }
   }
   // Strength: Last Logged & Best 1RM
-  let lastLoggedStrength = null, bestStrength = null;
+  let lastLoggedStrength = null,
+    bestStrength = null;
   if (!exercise.category || exercise.category.toLowerCase() !== 'cardio') {
     if (lastLog && lastLog.sets && lastLog.sets.length > 0) {
       const s = lastLog.sets[lastLog.sets.length - 1];
@@ -121,16 +156,23 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
   }
 
   // Find the most recent log for any exercise
-  const lastWorkoutLog = workoutLog.length > 0 ? workoutLog.reduce((latest, l) => {
-    const lTime = l.timestamp?.seconds ? l.timestamp.seconds : new Date(l.timestamp).getTime() / 1000;
-    if (!latest) return l;
-    const latestTime = latest.timestamp?.seconds ? latest.timestamp.seconds : new Date(latest.timestamp).getTime() / 1000;
-    return lTime > latestTime ? l : latest;
-  }, null) : null;
+  const lastWorkoutLog =
+    workoutLog.length > 0
+      ? workoutLog.reduce((latest, l) => {
+          const lTime = l.timestamp?.seconds
+            ? l.timestamp.seconds
+            : new Date(l.timestamp).getTime() / 1000;
+          if (!latest) return l;
+          const latestTime = latest.timestamp?.seconds
+            ? latest.timestamp.seconds
+            : new Date(latest.timestamp).getTime() / 1000;
+          return lTime > latestTime ? l : latest;
+        }, null)
+      : null;
   const lastWorkoutDate = lastWorkoutLog
-    ? (lastWorkoutLog.timestamp?.seconds
-        ? new Date(lastWorkoutLog.timestamp.seconds * 1000)
-        : new Date(lastWorkoutLog.timestamp))
+    ? lastWorkoutLog.timestamp?.seconds
+      ? new Date(lastWorkoutLog.timestamp.seconds * 1000)
+      : new Date(lastWorkoutLog.timestamp)
     : null;
 
   return (
@@ -153,43 +195,111 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
       <div className="font-semibold text-base mb-2">{exercise.name}</div>
       {/* Stats Section */}
       <div className="mb-2">
-        {lastLoggedCardio && <div className="text-xs text-blue-700 font-medium">Last Logged: {lastLoggedCardio}</div>}
-        {bestCardio && <div className="text-xs text-purple-700 font-medium">Best Duration: {bestCardio}</div>}
-        {lastLoggedStrength && <div className="text-xs text-blue-700 font-medium">Last Logged: {lastLoggedStrength}</div>}
-        {bestStrength && <div className="text-xs text-purple-700 font-medium">{bestStrength}</div>}
+        {lastLoggedCardio && (
+          <div className="text-xs text-blue-700 font-medium">
+            Last Logged: {lastLoggedCardio}
+          </div>
+        )}
+        {bestCardio && (
+          <div className="text-xs text-purple-700 font-medium">
+            Best Duration: {bestCardio}
+          </div>
+        )}
+        {lastLoggedStrength && (
+          <div className="text-xs text-blue-700 font-medium">
+            Last Logged: {lastLoggedStrength}
+          </div>
+        )}
+        {bestStrength && (
+          <div className="text-xs text-purple-700 font-medium">
+            {bestStrength}
+          </div>
+        )}
       </div>
-      {exercise.instructions && Array.isArray(exercise.instructions) && exercise.instructions.length > 0 && (
-        <div className="mb-3">
-          <div className="font-medium text-sm mb-1 text-green-600">Instructions:</div>
-          <ol className="text-sm text-gray-700 space-y-1">
-            {exercise.instructions.map((instruction, index) => (
-              <li key={index} className="leading-relaxed">{index + 1}. {instruction}</li>
-            ))}
-          </ol>
-        </div>
-      )}
+      {exercise.instructions &&
+        Array.isArray(exercise.instructions) &&
+        exercise.instructions.length > 0 && (
+          <div className="mb-3">
+            <div className="font-medium text-sm mb-1 text-green-600">
+              Instructions:
+            </div>
+            <ol className="text-sm text-gray-700 space-y-1">
+              {exercise.instructions.map((instruction, index) => (
+                <li key={index} className="leading-relaxed">
+                  {index + 1}. {instruction}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       {/* Show full personal bests object */}
       {bests && (
         <div className="mb-2">
-          <div className="font-medium text-sm text-purple-700">Personal Best:</div>
+          <div className="font-medium text-sm text-purple-700">
+            Personal Best:
+          </div>
           {bests.allTime && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>All Time:</strong> {bests.allTime.value !== undefined ? Number(bests.allTime.value).toFixed(1) : ''} {bests.allTime.unit} ({bests.allTime.type}) on {bests.allTime.date ? (bests.allTime.date.seconds ? new Date(bests.allTime.date.seconds * 1000).toLocaleDateString() : new Date(bests.allTime.date).toLocaleDateString()) : ''}
+              <strong>All Time:</strong>{' '}
+              {bests.allTime.value !== undefined
+                ? Number(bests.allTime.value).toFixed(1)
+                : ''}{' '}
+              {bests.allTime.unit} ({bests.allTime.type}) on{' '}
+              {bests.allTime.date
+                ? bests.allTime.date.seconds
+                  ? new Date(
+                      bests.allTime.date.seconds * 1000
+                    ).toLocaleDateString()
+                  : new Date(bests.allTime.date).toLocaleDateString()
+                : ''}
             </div>
           )}
           {bests.current && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Current:</strong> {bests.current.value !== undefined ? Number(bests.current.value).toFixed(1) : ''} {bests.current.unit} ({bests.current.type}) on {bests.current.date ? (bests.current.date.seconds ? new Date(bests.current.date.seconds * 1000).toLocaleDateString() : new Date(bests.current.date).toLocaleDateString()) : ''}
+              <strong>Current:</strong>{' '}
+              {bests.current.value !== undefined
+                ? Number(bests.current.value).toFixed(1)
+                : ''}{' '}
+              {bests.current.unit} ({bests.current.type}) on{' '}
+              {bests.current.date
+                ? bests.current.date.seconds
+                  ? new Date(
+                      bests.current.date.seconds * 1000
+                    ).toLocaleDateString()
+                  : new Date(bests.current.date).toLocaleDateString()
+                : ''}
             </div>
           )}
           {bests.quarter && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Quarter:</strong> {bests.quarter.value !== undefined ? Number(bests.quarter.value).toFixed(1) : ''} {bests.quarter.unit} ({bests.quarter.type}) on {bests.quarter.date ? (bests.quarter.date.seconds ? new Date(bests.quarter.date.seconds * 1000).toLocaleDateString() : new Date(bests.quarter.date).toLocaleDateString()) : ''}
+              <strong>Quarter:</strong>{' '}
+              {bests.quarter.value !== undefined
+                ? Number(bests.quarter.value).toFixed(1)
+                : ''}{' '}
+              {bests.quarter.unit} ({bests.quarter.type}) on{' '}
+              {bests.quarter.date
+                ? bests.quarter.date.seconds
+                  ? new Date(
+                      bests.quarter.date.seconds * 1000
+                    ).toLocaleDateString()
+                  : new Date(bests.quarter.date).toLocaleDateString()
+                : ''}
             </div>
           )}
           {bests.year && (
             <div className="text-xs text-gray-700 mb-1">
-              <strong>Year:</strong> {bests.year.value !== undefined ? Number(bests.year.value).toFixed(1) : ''} {bests.year.unit} ({bests.year.type}) on {bests.year.date ? (bests.year.date.seconds ? new Date(bests.year.date.seconds * 1000).toLocaleDateString() : new Date(bests.year.date).toLocaleDateString()) : ''}
+              <strong>Year:</strong>{' '}
+              {bests.year.value !== undefined
+                ? Number(bests.year.value).toFixed(1)
+                : ''}{' '}
+              {bests.year.unit} ({bests.year.type}) on{' '}
+              {bests.year.date
+                ? bests.year.date.seconds
+                  ? new Date(
+                      bests.year.date.seconds * 1000
+                    ).toLocaleDateString()
+                  : new Date(bests.year.date).toLocaleDateString()
+                : ''}
             </div>
           )}
         </div>
@@ -197,15 +307,22 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
       {/* Show full last log object */}
       {lastLog && (
         <div className="mb-2">
-          <div className="font-medium text-sm text-blue-700">Last Worked (raw):</div>
-          <pre className="text-xs bg-gray-100 rounded p-2 border">{JSON.stringify(lastLog, null, 2)}</pre>
+          <div className="font-medium text-sm text-blue-700">
+            Last Worked (raw):
+          </div>
+          <pre className="text-xs bg-gray-100 rounded p-2 border">
+            {JSON.stringify(lastLog, null, 2)}
+          </pre>
         </div>
       )}
       {exercise.laggingMessage && (
-        <div className="mb-2 text-sm text-purple-700">{exercise.laggingMessage}</div>
+        <div className="mb-2 text-sm text-purple-700">
+          {exercise.laggingMessage}
+        </div>
       )}
       {/* XP and Lagging Type */}
-      {(bonusXP !== undefined || (laggingType && laggingType !== 'neverTrained')) && (
+      {(bonusXP !== undefined ||
+        (laggingType && laggingType !== 'neverTrained')) && (
         <div className="mb-2 flex items-center gap-3">
           {bonusXP !== undefined && (
             <span className="flex items-center text-green-700 font-semibold text-sm">
@@ -229,30 +346,44 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
       )}
       {hasLogs && lastTrainedDate && (
         <div className="text-xs text-gray-700 mb-1">
-          <strong>Last Trained:</strong> {formatSmartDate(lastTrainedDate)} at {lastTrainedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <strong>Last Trained:</strong> {formatSmartDate(lastTrainedDate)} at{' '}
+          {lastTrainedDate.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </div>
       )}
       {hasLogs && lastLog && (
         <div className="text-xs text-gray-700 mb-1">
           <strong>Last Logged:</strong>{' '}
-          {lastLog.duration ? `${lastLog.duration} minutes` : lastLog.sets && lastLog.sets[0] ? `${lastLog.sets[0].weight} lbs x ${lastLog.sets[0].reps} reps` : ''}
-          {' '}{timeAgo(lastLog.timestamp)}
+          {lastLog.duration
+            ? `${lastLog.duration} minutes`
+            : lastLog.sets && lastLog.sets[0]
+              ? `${lastLog.sets[0].weight} lbs x ${lastLog.sets[0].reps} reps`
+              : ''}{' '}
+          {timeAgo(lastLog.timestamp)}
         </div>
       )}
       {bestDuration && bestDuration.duration && (
         <div className="text-xs text-gray-700 mb-1">
-          <strong>Best Duration:</strong> {bestDuration.duration} minutes {timeAgo(bestDuration.timestamp)}
+          <strong>Best Duration:</strong> {bestDuration.duration} minutes{' '}
+          {timeAgo(bestDuration.timestamp)}
         </div>
       )}
       {best1RM && best1RM.oneRepMax && (
         <div className="text-xs text-gray-700 mb-1">
-          <strong>1RM:</strong> {best1RM.oneRepMax} lbs {timeAgo(best1RM.timestamp)}
+          <strong>1RM:</strong> {best1RM.oneRepMax} lbs{' '}
+          {timeAgo(best1RM.timestamp)}
         </div>
       )}
       {/* Show last workout date for any exercise */}
       {lastWorkoutDate && (
         <div className="text-xs text-gray-700 mb-1">
-          <strong>Last Workout:</strong> {formatSmartDate(lastWorkoutDate)} at {lastWorkoutDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <strong>Last Workout:</strong> {formatSmartDate(lastWorkoutDate)} at{' '}
+          {lastWorkoutDate.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </div>
       )}
       <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2 mt-2">
@@ -264,7 +395,13 @@ export function ExerciseTooltipContent({ exercise, bonusXP, laggingType, userPro
   );
 }
 
-export default function ExerciseTooltip({ exercise, children, bonusXP, laggingType, userProfile }) {
+export default function ExerciseTooltip({
+  exercise,
+  children,
+  bonusXP,
+  laggingType,
+  userProfile,
+}) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   if (!exercise) return children;
@@ -272,12 +409,17 @@ export default function ExerciseTooltip({ exercise, children, bonusXP, laggingTy
   if (isMobile) {
     return (
       <>
-        <span onClick={() => setOpen(true)} style={{ display: 'inline-block', width: '100%' }}>
+        <span
+          onClick={() => setOpen(true)}
+          style={{ display: 'inline-block', width: '100%' }}
+        >
           {children}
         </span>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-xs w-full p-0 bg-white rounded-lg shadow-lg">
-            <DialogTitle className="sr-only">{exercise?.name || 'Exercise Details'}</DialogTitle>
+            <DialogTitle className="sr-only">
+              {exercise?.name || 'Exercise Details'}
+            </DialogTitle>
             <button
               onClick={() => setOpen(false)}
               className="absolute top-2 right-2 z-10 bg-gray-100 rounded-full p-1 hover:bg-gray-200"
@@ -316,4 +458,4 @@ export default function ExerciseTooltip({ exercise, children, bonusXP, laggingTy
       </Tooltip>
     </TooltipProvider>
   );
-} 
+}

@@ -1,7 +1,7 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, User, Mail, Clock, Hash } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Crown, Hash, Mail, User } from 'lucide-react';
+import React from 'react';
 
 export default function UserProfileModal({ user, userProfile }) {
   const status = userProfile?.subscription?.status || 'basic';
@@ -57,29 +57,45 @@ export default function UserProfileModal({ user, userProfile }) {
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-gray-500" />
               <div>
-                <label className="text-sm font-medium text-gray-600">Name</label>
-                <div className="text-sm">{userProfile?.name || user?.displayName || 'Not set'}</div>
+                <label className="text-sm font-medium text-gray-600">
+                  Name
+                </label>
+                <div className="text-sm">
+                  {userProfile?.name || user?.displayName || 'Not set'}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-gray-500" />
               <div>
-                <label className="text-sm font-medium text-gray-600">Email</label>
-                <div className="text-sm font-mono">{user?.email || 'Not available'}</div>
+                <label className="text-sm font-medium text-gray-600">
+                  Email
+                </label>
+                <div className="text-sm font-mono">
+                  {user?.email || 'Not available'}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-gray-500" />
               <div>
-                <label className="text-sm font-medium text-gray-600">Time Zone</label>
-                <div className="text-sm">{userProfile?.timeZone || 'Not set'}</div>
+                <label className="text-sm font-medium text-gray-600">
+                  Time Zone
+                </label>
+                <div className="text-sm">
+                  {userProfile?.timeZone || 'Not set'}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Hash className="h-4 w-4 text-gray-500" />
               <div>
-                <label className="text-sm font-medium text-gray-600">User ID</label>
-                <div className="text-xs font-mono text-gray-500">{user?.uid || 'Not available'}</div>
+                <label className="text-sm font-medium text-gray-600">
+                  User ID
+                </label>
+                <div className="text-xs font-mono text-gray-500">
+                  {user?.uid || 'Not available'}
+                </div>
               </div>
             </div>
           </div>
@@ -98,20 +114,31 @@ export default function UserProfileModal({ user, userProfile }) {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm font-medium">Subscription Status:</span>
-                <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
+                <span className="text-sm font-medium">
+                  Subscription Status:
+                </span>
+                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                  Admin
+                </Badge>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Plan:</span>
-                <span className="text-sm">{userProfile?.subscription?.plan || 'admin'}</span>
+                <span className="text-sm">
+                  {userProfile?.subscription?.plan || 'admin'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Features:</span>
-                <span className="text-sm">{userProfile?.subscription?.features?.join(', ') || 'all_features'}</span>
+                <span className="text-sm">
+                  {userProfile?.subscription?.features?.join(', ') ||
+                    'all_features'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Expires:</span>
-                <span className="text-sm">{userProfile?.subscription?.expiresAt || 'Never'}</span>
+                <span className="text-sm">
+                  {userProfile?.subscription?.expiresAt || 'Never'}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -119,4 +146,4 @@ export default function UserProfileModal({ user, userProfile }) {
       )}
     </div>
   );
-} 
+}

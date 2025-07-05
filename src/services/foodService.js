@@ -1,6 +1,6 @@
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { getAuth } from 'firebase/auth';
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 /**
  * A utility to create a URL-friendly "slug" from a string.
@@ -9,7 +9,11 @@ import { getAuth } from 'firebase/auth';
  * @returns {string} The slugified string.
  */
 function slugify(str) {
-  return (str || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+  return (str || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 64);
 }
 
 /**
@@ -38,10 +42,13 @@ export function generateFoodId(food) {
  */
 export async function loadLocalFoods() {
   const querySnapshot = await getDocs(collection(db, 'foods'));
-  console.log('[loadLocalFoods] Loaded foods count:', querySnapshot.docs.length);
-  return querySnapshot.docs.map(doc => ({
+  console.log(
+    '[loadLocalFoods] Loaded foods count:',
+    querySnapshot.docs.length
+  );
+  return querySnapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   }));
 }
 
@@ -70,7 +77,7 @@ export async function saveFoodToLibrary(food) {
     id: foodId,
     label: food.food_name || food.label,
     created_at: new Date().toISOString(),
-    source: 'nutritionix' // Or determine source based on data
+    source: 'nutritionix', // Or determine source based on data
   };
 
   console.log('Attempting to save food to Firestore:', foodToSave);
@@ -83,4 +90,4 @@ export async function saveFoodToLibrary(food) {
     console.error('Error saving food to Firestore:', error, foodToSave);
     throw error;
   }
-} 
+}

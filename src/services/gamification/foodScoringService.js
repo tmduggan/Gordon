@@ -6,7 +6,7 @@ import { convertToGrams } from '../../utils/dataUtils';
 // Food group multipliers based on nutritional value
 const FOOD_GROUP_MULTIPLIERS = {
   3: 1.5, // Fruits - high value
-  4: 1.5, // Vegetables - high value  
+  4: 1.5, // Vegetables - high value
   7: 1.5, // Legumes & Nuts/Seeds - high value
   1: 1.0, // Dairy - standard
   2: 1.0, // Animal products - standard
@@ -47,7 +47,7 @@ export const MICRONUTRIENT_ATTRS = [
 
 // Helper to get nutrient value from full_nutrients by attr_id
 function getNutrientValue(full_nutrients, attr_id) {
-  const found = full_nutrients?.find(n => n.attr_id === attr_id);
+  const found = full_nutrients?.find((n) => n.attr_id === attr_id);
   return found ? found.value : 0;
 }
 
@@ -62,12 +62,12 @@ function getUniqueFoodId(food) {
   const data = food.nutritionix_data || food.nutrition || food;
   const foodGroup = getFoodGroup(food);
   const foodName = food.food_name || food.label || '';
-  
+
   // For branded foods (no food group), use the food name
   if (!foodGroup) {
     return foodName.toLowerCase().trim();
   }
-  
+
   // For foods with food groups, use group + name for uniqueness
   return `${foodGroup}_${foodName.toLowerCase().trim()}`;
 }
@@ -88,7 +88,8 @@ export function calculateFoodBaseXP(food, serving = 1, units = undefined) {
   const servingWeightGrams = food.serving_weight_grams || 1;
   // Use convertToGrams for correct scaling
   const grams = convertToGrams(food, serving, units || food.serving_unit);
-  const caloriesPerGram = (data.nf_calories || data.calories || 0) / servingWeightGrams;
+  const caloriesPerGram =
+    (data.nf_calories || data.calories || 0) / servingWeightGrams;
   const calories = caloriesPerGram * grams;
   return Math.round(calories * 2);
 }
@@ -116,10 +117,10 @@ export function calculateDailyTotals(logs, getFoodById) {
     carbs: 0,
     protein: 0,
     fiber: 0,
-    micronutrients: {}
+    micronutrients: {},
   };
-  
-  logs.forEach(log => {
+
+  logs.forEach((log) => {
     const food = getFoodById(log.foodId);
     if (food) {
       const data = food.nutritionix_data || food.nutrition || food;
@@ -129,22 +130,32 @@ export function calculateDailyTotals(logs, getFoodById) {
       // Use convertToGrams for correct scaling
       const grams = convertToGrams(food, serving, units);
       // Add macros per gram
-      totals.calories += ((data.nf_calories || data.calories || 0) / servingWeightGrams) * grams;
-      totals.fat += ((data.nf_total_fat || data.fat || 0) / servingWeightGrams) * grams;
-      totals.carbs += ((data.nf_total_carbohydrate || data.carbs || 0) / servingWeightGrams) * grams;
-      totals.protein += ((data.nf_protein || data.protein || 0) / servingWeightGrams) * grams;
-      totals.fiber += ((data.nf_dietary_fiber || data.fiber || 0) / servingWeightGrams) * grams;
+      totals.calories +=
+        ((data.nf_calories || data.calories || 0) / servingWeightGrams) * grams;
+      totals.fat +=
+        ((data.nf_total_fat || data.fat || 0) / servingWeightGrams) * grams;
+      totals.carbs +=
+        ((data.nf_total_carbohydrate || data.carbs || 0) / servingWeightGrams) *
+        grams;
+      totals.protein +=
+        ((data.nf_protein || data.protein || 0) / servingWeightGrams) * grams;
+      totals.fiber +=
+        ((data.nf_dietary_fiber || data.fiber || 0) / servingWeightGrams) *
+        grams;
       // Add micronutrients
       const full_nutrients = data.full_nutrients || [];
       MICRONUTRIENT_ATTRS.forEach(({ attr_id, label }) => {
-        const value = getNutrientValue(full_nutrients, attr_id) * (grams / servingWeightGrams);
+        const value =
+          getNutrientValue(full_nutrients, attr_id) *
+          (grams / servingWeightGrams);
         if (value > 0) {
-          totals.micronutrients[label] = (totals.micronutrients[label] || 0) + value;
+          totals.micronutrients[label] =
+            (totals.micronutrients[label] || 0) + value;
         }
       });
     }
   });
-  
+
   return totals;
 }
 
@@ -156,20 +167,20 @@ export function calculateDailyTotals(logs, getFoodById) {
  */
 export function calculateMacroGoalBonus(totals, goals) {
   let bonus = 0;
-  
+
   // Check each macro for 80-120% range
   const macros = ['calories', 'protein', 'carbs', 'fat'];
-  macros.forEach(macro => {
+  macros.forEach((macro) => {
     const total = totals[macro] || 0;
     const goal = goals[macro] || 0;
-    
+
     if (goal > 0) {
       const percentage = (total / goal) * 100;
-      
+
       // Bonus for hitting 80-120% range
       if (percentage >= 80 && percentage <= 120) {
         bonus += 50;
-        
+
         // Extra bonus for hitting exactly 100%
         if (percentage >= 100 && percentage <= 100) {
           bonus += 50; // Total 100 points for hitting 100%
@@ -177,20 +188,20 @@ export function calculateMacroGoalBonus(totals, goals) {
       }
     }
   });
-  
+
   // Bonus for hitting all macros in range
-  const allMacrosInRange = macros.every(macro => {
+  const allMacrosInRange = macros.every((macro) => {
     const total = totals[macro] || 0;
     const goal = goals[macro] || 0;
     if (goal === 0) return true;
     const percentage = (total / goal) * 100;
     return percentage >= 80 && percentage <= 120;
   });
-  
+
   if (allMacrosInRange) {
     bonus += 500;
   }
-  
+
   return bonus;
 }
 
@@ -202,21 +213,21 @@ export function calculateMacroGoalBonus(totals, goals) {
 export function calculateMicronutrientBonus(totals) {
   let bonus = 0;
   let micronutrientsHit = 0;
-  
+
   MICRONUTRIENT_ATTRS.forEach(({ attr_id, label, rdv }) => {
     const value = totals.micronutrients[label] || 0;
-    
+
     if (rdv && value >= rdv) {
       bonus += 10; // +10 points per micronutrient hitting 100%
       micronutrientsHit++;
     }
   });
-  
+
   // Bonus for hitting multiple micronutrients
   if (micronutrientsHit >= 5) {
     bonus += 100;
   }
-  
+
   return bonus;
 }
 
@@ -228,15 +239,15 @@ export function calculateMicronutrientBonus(totals) {
  */
 export function calculateUniqueFoodBonus(logs, getFoodById) {
   const uniqueFoods = new Set();
-  
-  logs.forEach(log => {
+
+  logs.forEach((log) => {
     const food = getFoodById(log.foodId);
     if (food) {
       const uniqueId = getUniqueFoodId(food);
       uniqueFoods.add(uniqueId);
     }
   });
-  
+
   // +5 points per unique food
   return uniqueFoods.size * 5;
 }
@@ -251,7 +262,7 @@ export function calculateUniqueFoodBonus(logs, getFoodById) {
 export function calculateFoodXP(food, serving = 1, units = undefined) {
   const baseXP = calculateFoodBaseXP(food, serving, units);
   const multiplier = calculateFoodGroupMultiplier(food);
-  
+
   return Math.round(baseXP * multiplier);
 }
 
@@ -269,28 +280,33 @@ export function calculateDailyFoodXP(logs, getFoodById, goals) {
   let uniqueFoodBonus = 0;
   let macroGoalBonus = 0;
   let micronutrientBonus = 0;
-  
+
   // Calculate base XP and food group bonuses
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const food = getFoodById(log.foodId);
     if (food) {
       const itemBaseXP = calculateFoodBaseXP(food, log.serving, log.units);
       const multiplier = calculateFoodGroupMultiplier(food);
-      
+
       baseXP += itemBaseXP;
       foodGroupBonus += Math.round(itemBaseXP * (multiplier - 1));
     }
   });
-  
+
   // Calculate other bonuses
   uniqueFoodBonus = calculateUniqueFoodBonus(logs, getFoodById);
-  
+
   const totals = calculateDailyTotals(logs, getFoodById);
   macroGoalBonus = calculateMacroGoalBonus(totals, goals);
   micronutrientBonus = calculateMicronutrientBonus(totals);
-  
-  totalXP = baseXP + foodGroupBonus + uniqueFoodBonus + macroGoalBonus + micronutrientBonus;
-  
+
+  totalXP =
+    baseXP +
+    foodGroupBonus +
+    uniqueFoodBonus +
+    macroGoalBonus +
+    micronutrientBonus;
+
   return {
     totalXP,
     breakdown: {
@@ -298,8 +314,8 @@ export function calculateDailyFoodXP(logs, getFoodById, goals) {
       foodGroupBonus,
       uniqueFoodBonus,
       macroGoalBonus,
-      micronutrientBonus
+      micronutrientBonus,
     },
-    totals
+    totals,
   };
-} 
+}

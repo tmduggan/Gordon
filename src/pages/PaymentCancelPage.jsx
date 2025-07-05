@@ -1,8 +1,8 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Crown, XCircle } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { XCircle, ArrowLeft, Crown } from 'lucide-react';
 
 export default function PaymentCancelPage() {
   const navigate = useNavigate();
@@ -32,7 +32,8 @@ export default function PaymentCancelPage() {
               Your payment was cancelled. No charges were made to your account.
             </p>
             <p className="text-gray-600">
-              You can still use all basic features of the app. Upgrade to Premium anytime to unlock advanced features!
+              You can still use all basic features of the app. Upgrade to
+              Premium anytime to unlock advanced features!
             </p>
           </div>
 
@@ -50,18 +51,14 @@ export default function PaymentCancelPage() {
           </div>
 
           <div className="space-y-3">
-            <Button 
+            <Button
               onClick={handleTryAgain}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Crown className="h-4 w-4 mr-2" />
               Try Upgrade Again
             </Button>
-            <Button 
-              onClick={handleReturn}
-              variant="outline"
-              className="w-full"
-            >
+            <Button onClick={handleReturn} variant="outline" className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Return to App
             </Button>
@@ -70,4 +67,4 @@ export default function PaymentCancelPage() {
       </Card>
     </div>
   );
-} 
+}

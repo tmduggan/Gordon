@@ -1,35 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Eye, EyeOff, Target, Zap } from 'lucide-react';
-import useAuthStore from '../../store/useAuthStore';
+import React, { useEffect, useState } from 'react';
 import useLibrary from '../../hooks/useLibrary';
+import useAuthStore from '../../store/useAuthStore';
 
 // Equipment icon mapping (same as WorkoutSuggestions)
 const equipmentIconMap = {
   'smith machine': '/icons/smith.png',
-  'dumbbell': '/icons/dumbbell.png',
-  'barbell': '/icons/barbell.png',
-  'kettlebell': '/icons/kettlebell.png',
+  dumbbell: '/icons/dumbbell.png',
+  barbell: '/icons/barbell.png',
+  kettlebell: '/icons/kettlebell.png',
   'sled machine': '/icons/sled machine.jpg',
   'body weight': '/icons/bodyweight.png',
-  'machine': '/icons/machine.png',
+  machine: '/icons/machine.png',
 };
 
 const getEquipmentIcon = (equipmentName) => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
-  
-  if (lowerCaseEquipment.includes('dumbbell')) return equipmentIconMap['dumbbell'];
-  if (lowerCaseEquipment.includes('barbell')) return equipmentIconMap['barbell'];
-  if (lowerCaseEquipment.includes('kettlebell')) return equipmentIconMap['kettlebell'];
-  if (lowerCaseEquipment === 'smith machine') return equipmentIconMap['smith machine'];
-  if (lowerCaseEquipment === 'sled machine') return equipmentIconMap['sled machine'];
-  if (lowerCaseEquipment === 'body weight') return equipmentIconMap['body weight'];
-  if (lowerCaseEquipment === 'leverage machine' || lowerCaseEquipment === 'cable') {
+
+  if (lowerCaseEquipment.includes('dumbbell'))
+    return equipmentIconMap['dumbbell'];
+  if (lowerCaseEquipment.includes('barbell'))
+    return equipmentIconMap['barbell'];
+  if (lowerCaseEquipment.includes('kettlebell'))
+    return equipmentIconMap['kettlebell'];
+  if (lowerCaseEquipment === 'smith machine')
+    return equipmentIconMap['smith machine'];
+  if (lowerCaseEquipment === 'sled machine')
+    return equipmentIconMap['sled machine'];
+  if (lowerCaseEquipment === 'body weight')
+    return equipmentIconMap['body weight'];
+  if (
+    lowerCaseEquipment === 'leverage machine' ||
+    lowerCaseEquipment === 'cable'
+  ) {
     return equipmentIconMap['machine'];
   }
   return null;
@@ -37,20 +56,20 @@ const getEquipmentIcon = (equipmentName) => {
 
 // Muscle icon mapping (same as WorkoutSuggestions)
 const muscleIconMap = {
-  'quads': '/icons/Muscle-Quads.jpeg',
-  'abductors': '/icons/Muscle-Abductors.jpeg',
-  'abs': '/icons/Muscle-Abs.jpeg',
-  'adductors': '/icons/Muscle-Adductors.jpeg',
-  'biceps': '/icons/Muscle-Biceps.jpeg',
-  'calves': '/icons/Muscle-Calves.jpeg',
-  'delts': '/icons/Muscle-Deltoids.jpeg',
-  'forearms': '/icons/Muscle-Forearms.jpeg',
-  'hamstrings': '/icons/Muscle-Hamstrings.jpeg',
-  'pectorals': '/icons/Muscle-Pectorals.jpeg',
+  quads: '/icons/Muscle-Quads.jpeg',
+  abductors: '/icons/Muscle-Abductors.jpeg',
+  abs: '/icons/Muscle-Abs.jpeg',
+  adductors: '/icons/Muscle-Adductors.jpeg',
+  biceps: '/icons/Muscle-Biceps.jpeg',
+  calves: '/icons/Muscle-Calves.jpeg',
+  delts: '/icons/Muscle-Deltoids.jpeg',
+  forearms: '/icons/Muscle-Forearms.jpeg',
+  hamstrings: '/icons/Muscle-Hamstrings.jpeg',
+  pectorals: '/icons/Muscle-Pectorals.jpeg',
   'serratus anterior': '/icons/Muscle-serratus anterior.jpeg',
-  'traps': '/icons/Muscle-Traps.jpeg',
-  'triceps': '/icons/Muscle-Triceps.jpeg',
-  'glutes': '/icons/Muscle-glutes.jpeg',
+  traps: '/icons/Muscle-Traps.jpeg',
+  triceps: '/icons/Muscle-Triceps.jpeg',
+  glutes: '/icons/Muscle-glutes.jpeg',
 };
 
 const getMuscleIcon = (muscleName) => {
@@ -69,8 +88,10 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
   useEffect(() => {
     if (open && exerciseLibrary.items && userProfile?.hiddenExercises) {
       const hiddenWithDetails = userProfile.hiddenExercises
-        .map(exerciseId => {
-          const exercise = exerciseLibrary.items.find(e => e.id === exerciseId);
+        .map((exerciseId) => {
+          const exercise = exerciseLibrary.items.find(
+            (e) => e.id === exerciseId
+          );
           return exercise ? { ...exercise, id: exerciseId } : null;
         })
         .filter(Boolean);
@@ -79,15 +100,15 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
   }, [open, exerciseLibrary.items, userProfile?.hiddenExercises]);
 
   const handleUnhide = async (exerciseId) => {
-    setLoading(prev => ({ ...prev, [exerciseId]: true }));
+    setLoading((prev) => ({ ...prev, [exerciseId]: true }));
     try {
       await unhideExercise(exerciseId);
       // Remove from local state
-      setHiddenExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+      setHiddenExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
     } catch (error) {
       console.error('Error unhiding exercise:', error);
     } finally {
-      setLoading(prev => ({ ...prev, [exerciseId]: false }));
+      setLoading((prev) => ({ ...prev, [exerciseId]: false }));
     }
   };
 
@@ -114,7 +135,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                   Manage Hidden Exercises
                 </div>
                 <div className="text-blue-700">
-                  These are exercises you've manually hidden from suggestions. 
+                  These are exercises you've manually hidden from suggestions.
                   Unhide them to see them again in your workout suggestions.
                 </div>
                 {isBasic && (
@@ -131,7 +152,9 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
             <div className="text-center py-8 text-gray-500">
               <EyeOff className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-lg font-medium">No hidden exercises</p>
-              <p className="text-sm">Exercises you hide from suggestions will appear here</p>
+              <p className="text-sm">
+                Exercises you hide from suggestions will appear here
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -151,7 +174,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                             {exercise.name}
                           </strong>
                         </div>
-                        
+
                         {/* Icons and Badges Row */}
                         <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
                           {/* Icons Row */}
@@ -160,10 +183,10 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <img 
-                                      src={muscleIcon} 
-                                      alt={target} 
-                                      className="h-6 w-6 rounded-md border border-black" 
+                                    <img
+                                      src={muscleIcon}
+                                      alt={target}
+                                      className="h-6 w-6 rounded-md border border-black"
                                     />
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -176,10 +199,10 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <img 
-                                      src={equipmentIcon} 
-                                      alt={equipment} 
-                                      className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
+                                    <img
+                                      src={equipmentIcon}
+                                      alt={equipment}
+                                      className="h-6 w-6 p-0.5 bg-equipment rounded-md"
                                     />
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -189,7 +212,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                               </TooltipProvider>
                             )}
                           </div>
-                          
+
                           {/* Target Badge */}
                           <div className="flex-shrink-0">
                             <Badge variant="outline" className="text-sm">
@@ -199,7 +222,7 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Unhide Button */}
                       <div className="flex-shrink-0 ml-4">
                         <TooltipProvider>
@@ -238,4 +261,4 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
       </DialogContent>
     </Dialog>
   );
-} 
+}

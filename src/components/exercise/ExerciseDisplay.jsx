@@ -1,12 +1,27 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Eye, EyeOff, Target, Zap, Pin, PinOff, Clock, TrendingUp, RefreshCw } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  Clock,
+  Eye,
+  EyeOff,
+  Pin,
+  PinOff,
+  RefreshCw,
+  Target,
+  TrendingUp,
+  Zap,
+} from 'lucide-react';
+import React from 'react';
+import useExerciseLogStore from '../../store/useExerciseLogStore';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import ExerciseTooltip from './ExerciseTooltip';
-import useExerciseLogStore from '../../store/useExerciseLogStore';
 
 /**
  * ExerciseDisplay - unified component for rendering an exercise in any context (pinned, suggestion, detailed, etc.)
@@ -36,11 +51,11 @@ import useExerciseLogStore from '../../store/useExerciseLogStore';
  *   - onRefresh: function
  *   - userProfile: object
  */
-export default function ExerciseDisplay({ 
-  exercise, 
+export default function ExerciseDisplay({
+  exercise,
   variant = 'row',
-  showXP = true, 
-  showPinIcon = false, 
+  showXP = true,
+  showPinIcon = false,
   showUnhideButton = false,
   showSecondaryMuscles = false,
   showBodyPart = false,
@@ -53,18 +68,28 @@ export default function ExerciseDisplay({
   onUnhide,
   onClick,
   loading = false,
-  className = "",
-  nameClassName = "text-lg",
+  className = '',
+  nameClassName = 'text-lg',
   children,
   showHideButton = false,
   onHide,
   showRefreshButton = false,
   onRefresh,
-  userProfile = undefined
+  userProfile = undefined,
 }) {
   if (!exercise) return null;
 
-  const { id, name, target, equipment, difficulty, xp, secondaryMuscles, bodyPart, category } = exercise;
+  const {
+    id,
+    name,
+    target,
+    equipment,
+    difficulty,
+    xp,
+    secondaryMuscles,
+    bodyPart,
+    category,
+  } = exercise;
   const equipmentIcon = getEquipmentIcon(equipment);
   const muscleIcon = getMuscleIcon(target);
 
@@ -98,7 +123,10 @@ export default function ExerciseDisplay({
 
   // Utility: Convert string to Title Case (capitalize first letter of each word, leave numbers/symbols as-is)
   function toTitleCase(str) {
-    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1));
+    return str.replace(
+      /\w\S*/g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
+    );
   }
 
   // Layout selection
@@ -108,23 +136,50 @@ export default function ExerciseDisplay({
         <div className="flex flex-col gap-2">
           <strong className="block text-lg">{toTitleCase(name)}</strong>
           <div className="flex flex-row items-center gap-2">
-            {muscleIcon && <img src={muscleIcon} alt={target} className="h-6 w-6 rounded-md border border-black" />}
-            {equipmentIcon && <img src={equipmentIcon} alt={equipment} className="h-6 w-6 p-0.5 bg-equipment rounded-md" />}
-            {showXP && xp !== undefined && <Badge variant="secondary" className="text-sm"><Zap className="h-4 w-4 mr-1" />{xp} XP</Badge>}
+            {muscleIcon && (
+              <img
+                src={muscleIcon}
+                alt={target}
+                className="h-6 w-6 rounded-md border border-black"
+              />
+            )}
+            {equipmentIcon && (
+              <img
+                src={equipmentIcon}
+                alt={equipment}
+                className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+              />
+            )}
+            {showXP && xp !== undefined && (
+              <Badge variant="secondary" className="text-sm">
+                <Zap className="h-4 w-4 mr-1" />
+                {xp} XP
+              </Badge>
+            )}
             {bonusXP !== undefined && (
               <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
                 <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
               </Badge>
             )}
             {laggingType && (
-              <Badge variant="outline" className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}>
+              <Badge
+                variant="outline"
+                className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
+              >
                 {getLaggingTypeIcon(laggingType)}
-                <span className="ml-1 capitalize">{laggingType.replace(/([A-Z])/g, ' $1')}</span>
+                <span className="ml-1 capitalize">
+                  {laggingType.replace(/([A-Z])/g, ' $1')}
+                </span>
               </Badge>
             )}
           </div>
           {showSecondaryMuscles && secondaryMuscles && (
-            <div className="text-sm text-gray-600">Secondary: {Array.isArray(secondaryMuscles) ? secondaryMuscles.join(', ') : secondaryMuscles}</div>
+            <div className="text-sm text-gray-600">
+              Secondary:{' '}
+              {Array.isArray(secondaryMuscles)
+                ? secondaryMuscles.join(', ')
+                : secondaryMuscles}
+            </div>
           )}
           {showBodyPart && bodyPart && (
             <div className="text-sm text-gray-600">Body Part: {bodyPart}</div>
@@ -143,32 +198,46 @@ export default function ExerciseDisplay({
     <div className="flex items-center justify-between">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
         {/* Exercise Name */}
-        <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType} userProfile={userProfile} workoutLog={workoutLog}>
+        <ExerciseTooltip
+          exercise={exercise}
+          bonusXP={bonusXP}
+          laggingType={laggingType}
+          userProfile={userProfile}
+          workoutLog={workoutLog}
+        >
           <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
-            <strong className={`block mr-2 ${nameClassName}`}>{toTitleCase(name)}</strong>
+            <strong className={`block mr-2 ${nameClassName}`}>
+              {toTitleCase(name)}
+            </strong>
             <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
               {muscleIcon && (
-                <img 
-                  src={muscleIcon} 
-                  alt={target} 
-                  className="h-6 w-6 rounded-md border border-black" 
+                <img
+                  src={muscleIcon}
+                  alt={target}
+                  className="h-6 w-6 rounded-md border border-black"
                 />
               )}
               {equipmentIcon && (
-                <img 
-                  src={equipmentIcon} 
-                  alt={equipment} 
-                  className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
+                <img
+                  src={equipmentIcon}
+                  alt={equipment}
+                  className="h-6 w-6 p-0.5 bg-equipment rounded-md"
                 />
               )}
               {bonusXP !== undefined && (
                 <Zap className="h-4 w-4 text-green-600" title="XP" />
               )}
               {laggingType === 'neverTrained' && (
-                <Target className="h-4 w-4 text-red-500" title="Never Trained" />
+                <Target
+                  className="h-4 w-4 text-red-500"
+                  title="Never Trained"
+                />
               )}
               {laggingType === 'underTrained' && (
-                <TrendingUp className="h-4 w-4 text-orange-500" title="Under Trained" />
+                <TrendingUp
+                  className="h-4 w-4 text-orange-500"
+                  title="Under Trained"
+                />
               )}
               {laggingType === 'neglected' && (
                 <Clock className="h-4 w-4 text-yellow-500" title="Neglected" />
@@ -284,14 +353,16 @@ export default function ExerciseDisplay({
     </div>
   );
 
-  const cardProps = onClick ? {
-    role: 'button',
-    tabIndex: 0,
-    onClick: (e) => {
-      if (onClick) onClick(e);
-    },
-    className: `cursor-pointer ${className}`
-  } : { className };
+  const cardProps = onClick
+    ? {
+        role: 'button',
+        tabIndex: 0,
+        onClick: (e) => {
+          if (onClick) onClick(e);
+        },
+        className: `cursor-pointer ${className}`,
+      }
+    : { className };
 
   // Optionally wrap in a tooltip for reason
   if (showTooltip) {
@@ -303,4 +374,4 @@ export default function ExerciseDisplay({
   }
 
   return <Card {...cardProps}>{content}</Card>;
-} 
+}

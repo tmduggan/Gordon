@@ -1,5 +1,5 @@
-import React from 'react';
 import { Crown, User } from 'lucide-react';
+import React from 'react';
 
 export default function SubscriptionStatus({ status }) {
   let label, color, Icon;
@@ -22,9 +22,11 @@ export default function SubscriptionStatus({ status }) {
       break;
   }
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${color}`}
+    >
       <Icon className="h-3 w-3 mr-1" />
       {label}
     </span>
   );
-} 
+}

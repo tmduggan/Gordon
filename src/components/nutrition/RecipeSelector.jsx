@@ -1,16 +1,27 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ChefHat, Trash2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import React from 'react';
 
-export default function RecipeSelector({ recipes = [], onSelectRecipe, onDeleteRecipe }) {
+export default function RecipeSelector({
+  recipes = [],
+  onSelectRecipe,
+  onDeleteRecipe,
+}) {
   if (recipes.length === 0) {
     return (
       <Card className="p-6 text-center">
         <ChefHat className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No Recipes Yet</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          No Recipes Yet
+        </h3>
         <p className="text-gray-500">
           Create your first recipe to quickly log your favorite meals!
         </p>
@@ -24,11 +35,11 @@ export default function RecipeSelector({ recipes = [], onSelectRecipe, onDeleteR
         <ChefHat className="h-5 w-5 text-orange-500" />
         <h3 className="text-lg font-medium">Your Recipes</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {recipes.map((recipe) => (
-          <Card 
-            key={recipe.id} 
+          <Card
+            key={recipe.id}
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200 relative group"
             onClick={() => onSelectRecipe(recipe)}
           >
@@ -52,32 +63,48 @@ export default function RecipeSelector({ recipes = [], onSelectRecipe, onDeleteR
                 )}
               </div>
             </CardHeader>
-            
+
             <CardContent className="pt-0">
               <div className="space-y-2">
                 {/* Macro Summary */}
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   <div className="text-gray-600">
-                    <span className="font-medium">{Math.round(recipe.totalMacros.calories)}</span> cal
+                    <span className="font-medium">
+                      {Math.round(recipe.totalMacros.calories)}
+                    </span>{' '}
+                    cal
                   </div>
                   <div className="text-gray-600">
-                    <span className="font-medium">{Math.round(recipe.totalMacros.protein)}g</span> protein
+                    <span className="font-medium">
+                      {Math.round(recipe.totalMacros.protein)}g
+                    </span>{' '}
+                    protein
                   </div>
                   <div className="text-gray-600">
-                    <span className="font-medium">{Math.round(recipe.totalMacros.carbs)}g</span> carbs
+                    <span className="font-medium">
+                      {Math.round(recipe.totalMacros.carbs)}g
+                    </span>{' '}
+                    carbs
                   </div>
                   <div className="text-gray-600">
-                    <span className="font-medium">{Math.round(recipe.totalMacros.fat)}g</span> fat
+                    <span className="font-medium">
+                      {Math.round(recipe.totalMacros.fat)}g
+                    </span>{' '}
+                    fat
                   </div>
                 </div>
-                
+
                 {/* Ingredients Preview */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="text-xs text-gray-500 truncate">
-                        {recipe.items.slice(0, 3).map(item => item.name).join(', ')}
-                        {recipe.items.length > 3 && ` +${recipe.items.length - 3} more`}
+                        {recipe.items
+                          .slice(0, 3)
+                          .map((item) => item.name)
+                          .join(', ')}
+                        {recipe.items.length > 3 &&
+                          ` +${recipe.items.length - 3} more`}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
@@ -92,7 +119,7 @@ export default function RecipeSelector({ recipes = [], onSelectRecipe, onDeleteR
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                
+
                 {/* Recipe Badge */}
                 <Badge variant="outline" className="text-xs">
                   <ChefHat className="h-3 w-3 mr-1" />
@@ -105,4 +132,4 @@ export default function RecipeSelector({ recipes = [], onSelectRecipe, onDeleteR
       </div>
     </div>
   );
-} 
+}

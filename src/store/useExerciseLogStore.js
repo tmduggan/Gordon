@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { create } from 'zustand';
 import { db } from '../firebase';
 import useAuthStore from './useAuthStore';
 
@@ -15,7 +15,7 @@ const useExerciseLogStore = create((set, get) => ({
       const logsRef = collection(db, 'exerciseLogs');
       const q = query(logsRef, where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const logs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       set({ logs, loading: false });
     } catch (error) {
       console.error('Error fetching exercise logs:', error);
@@ -23,7 +23,7 @@ const useExerciseLogStore = create((set, get) => ({
     }
   },
 
-  clearLogs: () => set({ logs: [] })
+  clearLogs: () => set({ logs: [] }),
 }));
 
-export default useExerciseLogStore; 
+export default useExerciseLogStore;

@@ -1,30 +1,38 @@
-import React, { useState, useEffect } from "react";
-import useAuthStore from "./store/useAuthStore";
-import Auth from "./Auth";
-import ProfileMenu from "@/components/profile/ProfileMenu";
-import MainPage from "./pages/MainPage";
-import ExercisePage from "./pages/ExercisePage";
-import FoodPage from "./pages/FoodPage";
-import PaymentSuccessPage from "./pages/PaymentSuccessPage";
-import PaymentCancelPage from "./pages/PaymentCancelPage";
-import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/toaster";
+import ProfileMenu from '@/components/profile/ProfileMenu';
+import { Button } from '@/components/ui/button';
+import { Toaster } from '@/components/ui/toaster';
+import React, { useEffect, useState } from 'react';
+import Auth from './Auth';
+import ExercisePage from './pages/ExercisePage';
+import FoodPage from './pages/FoodPage';
+import MainPage from './pages/MainPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import useAuthStore from './store/useAuthStore';
 
 // Component Imports
 
 // Add global debug functions for development
 if (process.env.NODE_ENV === 'development') {
   window.debugUserProfile = () => {
-    const { user, userProfile, isAdmin, isPremium, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore.getState();
-    
+    const {
+      user,
+      userProfile,
+      isAdmin,
+      isPremium,
+      toggleSubscriptionStatus,
+      ensureSubscriptionField,
+    } = useAuthStore.getState();
+
     return { user, userProfile, isAdmin: isAdmin(), isPremium: isPremium() };
   };
-  
+
   window.fixUserProfile = async () => {
-    const { ensureSubscriptionField, toggleSubscriptionStatus } = useAuthStore.getState();
+    const { ensureSubscriptionField, toggleSubscriptionStatus } =
+      useAuthStore.getState();
     await ensureSubscriptionField();
   };
-  
+
   window.toggleUserStatus = async () => {
     const { toggleSubscriptionStatus } = useAuthStore.getState();
     await toggleSubscriptionStatus();
@@ -44,13 +52,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('exercise');
   const [theme, setTheme] = useState('theme-exercise');
   const [paymentStatus, setPaymentStatus] = useState(null);
-  
+
   // Check for payment result URLs
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
     const paymentResult = urlParams.get('payment_result');
-    
+
     if (sessionId) {
       setPaymentStatus('success');
     } else if (paymentResult === 'cancel') {
@@ -64,13 +72,19 @@ export default function App() {
     if (activeTab === 'nutrition') {
       setTheme('theme-nutrition');
       favicon.href = '/nutrition-favicon.png';
-        } else {
+    } else {
       setTheme('theme-exercise');
       favicon.href = '/exercise-favicon.png';
     }
   }, [activeTab]);
 
-  const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
+  const defaultGoals = {
+    calories: 2300,
+    fat: 65,
+    carbs: 280,
+    protein: 180,
+    fiber: 32,
+  };
 
   // --- Render Logic ---
   if (loading) {
@@ -84,7 +98,7 @@ export default function App() {
     );
   }
 
-    if (!user) {
+  if (!user) {
     return <Auth />;
   }
 
@@ -100,33 +114,25 @@ export default function App() {
   const Navigation = () => (
     <div className="flex items-center space-x-3">
       <Button
-        variant={activeTab === "exercise" ? "default" : "outline"}
-        onClick={() => setActiveTab("exercise")}
+        variant={activeTab === 'exercise' ? 'default' : 'outline'}
+        onClick={() => setActiveTab('exercise')}
         size="icon"
         className="h-12 w-12"
       >
-        <img 
-          src="/exercise-favicon.png" 
-          alt="Exercise" 
-          className="h-7 w-7"
-        />
+        <img src="/exercise-favicon.png" alt="Exercise" className="h-7 w-7" />
       </Button>
       <Button
-        variant={activeTab === "nutrition" ? "default" : "outline"}
-        onClick={() => setActiveTab("nutrition")}
+        variant={activeTab === 'nutrition' ? 'default' : 'outline'}
+        onClick={() => setActiveTab('nutrition')}
         size="icon"
         className="h-12 w-12"
       >
-        <img 
-          src="/nutrition-favicon.png" 
-          alt="Nutrition" 
-          className="h-7 w-7"
-        />
+        <img src="/nutrition-favicon.png" alt="Nutrition" className="h-7 w-7" />
       </Button>
-          </div>
+    </div>
   );
 
-                              return (
+  return (
     <div className={`min-h-screen ${theme}`}>
       <header className="bg-card shadow-md relative">
         <div className="container mx-auto px-4 py-2 flex justify-center items-center">
@@ -134,7 +140,7 @@ export default function App() {
           <div className="absolute top-2 right-4">
             <ProfileMenu />
           </div>
-                  </div>
+        </div>
       </header>
       <main className="container mx-auto p-4">
         {activeTab === 'exercise' && <ExercisePage />}

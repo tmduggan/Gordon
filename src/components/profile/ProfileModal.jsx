@@ -1,29 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Medal, Apple, Dumbbell, User, Bug, Target, Crown, Settings, RefreshCw, Shield } from 'lucide-react';
-import LevelDisplay from '../gamification/LevelDisplay';
-import useAuthStore from '../../store/useAuthStore';
-import { Button } from '@/components/ui/button';
-import useLibrary from '../../hooks/useLibrary';
-import useHistory from '../../hooks/useHistory';
-import { validateUserXP } from '../../services/gamification/levelService';
-import { useToast } from '../../hooks/useToast';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Apple,
+  Bug,
+  Crown,
+  Dumbbell,
+  Medal,
+  RefreshCw,
+  Settings,
+  Shield,
+  Target,
+  User,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import useHistory from '../../hooks/useHistory';
+import useLibrary from '../../hooks/useLibrary';
+import { useToast } from '../../hooks/useToast';
+import { validateUserXP } from '../../services/gamification/levelService';
+import useAuthStore from '../../store/useAuthStore';
 import { ensureAvailableEquipment } from '../../utils/dataUtils';
-import DebugControls from './DebugControls';
-import AdminControlsModal from './AdminControlsModal';
-import NutritionGoals from './NutritionGoals';
-import EquipmentModal from './EquipmentModal';
-import SubscriptionStatus from './SubscriptionStatus';
+import LevelDisplay from '../gamification/LevelDisplay';
 import SubscriptionManagement from '../payment/SubscriptionManagement';
-import ProfileInfoForm from './ProfileInfoForm';
-import NutritionGoalsForm from './NutritionGoalsForm';
 import AnimatedModal from '../ui/AnimatedModal';
+import AdminControlsModal from './AdminControlsModal';
+import DebugControls from './DebugControls';
+import EquipmentModal from './EquipmentModal';
+import NutritionGoals from './NutritionGoals';
+import NutritionGoalsForm from './NutritionGoalsForm';
+import ProfileInfoForm from './ProfileInfoForm';
+import SubscriptionStatus from './SubscriptionStatus';
 
-const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 };
+const DEFAULT_GOALS = {
+  calories: 2000,
+  protein: 150,
+  carbs: 200,
+  fat: 60,
+  fiber: 25,
+};
 
 // Define equipment options for each category
 const bodyweightOptions = [
@@ -60,35 +83,58 @@ const cardioOptions = [
 ];
 
 export default function ProfileModal({ open, onOpenChange }) {
-  const { user, userProfile, saveUserProfile, fixXPDiscrepancy, recalculateAndSyncXP, migrateMuscleScores, isAdmin, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
+  const {
+    user,
+    userProfile,
+    saveUserProfile,
+    fixXPDiscrepancy,
+    recalculateAndSyncXP,
+    migrateMuscleScores,
+    isAdmin,
+    toggleSubscriptionStatus,
+    ensureSubscriptionField,
+  } = useAuthStore();
   const { toast } = useToast();
   const [tab, setTab] = useState('achievements');
   const [goals, setGoals] = useState(userProfile?.goals || DEFAULT_GOALS);
   const exerciseLibrary = useLibrary('exercise');
   const exerciseHistory = useHistory('exercise', exerciseLibrary.items);
   const foodHistory = useHistory('food');
-  const [availableEquipment, setAvailableEquipment] = useState(ensureAvailableEquipment(userProfile?.availableEquipment));
+  const [availableEquipment, setAvailableEquipment] = useState(
+    ensureAvailableEquipment(userProfile?.availableEquipment)
+  );
   const [profile, setProfile] = useState({
     name: userProfile?.name || user?.displayName || '',
     email: user?.email || '',
-    timeZone: userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    timeZone:
+      userProfile?.timeZone ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+      '',
   });
   const [xpValidation, setXpValidation] = useState(null);
   const [equipmentCategory, setEquipmentCategory] = useState('bodyweight');
-  const [selectedBodyweight, setSelectedBodyweight] = useState(availableEquipment.bodyweight || []);
+  const [selectedBodyweight, setSelectedBodyweight] = useState(
+    availableEquipment.bodyweight || []
+  );
   const [selectedGym, setSelectedGym] = useState(availableEquipment.gym || []);
-  const [selectedCardio, setSelectedCardio] = useState(availableEquipment.cardio || []);
+  const [selectedCardio, setSelectedCardio] = useState(
+    availableEquipment.cardio || []
+  );
 
   // Get all unique equipment options from the exercise library
   const equipmentOptions = React.useMemo(() => {
     if (!exerciseLibrary.items) return [];
-    const all = exerciseLibrary.items.map(e => e.equipment).filter(Boolean);
+    const all = exerciseLibrary.items.map((e) => e.equipment).filter(Boolean);
     return Array.from(new Set(all)).sort();
   }, [exerciseLibrary.items]);
 
   // Initialize availableEquipment to all options if empty
   useEffect(() => {
-    if (open && equipmentOptions.length > 0 && (!availableEquipment || availableEquipment.length === 0)) {
+    if (
+      open &&
+      equipmentOptions.length > 0 &&
+      (!availableEquipment || availableEquipment.length === 0)
+    ) {
       setAvailableEquipment(equipmentOptions);
     }
     // eslint-disable-next-line
@@ -117,7 +163,10 @@ export default function ProfileModal({ open, onOpenChange }) {
       cardio: selectedCardio,
     });
     setAvailableEquipment(newAvailableEquipment);
-    saveUserProfile({ ...userProfile, availableEquipment: newAvailableEquipment });
+    saveUserProfile({
+      ...userProfile,
+      availableEquipment: newAvailableEquipment,
+    });
     onOpenChange(false);
   };
   const handleSaveProfile = () => {
@@ -128,7 +177,7 @@ export default function ProfileModal({ open, onOpenChange }) {
   // Checkbox handler
   const handleCheckboxChange = (equipment) => {
     if (availableEquipment.includes(equipment)) {
-      setAvailableEquipment(availableEquipment.filter(e => e !== equipment));
+      setAvailableEquipment(availableEquipment.filter((e) => e !== equipment));
     } else {
       setAvailableEquipment([...availableEquipment, equipment]);
     }
@@ -136,7 +185,11 @@ export default function ProfileModal({ open, onOpenChange }) {
 
   // XP validation and fix functions
   const validateXP = () => {
-    const validation = validateUserXP(userProfile, exerciseHistory.logs, foodHistory.logs);
+    const validation = validateUserXP(
+      userProfile,
+      exerciseHistory.logs,
+      foodHistory.logs
+    );
     setXpValidation(validation);
   };
 
@@ -156,15 +209,16 @@ export default function ProfileModal({ open, onOpenChange }) {
     try {
       await migrateMuscleScores(exerciseHistory.logs, exerciseLibrary.items);
       toast({
-        title: "Muscle scores updated!",
-        description: "Your muscle scores have been migrated to the new time-based format."
+        title: 'Muscle scores updated!',
+        description:
+          'Your muscle scores have been migrated to the new time-based format.',
       });
     } catch (error) {
-      console.error("Error migrating muscle scores:", error);
+      console.error('Error migrating muscle scores:', error);
       toast({
-        title: "Migration failed",
-        description: "There was an error updating your muscle scores.",
-        variant: "destructive"
+        title: 'Migration failed',
+        description: 'There was an error updating your muscle scores.',
+        variant: 'destructive',
       });
     }
   };
@@ -175,7 +229,7 @@ export default function ProfileModal({ open, onOpenChange }) {
   // Replace the Goliath Tab content with category-based equipment selection
   const handleBodyweightCheckboxChange = (option) => {
     if (selectedBodyweight.includes(option)) {
-      setSelectedBodyweight(selectedBodyweight.filter(e => e !== option));
+      setSelectedBodyweight(selectedBodyweight.filter((e) => e !== option));
     } else {
       setSelectedBodyweight([...selectedBodyweight, option]);
     }
@@ -183,7 +237,7 @@ export default function ProfileModal({ open, onOpenChange }) {
 
   const handleGymCheckboxChange = (option) => {
     if (selectedGym.includes(option)) {
-      setSelectedGym(selectedGym.filter(e => e !== option));
+      setSelectedGym(selectedGym.filter((e) => e !== option));
     } else {
       setSelectedGym([...selectedGym, option]);
     }
@@ -191,7 +245,7 @@ export default function ProfileModal({ open, onOpenChange }) {
 
   const handleCardioCheckboxChange = (option) => {
     if (selectedCardio.includes(option)) {
-      setSelectedCardio(selectedCardio.filter(e => e !== option));
+      setSelectedCardio(selectedCardio.filter((e) => e !== option));
     } else {
       setSelectedCardio([...selectedCardio, option]);
     }
@@ -208,14 +262,14 @@ export default function ProfileModal({ open, onOpenChange }) {
     try {
       await toggleSubscriptionStatus();
       toast({
-        title: "Subscription Status Updated",
-        description: "Your subscription status has been changed.",
+        title: 'Subscription Status Updated',
+        description: 'Your subscription status has been changed.',
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update subscription status.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update subscription status.',
+        variant: 'destructive',
       });
     }
   };
@@ -224,14 +278,14 @@ export default function ProfileModal({ open, onOpenChange }) {
     try {
       await ensureSubscriptionField();
       toast({
-        title: "Subscription Field Ensured",
-        description: "Subscription field has been created/verified.",
+        title: 'Subscription Field Ensured',
+        description: 'Subscription field has been created/verified.',
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to ensure subscription field.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to ensure subscription field.',
+        variant: 'destructive',
       });
     }
   };
@@ -240,22 +294,38 @@ export default function ProfileModal({ open, onOpenChange }) {
     const status = userProfile?.subscription?.status || 'basic';
     switch (status) {
       case 'admin':
-        return { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Crown };
+        return {
+          label: 'Admin',
+          color: 'bg-purple-100 text-purple-800 border-purple-200',
+          icon: Crown,
+        };
       case 'premium':
-        return { label: 'Premium', color: 'bg-status-success text-status-success border-status-success', icon: Crown };
+        return {
+          label: 'Premium',
+          color: 'bg-status-success text-status-success border-status-success',
+          icon: Crown,
+        };
       case 'basic':
       default:
-        return { label: 'Basic', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: User };
+        return {
+          label: 'Basic',
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          icon: User,
+        };
     }
   };
 
-  const { icon: StatusIcon, label: statusLabel, color: statusColor } = getSubscriptionStatus();
+  const {
+    icon: StatusIcon,
+    label: statusLabel,
+    color: statusColor,
+  } = getSubscriptionStatus();
 
   const handleResetAIFoodUsage = async () => {
     const today = new Date().toISOString().split('T')[0];
     const updatedProfile = {
       ...userProfile,
-      aiFoodSuggestionUsage: { date: today, count: 0 }
+      aiFoodSuggestionUsage: { date: today, count: 0 },
     };
     await saveUserProfile(updatedProfile);
   };
@@ -271,13 +341,22 @@ export default function ProfileModal({ open, onOpenChange }) {
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="w-full mt-2">
           <TabsList className="grid grid-cols-3 gap-2 mb-4 w-full">
-            <TabsTrigger value="achievements" className="flex items-center min-w-0 flex-1">
+            <TabsTrigger
+              value="achievements"
+              className="flex items-center min-w-0 flex-1"
+            >
               <Medal className="inline-block mr-1" /> Achievements
             </TabsTrigger>
-            <TabsTrigger value="goliath" className="flex items-center min-w-0 flex-1">
+            <TabsTrigger
+              value="goliath"
+              className="flex items-center min-w-0 flex-1"
+            >
               <Dumbbell className="inline-block mr-1" /> Goliath
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center min-w-0 flex-1">
+            <TabsTrigger
+              value="profile"
+              className="flex items-center min-w-0 flex-1"
+            >
               <User className="inline-block mr-1" /> Profile
             </TabsTrigger>
           </TabsList>
@@ -287,7 +366,11 @@ export default function ProfileModal({ open, onOpenChange }) {
             <LevelDisplay
               totalXP={userProfile?.totalXP || 0}
               workoutLogs={userProfile?.workoutLogs || []}
-              accountCreationDate={user?.metadata?.creationTime ? new Date(user.metadata.creationTime) : undefined}
+              accountCreationDate={
+                user?.metadata?.creationTime
+                  ? new Date(user.metadata.creationTime)
+                  : undefined
+              }
               className="mb-4"
               userProfile={userProfile}
             />
@@ -328,21 +411,40 @@ export default function ProfileModal({ open, onOpenChange }) {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><strong>Calories:</strong> {currentGoals.calories}</div>
-                    <div><strong>Protein:</strong> {currentGoals.protein}g</div>
-                    <div><strong>Carbs:</strong> {currentGoals.carbs}g</div>
-                    <div><strong>Fat:</strong> {currentGoals.fat}g</div>
-                    <div><strong>Fiber:</strong> {currentGoals.fiber}g</div>
+                    <div>
+                      <strong>Calories:</strong> {currentGoals.calories}
+                    </div>
+                    <div>
+                      <strong>Protein:</strong> {currentGoals.protein}g
+                    </div>
+                    <div>
+                      <strong>Carbs:</strong> {currentGoals.carbs}g
+                    </div>
+                    <div>
+                      <strong>Fat:</strong> {currentGoals.fat}g
+                    </div>
+                    <div>
+                      <strong>Fiber:</strong> {currentGoals.fiber}g
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">To change your goals, update your activity level or body stats above.</div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    To change your goals, update your activity level or body
+                    stats above.
+                  </div>
                 </CardContent>
               </Card>
-              <SubscriptionManagement adminDetails={isAdminUser ? {
-                status: userProfile?.subscription?.status,
-                plan: userProfile?.subscription?.plan,
-                features: userProfile?.subscription?.features,
-                expiresAt: userProfile?.subscription?.expiresAt,
-              } : null} />
+              <SubscriptionManagement
+                adminDetails={
+                  isAdminUser
+                    ? {
+                        status: userProfile?.subscription?.status,
+                        plan: userProfile?.subscription?.plan,
+                        features: userProfile?.subscription?.features,
+                        expiresAt: userProfile?.subscription?.expiresAt,
+                      }
+                    : null
+                }
+              />
             </div>
           </TabsContent>
         </Tabs>
@@ -354,4 +456,4 @@ export default function ProfileModal({ open, onOpenChange }) {
       </div>
     </AnimatedModal>
   );
-} 
+}

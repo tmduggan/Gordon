@@ -1,26 +1,45 @@
 import React from 'react';
 
-const MuscleTooltip = ({ hovered, mousePos, rawMuscleScores, extraScores, getContributingMuscles, getTooltipStyle }) => {
+const MuscleTooltip = ({
+  hovered,
+  mousePos,
+  rawMuscleScores,
+  extraScores,
+  getContributingMuscles,
+  getTooltipStyle,
+}) => {
   if (!hovered) return null;
   // Calculate total training percentage
-  const score = rawMuscleScores && rawMuscleScores[hovered] !== undefined ? rawMuscleScores[hovered] : 0;
+  const score =
+    rawMuscleScores && rawMuscleScores[hovered] !== undefined
+      ? rawMuscleScores[hovered]
+      : 0;
   const scorePct = Math.round((score || 0) * 100);
 
   // Get rep counts
-  const todayReps = extraScores && extraScores.svg3DayScores && extraScores.svg3DayScores[hovered] !== undefined
-    ? Math.round(rawMuscleScores[hovered] * 60)
-    : 0;
-  const threeDayReps = extraScores && extraScores.svg3DayScores && extraScores.svg3DayScores[hovered] !== undefined
-    ? Math.round(extraScores.svg3DayScores[hovered])
-    : 0;
-  const sevenDayReps = extraScores && extraScores.svg7DayScores && extraScores.svg7DayScores[hovered] !== undefined
-    ? Math.round(extraScores.svg7DayScores[hovered])
-    : 0;
+  const todayReps =
+    extraScores &&
+    extraScores.svg3DayScores &&
+    extraScores.svg3DayScores[hovered] !== undefined
+      ? Math.round(rawMuscleScores[hovered] * 60)
+      : 0;
+  const threeDayReps =
+    extraScores &&
+    extraScores.svg3DayScores &&
+    extraScores.svg3DayScores[hovered] !== undefined
+      ? Math.round(extraScores.svg3DayScores[hovered])
+      : 0;
+  const sevenDayReps =
+    extraScores &&
+    extraScores.svg7DayScores &&
+    extraScores.svg7DayScores[hovered] !== undefined
+      ? Math.round(extraScores.svg7DayScores[hovered])
+      : 0;
 
   // Calculate percent effect for each
-  const todayPct = Math.round(Math.min(todayReps, 60) / 60 * 100);
-  const threeDayPct = Math.round(Math.min(threeDayReps, 120) / 120 * 50);
-  const sevenDayPct = Math.round(Math.min(sevenDayReps, 500) / 500 * 10);
+  const todayPct = Math.round((Math.min(todayReps, 60) / 60) * 100);
+  const threeDayPct = Math.round((Math.min(threeDayReps, 120) / 120) * 50);
+  const sevenDayPct = Math.round((Math.min(sevenDayReps, 500) / 500) * 10);
 
   return (
     <div
@@ -28,20 +47,25 @@ const MuscleTooltip = ({ hovered, mousePos, rawMuscleScores, extraScores, getCon
       style={getTooltipStyle()}
     >
       <div className="font-semibold capitalize mb-1">
-        {hovered.replace(/_/g, ' ')}: <span className="text-yellow-300">{scorePct}% Trained</span>
+        {hovered.replace(/_/g, ' ')}:{' '}
+        <span className="text-yellow-300">{scorePct}% Trained</span>
       </div>
-      <div>Today: {todayReps} ({todayPct}%)</div>
-      <div>3-Day: {threeDayReps} ({threeDayPct}%)</div>
-      <div>7-Day: {sevenDayReps} ({sevenDayPct}%)</div>
+      <div>
+        Today: {todayReps} ({todayPct}%)
+      </div>
+      <div>
+        3-Day: {threeDayReps} ({threeDayPct}%)
+      </div>
+      <div>
+        7-Day: {sevenDayReps} ({sevenDayPct}%)
+      </div>
       <div className="text-xs text-gray-300 mt-1">
         {getContributingMuscles(hovered).length > 0 && (
-          <div>
-            Includes: {getContributingMuscles(hovered).join(', ')}
-          </div>
+          <div>Includes: {getContributingMuscles(hovered).join(', ')}</div>
         )}
       </div>
     </div>
   );
 };
 
-export default MuscleTooltip; 
+export default MuscleTooltip;

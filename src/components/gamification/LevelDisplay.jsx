@@ -1,21 +1,33 @@
-import React, { useRef, useEffect, useState } from 'react';
+import AnimatedProgressBar from '@/components/ui/AnimatedProgressBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Trophy, Flame, Calendar, TrendingUp } from 'lucide-react';
-import { calculateLevelFromXP, calculateStreakBonuses, getLevelInfo } from '../../services/gamification/levelService';
-import LevelTooltip from './LevelTooltip';
 import {
-  getWeeklyStrengthReps,
-  getWeeklyCardioMinutes,
-  getMilestoneProgress,
-  STRENGTH_REP_MILESTONES,
-  CARDIO_MIN_MILESTONES,
-  getPrestigeMilestoneProgress
-} from '../../utils/dataUtils';
+  Tooltip as ShadTooltip,
+  TooltipContent as ShadTooltipContent,
+  TooltipProvider as ShadTooltipProvider,
+  TooltipTrigger as ShadTooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Calendar, Flame, TrendingUp, Trophy } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  calculateLevelFromXP,
+  calculateStreakBonuses,
+  getLevelInfo,
+} from '../../services/gamification/levelService';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
-import { Tooltip as ShadTooltip, TooltipContent as ShadTooltipContent, TooltipProvider as ShadTooltipProvider, TooltipTrigger as ShadTooltipTrigger } from '@/components/ui/tooltip';
-import AnimatedProgressBar from '@/components/ui/AnimatedProgressBar';
+import {
+  CARDIO_MIN_MILESTONES,
+  getMilestoneProgress,
+  getPrestigeMilestoneProgress,
+  getWeeklyCardioMinutes,
+  getWeeklyStrengthReps,
+  STRENGTH_REP_MILESTONES,
+} from '../../utils/dataUtils';
+import LevelTooltip from './LevelTooltip';
 
 // Helper for tier tooltip content
 function TierTooltip({ repProgress, cardioProgress }) {
@@ -30,10 +42,14 @@ function TierTooltip({ repProgress, cardioProgress }) {
     }
     return (
       <div className="flex flex-col gap-1 mt-2">
-        <div className="font-semibold text-xs text-gray-700 mb-1">{label} Tier Progress</div>
+        <div className="font-semibold text-xs text-gray-700 mb-1">
+          {label} Tier Progress
+        </div>
         <div className="text-xs text-gray-600">
-          Completed: {completed.length > 0 ? completed.join(', ') : 'Base'}<br />
-          Current: <b>{progress.displayTier}</b><br />
+          Completed: {completed.length > 0 ? completed.join(', ') : 'Base'}
+          <br />
+          Current: <b>{progress.displayTier}</b>
+          <br />
           Progress to next: {Math.round(progress.progress)}%
         </div>
       </div>
@@ -47,11 +63,17 @@ function TierTooltip({ repProgress, cardioProgress }) {
   );
 }
 
-export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate, className = "", userProfile }) {
+export default function LevelDisplay({
+  totalXP,
+  workoutLogs,
+  accountCreationDate,
+  className = '',
+  userProfile,
+}) {
   const levelInfo = calculateLevelFromXP(totalXP, accountCreationDate);
   const streakInfo = calculateStreakBonuses(workoutLogs);
   const levelDisplay = getLevelInfo(levelInfo.level);
-  
+
   // Determine if user is capped (basic and at or above level 5)
   const isBasicCapped = (userProfile) => {
     if (!userProfile) return false;
@@ -63,11 +85,14 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
 
   // Get weekly progress from global logs
   const { logs: workoutLogsGlobal } = useExerciseLogStore();
-  const logs = workoutLogs && workoutLogs.length > 0 ? workoutLogs : workoutLogsGlobal;
+  const logs =
+    workoutLogs && workoutLogs.length > 0 ? workoutLogs : workoutLogsGlobal;
 
   // --- DEBUG OUTPUT FOR STRENGTH REPS ---
-  const strengthLogs = logs.filter(l => Array.isArray(l.sets) && l.sets.length > 0);
-  const strengthSummary = strengthLogs.map(l => {
+  const strengthLogs = logs.filter(
+    (l) => Array.isArray(l.sets) && l.sets.length > 0
+  );
+  const strengthSummary = strengthLogs.map((l) => {
     const name = l.name || l.exerciseName || l.exerciseId;
     const reps = l.sets.reduce((sum, set) => {
       const r = parseInt(set.reps);
@@ -75,21 +100,37 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
     }, 0);
     return { name, reps };
   });
-  const totalStrengthReps = strengthSummary.reduce((sum, s) => sum + (isNaN(s.reps) ? 0 : s.reps), 0);
+  const totalStrengthReps = strengthSummary.reduce(
+    (sum, s) => sum + (isNaN(s.reps) ? 0 : s.reps),
+    0
+  );
 
   // --- DEBUG OUTPUT FOR CARDIO MINUTES ---
-  const cardioLogs = logs.filter(l => l.duration && (!l.sets || l.sets.length === 0));
-  const cardioSummary = cardioLogs.map(l => {
+  const cardioLogs = logs.filter(
+    (l) => l.duration && (!l.sets || l.sets.length === 0)
+  );
+  const cardioSummary = cardioLogs.map((l) => {
     const name = l.name || l.exerciseName || l.exerciseId;
     const mins = parseInt(l.duration);
     return { name, mins: isNaN(mins) ? 0 : mins };
   });
-  const totalCardioMins = cardioSummary.reduce((sum, c) => sum + (isNaN(c.mins) ? 0 : c.mins), 0);
+  const totalCardioMins = cardioSummary.reduce(
+    (sum, c) => sum + (isNaN(c.mins) ? 0 : c.mins),
+    0
+  );
 
   const weeklyReps = getWeeklyStrengthReps(logs);
   const weeklyCardio = getWeeklyCardioMinutes(logs);
-  const repProgress = getPrestigeMilestoneProgress(weeklyReps, STRENGTH_REP_MILESTONES, 30);
-  const cardioProgress = getPrestigeMilestoneProgress(weeklyCardio, CARDIO_MIN_MILESTONES, 20);
+  const repProgress = getPrestigeMilestoneProgress(
+    weeklyReps,
+    STRENGTH_REP_MILESTONES,
+    30
+  );
+  const cardioProgress = getPrestigeMilestoneProgress(
+    weeklyCardio,
+    CARDIO_MIN_MILESTONES,
+    20
+  );
 
   // Cap and round numbers for display
   const safeInt = (n) => Math.min(999, Math.round(n || 0));
@@ -106,7 +147,7 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
   // Animate XP bar when value changes
   useEffect(() => {
     if (levelInfo.progress !== prevXP) {
-      setPrevXP(prev => prev); // keep old value for animation
+      setPrevXP((prev) => prev); // keep old value for animation
       const timeout = setTimeout(() => setPrevXP(levelInfo.progress), 1600); // 1s anim + buffer
       return () => clearTimeout(timeout);
     }
@@ -115,8 +156,11 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
   // Animate Strength bar when value changes
   useEffect(() => {
     if (repProgress.progress !== prevStrength) {
-      setPrevStrength(prev => prev);
-      const timeout = setTimeout(() => setPrevStrength(repProgress.progress), 1600);
+      setPrevStrength((prev) => prev);
+      const timeout = setTimeout(
+        () => setPrevStrength(repProgress.progress),
+        1600
+      );
       return () => clearTimeout(timeout);
     }
   }, [repProgress.progress]);
@@ -124,14 +168,19 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
   // Animate Cardio bar when value changes
   useEffect(() => {
     if (cardioProgress.progress !== prevCardio) {
-      setPrevCardio(prev => prev);
-      const timeout = setTimeout(() => setPrevCardio(cardioProgress.progress), 1600);
+      setPrevCardio((prev) => prev);
+      const timeout = setTimeout(
+        () => setPrevCardio(cardioProgress.progress),
+        1600
+      );
       return () => clearTimeout(timeout);
     }
   }, [cardioProgress.progress]);
 
   return (
-    <div className={`w-full bg-white rounded-xl shadow-lg px-8 py-6 flex flex-col items-center justify-center ${className}`}>
+    <div
+      className={`w-full bg-white rounded-xl shadow-lg px-8 py-6 flex flex-col items-center justify-center ${className}`}
+    >
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -142,21 +191,35 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                 </div>
                 <div className="flex flex-col flex-grow">
                   <div className="flex items-center w-full">
-                    <span className="font-semibold text-xl">Level {levelInfo.level}</span>
+                    <span className="font-semibold text-xl">
+                      Level {levelInfo.level}
+                    </span>
                     <span className="flex-grow" />
-                    <span className="text-green-600 font-bold text-2xl text-right">{totalXP.toLocaleString()}</span>
+                    <span className="text-green-600 font-bold text-2xl text-right">
+                      {totalXP.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-500 mt-1">
                     {isBasicCapped(userProfile) ? (
-                      <span className="text-red-600 font-semibold">XP capped at Level 5. Upgrade to continue leveling up!</span>
+                      <span className="text-red-600 font-semibold">
+                        XP capped at Level 5. Upgrade to continue leveling up!
+                      </span>
                     ) : (
-                      <span>{levelInfo.xpToNext > 0 ? `${levelInfo.xpToNext} XP to next level` : 'Max level reached!'}</span>
+                      <span>
+                        {levelInfo.xpToNext > 0
+                          ? `${levelInfo.xpToNext} XP to next level`
+                          : 'Max level reached!'}
+                      </span>
                     )}
                     <span>{levelInfo.progress}%</span>
                   </div>
                 </div>
               </div>
-              <AnimatedProgressBar value={levelInfo.progress} previousValue={prevXP} className="h-3 w-full" />
+              <AnimatedProgressBar
+                value={levelInfo.progress}
+                previousValue={prevXP}
+                className="h-3 w-full"
+              />
               {/* Weekly Progress Bars */}
               <div className="w-full mt-4 flex flex-col gap-2">
                 {/* Strength Progress Bar with Tooltip */}
@@ -166,9 +229,16 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                       <div>
                         <div className="flex justify-between text-xs mb-1">
                           <span>Strength Reps This Week</span>
-                          <span>Tier {repProgress.displayTier}: {displayReps} / {displayRepNext} reps</span>
+                          <span>
+                            Tier {repProgress.displayTier}: {displayReps} /{' '}
+                            {displayRepNext} reps
+                          </span>
                         </div>
-                        <AnimatedProgressBar value={repProgress.progress} previousValue={prevStrength} className="h-2 w-full bg-gray-200" />
+                        <AnimatedProgressBar
+                          value={repProgress.progress}
+                          previousValue={prevStrength}
+                          className="h-2 w-full bg-gray-200"
+                        />
                       </div>
                     </ShadTooltipTrigger>
                     <ShadTooltipContent side="top" align="center">
@@ -192,9 +262,16 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
                       <div>
                         <div className="flex justify-between text-xs mb-1">
                           <span>Cardio Minutes This Week</span>
-                          <span>Tier {cardioProgress.displayTier}: {displayCardio} / {displayCardioNext} min</span>
+                          <span>
+                            Tier {cardioProgress.displayTier}: {displayCardio} /{' '}
+                            {displayCardioNext} min
+                          </span>
                         </div>
-                        <AnimatedProgressBar value={cardioProgress.progress} previousValue={prevCardio} className="h-2 w-full bg-gray-200" />
+                        <AnimatedProgressBar
+                          value={cardioProgress.progress}
+                          previousValue={prevCardio}
+                          className="h-2 w-full bg-gray-200"
+                        />
                       </div>
                     </ShadTooltipTrigger>
                     <ShadTooltipContent side="top" align="center">
@@ -226,10 +303,13 @@ export default function LevelDisplay({ totalXP, workoutLogs, accountCreationDate
               cardioProgress={cardioProgress}
             />
             {/* --- Tier Structure Tooltip --- */}
-            <TierTooltip repProgress={repProgress} cardioProgress={cardioProgress} />
+            <TierTooltip
+              repProgress={repProgress}
+              cardioProgress={cardioProgress}
+            />
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </div>
   );
-} 
+}

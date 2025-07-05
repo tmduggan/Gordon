@@ -7,7 +7,13 @@ import { Progress } from './progress';
  * - 1s per full bar (level/tier)
  * - Handles multi-level/tier gains by animating to 100%, resetting, and continuing
  */
-export default function AnimatedProgressBar({ value, previousValue, className = '', onAnimationEnd, ...props }) {
+export default function AnimatedProgressBar({
+  value,
+  previousValue,
+  className = '',
+  onAnimationEnd,
+  ...props
+}) {
   const [displayValue, setDisplayValue] = useState(previousValue);
   const [animating, setAnimating] = useState(false);
   const [gainStart, setGainStart] = useState(previousValue);
@@ -84,7 +90,10 @@ export default function AnimatedProgressBar({ value, previousValue, className = 
   const gainWidth = gainEnd > gainStart ? gainEnd - gainStart : 0;
 
   return (
-    <div className={`relative w-full ${className}`} style={{ height: 'inherit' }}>
+    <div
+      className={`relative w-full ${className}`}
+      style={{ height: 'inherit' }}
+    >
       {/* Base bar */}
       <Progress value={displayValue} className={className} {...props} />
       {/* Green gain overlay */}
@@ -101,4 +110,4 @@ export default function AnimatedProgressBar({ value, previousValue, className = 
       )}
     </div>
   );
-} 
+}

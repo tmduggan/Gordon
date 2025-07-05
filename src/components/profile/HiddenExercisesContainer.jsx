@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { EyeOff } from 'lucide-react';
-import useAuthStore from '../../store/useAuthStore';
+import React, { useEffect, useState } from 'react';
 import useLibrary from '../../hooks/useLibrary';
+import useAuthStore from '../../store/useAuthStore';
 import ExerciseDisplay from '../exercise/ExerciseDisplay';
 
 export default function HiddenExercisesContainer() {
@@ -15,8 +15,10 @@ export default function HiddenExercisesContainer() {
   useEffect(() => {
     if (exerciseLibrary.items && userProfile?.hiddenExercises) {
       const hiddenWithDetails = userProfile.hiddenExercises
-        .map(exerciseId => {
-          const exercise = exerciseLibrary.items.find(e => e.id === exerciseId);
+        .map((exerciseId) => {
+          const exercise = exerciseLibrary.items.find(
+            (e) => e.id === exerciseId
+          );
           return exercise ? { ...exercise, id: exerciseId } : null;
         })
         .filter(Boolean);
@@ -25,15 +27,15 @@ export default function HiddenExercisesContainer() {
   }, [exerciseLibrary.items, userProfile?.hiddenExercises]);
 
   const handleUnhide = async (exerciseId) => {
-    setLoading(prev => ({ ...prev, [exerciseId]: true }));
+    setLoading((prev) => ({ ...prev, [exerciseId]: true }));
     try {
       await unhideExercise(exerciseId);
       // Remove from local state
-      setHiddenExercises(prev => prev.filter(ex => ex.id !== exerciseId));
+      setHiddenExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
     } catch (error) {
       console.error('Error unhiding exercise:', error);
     } finally {
-      setLoading(prev => ({ ...prev, [exerciseId]: false }));
+      setLoading((prev) => ({ ...prev, [exerciseId]: false }));
     }
   };
 
@@ -55,7 +57,7 @@ export default function HiddenExercisesContainer() {
           </span>
         )}
       </div>
-      
+
       <div className="space-y-2">
         {hiddenExercises.map((exercise) => (
           <ExerciseDisplay
@@ -70,4 +72,4 @@ export default function HiddenExercisesContainer() {
       </div>
     </div>
   );
-} 
+}

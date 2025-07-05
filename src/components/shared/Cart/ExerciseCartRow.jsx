@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MoreVertical } from 'lucide-react';
-import ExerciseLogInputs from '../../exercise/ExerciseLogInputs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreVertical } from 'lucide-react';
+import React, { useState } from 'react';
+import ExerciseLogInputs from '../../exercise/ExerciseLogInputs';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
 
 export default function ExerciseCartRow({
@@ -12,7 +22,7 @@ export default function ExerciseCartRow({
   removeFromCart = () => {},
   logData,
   onLogDataChange = () => {},
-  userWorkoutHistory
+  userWorkoutHistory,
 }) {
   // Runtime check: throw if not an exercise item
   if ('label' in item || item.type === 'recipe') {
@@ -26,7 +36,10 @@ export default function ExerciseCartRow({
   };
   let lastSetPlaceholder = null;
   if (Array.isArray(userWorkoutHistory)) {
-    const lastLog = userWorkoutHistory.find(log => log.exerciseId === id && Array.isArray(log.sets) && log.sets.length > 0);
+    const lastLog = userWorkoutHistory.find(
+      (log) =>
+        log.exerciseId === id && Array.isArray(log.sets) && log.sets.length > 0
+    );
     if (lastLog) {
       const lastSet = lastLog.sets[lastLog.sets.length - 1];
       if (lastSet) {
@@ -57,7 +70,10 @@ export default function ExerciseCartRow({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowConfirm(true)} className="text-red-600">
+                <DropdownMenuItem
+                  onClick={() => setShowConfirm(true)}
+                  className="text-red-600"
+                >
                   Remove Exercise
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -76,13 +92,26 @@ export default function ExerciseCartRow({
           <DialogHeader>
             <DialogTitle>Remove Exercise?</DialogTitle>
           </DialogHeader>
-          <div className="mb-4">Are you sure you want to remove this exercise and all its sets from your cart?</div>
+          <div className="mb-4">
+            Are you sure you want to remove this exercise and all its sets from
+            your cart?
+          </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { setShowConfirm(false); removeFromCart(item.id); }}>Remove</Button>
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowConfirm(false);
+                removeFromCart(item.id);
+              }}
+            >
+              Remove
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
     </Card>
   );
-} 
+}

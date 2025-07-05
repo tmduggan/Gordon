@@ -179,6 +179,59 @@ export default function useExerciseLogging() {
 }
 ```
 
+## Import Organization Pattern
+
+### Standard Import Order
+All import statements should follow this consistent order:
+
+```javascript
+// 1. React and core dependencies
+import React, { useState, useEffect, useMemo } from 'react';
+
+// 2. Third-party libraries (alphabetical)
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+
+// 3. Internal components (alphabetical)
+import CartContainer from '../components/shared/Cart/CartContainer';
+import ExerciseDisplay from '../components/exercise/ExerciseDisplay';
+import MuscleChart from '../components/exercise/muscleData/MuscleChart';
+
+// 4. Hooks (alphabetical)
+import useCart from '../hooks/useCart';
+import useExerciseLogging from '../hooks/useExerciseLogging';
+import useHistory from '../hooks/useHistory';
+
+// 5. Services (alphabetical)
+import { calculateExerciseScore } from '../services/exercise/exerciseService';
+import { analyzeLaggingMuscles } from '../services/gamification/suggestionService';
+import { getMuscleGroupCategoryNames } from '../services/svgMappingService';
+
+// 6. Store/State management (alphabetical)
+import useAuthStore from '../store/useAuthStore';
+import useExerciseLogStore from '../store/useExerciseLogStore';
+
+// 7. Utils (alphabetical)
+import { ensureAvailableEquipment } from '../utils/dataUtils';
+import { formatDate } from '../utils/dataUtils';
+import { isValidFoodItem } from '../utils/isValidFoodItem';
+```
+
+### Automation
+- **Prettier**: Automatically organizes imports with `prettier-plugin-organize-imports`
+- **ESLint**: Enforces import order with `eslint-plugin-import`
+- **Commands**:
+  - `npm run format` - Format all files with Prettier
+  - `npm run organize-imports` - Organize imports specifically
+  - `npm run lint` - Fix ESLint issues including import order
+
+### Import Rules
+- **Newlines between groups**: Each import group is separated by a blank line
+- **Alphabetical within groups**: Imports are sorted alphabetically within each group
+- **Absolute paths for UI components**: Use `@/components/ui/` for shadcn/ui components
+- **Relative paths for internal code**: Use relative paths for project-specific imports
+
 ## Migration Pattern
 
 When adding new features:

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CartContainer from '../../components/shared/Cart/CartContainer';
 
 // Mock dependencies
@@ -12,33 +12,33 @@ vi.mock('../../store/useAuthStore', () => ({
     user: { uid: 'test-user-id' },
     userProfile: { totalXP: 100, muscleReps: {} },
     addXP: mockAddXP,
-    saveUserProfile: vi.fn()
-  })
+    saveUserProfile: vi.fn(),
+  }),
 }));
 
 vi.mock('../../services/firebase/firestore/logExerciseEntry', () => ({
-  saveWorkoutLog: vi.fn()
+  saveWorkoutLog: vi.fn(),
 }));
 
 const mockCalculateExerciseScore = vi.fn();
 vi.mock('../../services/exercise/exerciseService', () => ({
-  calculateExerciseScore: mockCalculateExerciseScore
+  calculateExerciseScore: mockCalculateExerciseScore,
 }));
 
 vi.mock('../../services/gamification/levelService', () => ({
-  calculateStreakBonuses: vi.fn(() => ({ totalBonus: 0, streaks: [] }))
+  calculateStreakBonuses: vi.fn(() => ({ totalBonus: 0, streaks: [] })),
 }));
 
 vi.mock('../../services/gamification/suggestionService', () => ({
   analyzeLaggingMuscles: vi.fn(() => []),
-  calculateLaggingMuscleBonus: vi.fn(() => 0)
+  calculateLaggingMuscleBonus: vi.fn(() => 0),
 }));
 
 // Helper function to match the app's XP logic
 function calculateExpectedXP(sets = [], duration = null) {
   let totalXP = 0;
   if (sets && sets.length > 0) {
-    sets.forEach(set => {
+    sets.forEach((set) => {
       const weight = parseFloat(set.weight) || 0;
       const reps = parseInt(set.reps) || 0;
       if (weight > 0) {
@@ -57,22 +57,24 @@ function calculateExpectedXP(sets = [], duration = null) {
 describe('Exercise XP Calculation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCalculateExerciseScore.mockImplementation((workoutData, exerciseDetails) => {
-      if (workoutData.sets && workoutData.sets.length > 0) {
-        const set = workoutData.sets[0];
-        const weight = parseFloat(set.weight) || 0;
-        const reps = parseInt(set.reps) || 0;
-        if (weight > 0) {
-          return Math.round(reps * weight * 0.1);
-        } else if (reps > 0) {
-          return reps;
+    mockCalculateExerciseScore.mockImplementation(
+      (workoutData, exerciseDetails) => {
+        if (workoutData.sets && workoutData.sets.length > 0) {
+          const set = workoutData.sets[0];
+          const weight = parseFloat(set.weight) || 0;
+          const reps = parseInt(set.reps) || 0;
+          if (weight > 0) {
+            return Math.round(reps * weight * 0.1);
+          } else if (reps > 0) {
+            return reps;
+          }
         }
+        if (workoutData.duration) {
+          return parseInt(workoutData.duration) * 2;
+        }
+        return 0;
       }
-      if (workoutData.duration) {
-        return parseInt(workoutData.duration) * 2;
-      }
-      return 0;
-    });
+    );
   });
 
   it('calculates XP for weighted strength exercises', async () => {
@@ -80,17 +82,22 @@ describe('Exercise XP Calculation', () => {
     const exerciseItems = [{ id: 'bench-press', name: 'Bench Press' }];
     const sets = [
       { weight: 135, reps: 10 },
-      { weight: 155, reps: 8 }
+      { weight: 155, reps: 8 },
     ];
     const logData = { 'bench-press': { sets } };
-    const exerciseLibrary = [{ id: 'bench-press', name: 'Bench Press', target: 'chest' }];
+    const exerciseLibrary = [
+      { id: 'bench-press', name: 'Bench Press', target: 'chest' },
+    ];
     const expectedXP = calculateExpectedXP(sets);
     render(
       <CartContainer
         title="Exercise Cart"
         type="exercise"
         items={exerciseItems}
-        logCart={async () => { await mockAddXP(expectedXP); mockClearCart(); }}
+        logCart={async () => {
+          await mockAddXP(expectedXP);
+          mockClearCart();
+        }}
         clearCart={mockClearCart}
         icon="💪"
         logData={logData}
@@ -111,17 +118,22 @@ describe('Exercise XP Calculation', () => {
     const sets = [
       { weight: 0, reps: 15 },
       { weight: 0, reps: 12 },
-      { weight: 0, reps: 10 }
+      { weight: 0, reps: 10 },
     ];
-    const logData = { 'pushups': { sets } };
-    const exerciseLibrary = [{ id: 'pushups', name: 'Push-ups', target: 'chest' }];
+    const logData = { pushups: { sets } };
+    const exerciseLibrary = [
+      { id: 'pushups', name: 'Push-ups', target: 'chest' },
+    ];
     const expectedXP = calculateExpectedXP(sets);
     render(
       <CartContainer
         title="Exercise Cart"
         type="exercise"
         items={exerciseItems}
-        logCart={async () => { await mockAddXP(expectedXP); mockClearCart(); }}
+        logCart={async () => {
+          await mockAddXP(expectedXP);
+          mockClearCart();
+        }}
         clearCart={mockClearCart}
         icon="💪"
         logData={logData}
@@ -140,15 +152,20 @@ describe('Exercise XP Calculation', () => {
     const user = userEvent.setup();
     const exerciseItems = [{ id: 'running', name: 'Running' }];
     const duration = 30;
-    const logData = { 'running': { duration } };
-    const exerciseLibrary = [{ id: 'running', name: 'Running', target: 'cardio' }];
+    const logData = { running: { duration } };
+    const exerciseLibrary = [
+      { id: 'running', name: 'Running', target: 'cardio' },
+    ];
     const expectedXP = calculateExpectedXP([], duration);
     render(
       <CartContainer
         title="Exercise Cart"
         type="exercise"
         items={exerciseItems}
-        logCart={async () => { await mockAddXP(expectedXP); mockClearCart(); }}
+        logCart={async () => {
+          await mockAddXP(expectedXP);
+          mockClearCart();
+        }}
         clearCart={mockClearCart}
         icon="🏃"
         logData={logData}
@@ -167,23 +184,28 @@ describe('Exercise XP Calculation', () => {
     const user = userEvent.setup();
     const exerciseItems = [
       { id: 'bench-press', name: 'Bench Press' },
-      { id: 'running', name: 'Running' }
+      { id: 'running', name: 'Running' },
     ];
     const logData = {
-      'bench-press': { sets: [ { weight: 135, reps: 10 } ] },
-      'running': { duration: 20 }
+      'bench-press': { sets: [{ weight: 135, reps: 10 }] },
+      running: { duration: 20 },
     };
     const exerciseLibrary = [
       { id: 'bench-press', name: 'Bench Press', target: 'chest' },
-      { id: 'running', name: 'Running', target: 'cardio' }
+      { id: 'running', name: 'Running', target: 'cardio' },
     ];
-    const expectedXP = calculateExpectedXP(logData['bench-press'].sets) + calculateExpectedXP([], logData['running'].duration);
+    const expectedXP =
+      calculateExpectedXP(logData['bench-press'].sets) +
+      calculateExpectedXP([], logData['running'].duration);
     render(
       <CartContainer
         title="Exercise Cart"
         type="exercise"
         items={exerciseItems}
-        logCart={async () => { await mockAddXP(expectedXP); mockClearCart(); }}
+        logCart={async () => {
+          await mockAddXP(expectedXP);
+          mockClearCart();
+        }}
         clearCart={mockClearCart}
         icon="💪"
         logData={logData}
@@ -202,14 +224,19 @@ describe('Exercise XP Calculation', () => {
     const user = userEvent.setup();
     const exerciseItems = [{ id: 'bench-press', name: 'Bench Press' }];
     const logData = { 'bench-press': {} };
-    const exerciseLibrary = [{ id: 'bench-press', name: 'Bench Press', target: 'chest' }];
+    const exerciseLibrary = [
+      { id: 'bench-press', name: 'Bench Press', target: 'chest' },
+    ];
     const expectedXP = 0;
     render(
       <CartContainer
         title="Exercise Cart"
         type="exercise"
         items={exerciseItems}
-        logCart={async () => { await mockAddXP(expectedXP); mockClearCart(); }}
+        logCart={async () => {
+          await mockAddXP(expectedXP);
+          mockClearCart();
+        }}
         clearCart={mockClearCart}
         icon="💪"
         logData={logData}
@@ -220,4 +247,4 @@ describe('Exercise XP Calculation', () => {
     const xpElement = screen.getByText('0');
     expect(parseInt(xpElement.textContent)).toBe(expectedXP);
   });
-}); 
+});

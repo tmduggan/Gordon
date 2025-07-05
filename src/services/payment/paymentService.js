@@ -8,26 +8,27 @@ export const PREMIUM_PLANS = {
     name: 'Monthly Premium',
     price: 9.99,
     interval: 'month',
-    description: 'Full access to all premium features'
+    description: 'Full access to all premium features',
   },
   quarterly: {
     id: 'goliath_premium_3month',
     name: '3-Month Premium',
     price: 27.49,
     interval: '3 months',
-    description: 'Full access to all premium features (Save 8%)'
+    description: 'Full access to all premium features (Save 8%)',
   },
   annual: {
     id: 'goliath_premium_annual',
     name: 'Annual Premium',
     price: 99.99,
     interval: 'year',
-    description: 'Full access to all premium features (Save 17%)'
-  }
+    description: 'Full access to all premium features (Save 17%)',
+  },
 };
 
 // API base URL - always use the live Firebase Functions endpoint
-const API_BASE_URL = 'https://us-central1-food-tracker-19c9d.cloudfunctions.net/api';
+const API_BASE_URL =
+  'https://us-central1-food-tracker-19c9d.cloudfunctions.net/api';
 
 /**
  * Create a Stripe checkout session for premium upgrade
@@ -38,19 +39,22 @@ const API_BASE_URL = 'https://us-central1-food-tracker-19c9d.cloudfunctions.net/
  */
 export async function createCheckoutSession(userId, planId, userEmail) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId,
-        planId,
-        userEmail,
-        successUrl: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${window.location.origin}/?payment_result=cancel`,
-      }),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/create-checkout-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          planId,
+          userEmail,
+          successUrl: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/?payment_result=cancel`,
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to create checkout session');
@@ -72,25 +76,27 @@ export async function createCheckoutSession(userId, planId, userEmail) {
 export async function updateUserSubscription(userId, subscriptionData) {
   try {
     const userRef = doc(db, 'users', userId);
-    
+
     const subscriptionUpdate = {
       subscription: {
         status: 'premium',
         plan: subscriptionData.planId,
         stripeCustomerId: subscriptionData.customerId,
         stripeSubscriptionId: subscriptionData.subscriptionId,
-        expiresAt: new Date(subscriptionData.currentPeriodEnd * 1000).toISOString(),
+        expiresAt: new Date(
+          subscriptionData.currentPeriodEnd * 1000
+        ).toISOString(),
         features: [
           'basic_logging',
-          'basic_tracking', 
+          'basic_tracking',
           'premium_analytics',
           'unlimited_hides',
           'advanced_insights',
-          'priority_support'
+          'priority_support',
         ],
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        updatedAt: new Date().toISOString(),
+      },
     };
 
     await updateDoc(userRef, subscriptionUpdate);
@@ -124,7 +130,7 @@ export async function verifyAndUpdateSubscription(sessionId, userId) {
     }
 
     const result = await response.json();
-    
+
     if (result.success) {
       await updateUserSubscription(userId, result.subscriptionData);
       return result;
@@ -158,7 +164,7 @@ export async function cancelSubscription(userId) {
     }
 
     const result = await response.json();
-    
+
     if (result.success) {
       // Update user profile to basic
       const userRef = doc(db, 'users', userId);
@@ -168,10 +174,10 @@ export async function cancelSubscription(userId) {
           plan: 'basic',
           expiresAt: null,
           features: ['basic_logging', 'basic_tracking'],
-          updatedAt: new Date().toISOString()
-        }
+          updatedAt: new Date().toISOString(),
+        },
       });
-      
+
       return result;
     } else {
       throw new Error(result.error || 'Failed to cancel subscription');
@@ -180,4 +186,4 @@ export async function cancelSubscription(userId) {
     console.error('Error canceling subscription:', error);
     throw error;
   }
-} 
+}

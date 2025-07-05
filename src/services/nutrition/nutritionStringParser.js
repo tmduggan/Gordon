@@ -5,7 +5,10 @@
 export function parseNutritionString(input) {
   if (!input || typeof input !== 'string') return [];
   // Split by commas for each food item
-  const items = input.split(',').map(item => item.trim()).filter(Boolean);
+  const items = input
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
   const results = [];
   const regex = /^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)\s+(.+)$/;
 
@@ -22,4 +25,4 @@ export function parseNutritionString(input) {
     }
   }
   return results;
-} 
+}

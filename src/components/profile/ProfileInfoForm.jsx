@@ -1,24 +1,40 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import timeZones, { getCurrentTimeInZone } from '../../utils/timeZones';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import useAuthStore from '../../store/useAuthStore';
+import timeZones, { getCurrentTimeInZone } from '../../utils/timeZones';
 
 const activityLevels = [
   { value: 'sedentary', label: 'Sedentary (little or no exercise)' },
   { value: 'light', label: 'Lightly Active (light exercise 1-3 days/week)' },
-  { value: 'moderate', label: 'Moderately Active (moderate exercise 3-5 days/week)' },
+  {
+    value: 'moderate',
+    label: 'Moderately Active (moderate exercise 3-5 days/week)',
+  },
   { value: 'very', label: 'Very Active (hard exercise 6-7 days/week)' },
   { value: 'athlete', label: 'Athlete (very hard exercise, physical job)' },
 ];
 
-export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, showActivityLevel }) {
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({
+export default function ProfileInfoForm({
+  userProfile,
+  user,
+  onSave,
+  onCancel,
+  showActivityLevel,
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty },
+  } = useForm({
     defaultValues: {
-      timeZone: userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+      timeZone:
+        userProfile?.timeZone ||
+        Intl.DateTimeFormat().resolvedOptions().timeZone ||
+        '',
       activityLevel: userProfile?.activityLevel || 'moderate',
-    }
+    },
   });
 
   const { saveUserProfile } = useAuthStore();
@@ -65,7 +81,11 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
     if (unit === unitSystem) return;
     if (unit === 'metric') {
       // Convert imperial to metric
-      const { heightCm, weightKg } = toMetric(bodyStats.heightFt, bodyStats.heightIn, bodyStats.weightLbs);
+      const { heightCm, weightKg } = toMetric(
+        bodyStats.heightFt,
+        bodyStats.heightIn,
+        bodyStats.weightLbs
+      );
       setBodyStats({
         ...bodyStats,
         heightCm,
@@ -73,7 +93,10 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
       });
     } else {
       // Convert metric to imperial
-      const { heightFt, heightIn, weightLbs } = toImperial(bodyStats.heightCm, bodyStats.weightKg);
+      const { heightFt, heightIn, weightLbs } = toImperial(
+        bodyStats.heightCm,
+        bodyStats.weightKg
+      );
       setBodyStats({
         ...bodyStats,
         heightFt,
@@ -88,7 +111,11 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
     let heightCm = bodyStats.heightCm;
     let weightKg = bodyStats.weightKg;
     if (unitSystem === 'imperial') {
-      const metric = toMetric(bodyStats.heightFt, bodyStats.heightIn, bodyStats.weightLbs);
+      const metric = toMetric(
+        bodyStats.heightFt,
+        bodyStats.heightIn,
+        bodyStats.weightLbs
+      );
       heightCm = metric.heightCm;
       weightKg = metric.weightKg;
     }
@@ -113,13 +140,15 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="timeZone" className="text-sm font-medium">Time Zone</label>
+          <label htmlFor="timeZone" className="text-sm font-medium">
+            Time Zone
+          </label>
           <select
             id="timeZone"
-            {...register("timeZone", { required: "Time zone is required" })}
+            {...register('timeZone', { required: 'Time zone is required' })}
             className="border rounded px-2 py-1 w-full"
           >
-            {timeZones.map(tz => (
+            {timeZones.map((tz) => (
               <option key={tz.value} value={tz.value}>
                 {tz.label} {tz.flag} (GMT{tz.gmtOffset})
                 {`  ${getCurrentTimeInZone(tz.value)}`}
@@ -133,18 +162,26 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
 
         {showActivityLevel && (
           <div className="space-y-2">
-            <label htmlFor="activityLevel" className="text-sm font-medium">Activity Level</label>
+            <label htmlFor="activityLevel" className="text-sm font-medium">
+              Activity Level
+            </label>
             <select
               id="activityLevel"
-              {...register("activityLevel", { required: "Activity level is required" })}
+              {...register('activityLevel', {
+                required: 'Activity level is required',
+              })}
               className="border rounded px-2 py-1 w-full"
             >
-              {activityLevels.map(level => (
-                <option key={level.value} value={level.value}>{level.label}</option>
+              {activityLevels.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
               ))}
             </select>
             {errors.activityLevel && (
-              <p className="text-sm text-red-600">{errors.activityLevel.message}</p>
+              <p className="text-sm text-red-600">
+                {errors.activityLevel.message}
+              </p>
             )}
           </div>
         )}
@@ -171,61 +208,158 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
             <h2 className="text-lg font-bold mb-4 text-center">⚙️</h2>
             {/* Unit toggle */}
             <div className="flex gap-2 mb-4 justify-center">
-              <Button variant={unitSystem === 'imperial' ? 'default' : 'outline'} onClick={() => handleUnitToggle('imperial')}>Imperial</Button>
-              <Button variant={unitSystem === 'metric' ? 'default' : 'outline'} onClick={() => handleUnitToggle('metric')}>Metric</Button>
+              <Button
+                variant={unitSystem === 'imperial' ? 'default' : 'outline'}
+                onClick={() => handleUnitToggle('imperial')}
+              >
+                Imperial
+              </Button>
+              <Button
+                variant={unitSystem === 'metric' ? 'default' : 'outline'}
+                onClick={() => handleUnitToggle('metric')}
+              >
+                Metric
+              </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {unitSystem === 'metric' ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium">Height (cm)</label>
-                    <input type="number" value={bodyStats.heightCm} onChange={e => setBodyStats({ ...bodyStats, heightCm: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                    <label className="block text-sm font-medium">
+                      Height (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyStats.heightCm}
+                      onChange={(e) =>
+                        setBodyStats({ ...bodyStats, heightCm: e.target.value })
+                      }
+                      className="border rounded px-2 py-1 w-full"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium">Weight (kg)</label>
-                    <input type="number" value={bodyStats.weightKg} onChange={e => setBodyStats({ ...bodyStats, weightKg: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                    <label className="block text-sm font-medium">
+                      Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyStats.weightKg}
+                      onChange={(e) =>
+                        setBodyStats({ ...bodyStats, weightKg: e.target.value })
+                      }
+                      className="border rounded px-2 py-1 w-full"
+                    />
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium">Height (ft/in)</label>
+                    <label className="block text-sm font-medium">
+                      Height (ft/in)
+                    </label>
                     <div className="flex gap-2">
-                      <input type="number" placeholder="ft" value={bodyStats.heightFt} onChange={e => setBodyStats({ ...bodyStats, heightFt: e.target.value })} className="border rounded px-2 py-1 w-16" />
-                      <input type="number" placeholder="in" value={bodyStats.heightIn} onChange={e => setBodyStats({ ...bodyStats, heightIn: e.target.value })} className="border rounded px-2 py-1 w-16" />
+                      <input
+                        type="number"
+                        placeholder="ft"
+                        value={bodyStats.heightFt}
+                        onChange={(e) =>
+                          setBodyStats({
+                            ...bodyStats,
+                            heightFt: e.target.value,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
+                      <input
+                        type="number"
+                        placeholder="in"
+                        value={bodyStats.heightIn}
+                        onChange={(e) =>
+                          setBodyStats({
+                            ...bodyStats,
+                            heightIn: e.target.value,
+                          })
+                        }
+                        className="border rounded px-2 py-1 w-16"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium">Weight (lbs)</label>
-                    <input type="number" value={bodyStats.weightLbs} onChange={e => setBodyStats({ ...bodyStats, weightLbs: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                    <label className="block text-sm font-medium">
+                      Weight (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyStats.weightLbs}
+                      onChange={(e) =>
+                        setBodyStats({
+                          ...bodyStats,
+                          weightLbs: e.target.value,
+                        })
+                      }
+                      className="border rounded px-2 py-1 w-full"
+                    />
                   </div>
                 </>
               )}
               <div>
-                <label className="block text-sm font-medium">Date of Birth</label>
-                <input type="date" value={bodyStats.dob} onChange={e => setBodyStats({ ...bodyStats, dob: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                <label className="block text-sm font-medium">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={bodyStats.dob}
+                  onChange={(e) =>
+                    setBodyStats({ ...bodyStats, dob: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 w-full"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium">Gender</label>
-                <select value={bodyStats.gender} onChange={e => setBodyStats({ ...bodyStats, gender: e.target.value })} className="border rounded px-2 py-1 w-full">
+                <select
+                  value={bodyStats.gender}
+                  onChange={(e) =>
+                    setBodyStats({ ...bodyStats, gender: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 w-full"
+                >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium">Body Fat (%)</label>
-                <input type="number" value={bodyStats.bodyFat} onChange={e => setBodyStats({ ...bodyStats, bodyFat: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                <label className="block text-sm font-medium">
+                  Body Fat (%)
+                </label>
+                <input
+                  type="number"
+                  value={bodyStats.bodyFat}
+                  onChange={(e) =>
+                    setBodyStats({ ...bodyStats, bodyFat: e.target.value })
+                  }
+                  className="border rounded px-2 py-1 w-full"
+                />
               </div>
               {/* Move Time Zone and Activity Level here */}
               <div className="col-span-2">
-                <label htmlFor="timeZone" className="text-sm font-medium">Time Zone</label>
+                <label htmlFor="timeZone" className="text-sm font-medium">
+                  Time Zone
+                </label>
                 <select
                   id="timeZone"
-                  value={bodyStats.timeZone || userProfile?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || ''}
-                  onChange={e => setBodyStats({ ...bodyStats, timeZone: e.target.value })}
+                  value={
+                    bodyStats.timeZone ||
+                    userProfile?.timeZone ||
+                    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+                    ''
+                  }
+                  onChange={(e) =>
+                    setBodyStats({ ...bodyStats, timeZone: e.target.value })
+                  }
                   className="border rounded px-2 py-1 w-full"
                 >
-                  {timeZones.map(tz => (
+                  {timeZones.map((tz) => (
                     <option key={tz.value} value={tz.value}>
                       {tz.label} {tz.flag} (GMT{tz.gmtOffset})
                       {`  ${getCurrentTimeInZone(tz.value)}`}
@@ -234,21 +368,36 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
                 </select>
               </div>
               <div className="col-span-2">
-                <label htmlFor="activityLevel" className="text-sm font-medium">Activity Level</label>
+                <label htmlFor="activityLevel" className="text-sm font-medium">
+                  Activity Level
+                </label>
                 <select
                   id="activityLevel"
-                  value={bodyStats.activityLevel || userProfile?.activityLevel || 'moderate'}
-                  onChange={e => setBodyStats({ ...bodyStats, activityLevel: e.target.value })}
+                  value={
+                    bodyStats.activityLevel ||
+                    userProfile?.activityLevel ||
+                    'moderate'
+                  }
+                  onChange={(e) =>
+                    setBodyStats({
+                      ...bodyStats,
+                      activityLevel: e.target.value,
+                    })
+                  }
                   className="border rounded px-2 py-1 w-full"
                 >
-                  {activityLevels.map(level => (
-                    <option key={level.value} value={level.value}>{level.label}</option>
+                  {activityLevels.map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.label}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
             <div className="flex gap-2 mt-6 justify-end">
-              <Button variant="outline" onClick={() => setShowBodyModal(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setShowBodyModal(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleBodySave}>Save</Button>
             </div>
           </div>
@@ -256,4 +405,4 @@ export default function ProfileInfoForm({ userProfile, user, onSave, onCancel, s
       )}
     </>
   );
-} 
+}

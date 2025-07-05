@@ -1,4 +1,10 @@
-import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
 import { db } from '../../firebase';
 import { formatTimestampLocal } from '../../utils/timeUtils';
 
@@ -8,22 +14,27 @@ import { formatTimestampLocal } from '../../utils/timeUtils';
  * @returns {string} The ID of the newly created document.
  */
 export const saveWorkoutLog = async (logObject) => {
-    if (!logObject.userId) {
-        throw new Error("User ID is required to save a workout log.");
-    }
-    
-    // Reference the user's specific 'workoutLog' subcollection
-    const subcollectionRef = collection(db, 'users', logObject.userId, 'workoutLog');
+  if (!logObject.userId) {
+    throw new Error('User ID is required to save a workout log.');
+  }
 
-    // Add server-generated timestamp for recording
-    const logData = {
-        ...logObject,
-        recordedTime: serverTimestamp()
-    };
+  // Reference the user's specific 'workoutLog' subcollection
+  const subcollectionRef = collection(
+    db,
+    'users',
+    logObject.userId,
+    'workoutLog'
+  );
 
-    const docRef = await addDoc(subcollectionRef, logData);
+  // Add server-generated timestamp for recording
+  const logData = {
+    ...logObject,
+    recordedTime: serverTimestamp(),
+  };
 
-    // Optionally, just log:
-    console.log('Workout entry saved successfully.');
-    return docRef.id;
-}; 
+  const docRef = await addDoc(subcollectionRef, logData);
+
+  // Optionally, just log:
+  console.log('Workout entry saved successfully.');
+  return docRef.id;
+};

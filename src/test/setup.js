@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock Firebase
 vi.mock('../firebase', () => ({
@@ -9,8 +9,8 @@ vi.mock('../firebase', () => ({
     signInWithEmailAndPassword: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signOut: vi.fn(),
-  }
-}))
+  },
+}));
 
 // Mock Firestore functions
 vi.mock('firebase/firestore', () => ({
@@ -28,15 +28,15 @@ vi.mock('firebase/firestore', () => ({
   updateDoc: vi.fn(),
   serverTimestamp: vi.fn(() => new Date()),
   onSnapshot: vi.fn(),
-}))
+}));
 
 // Mock Stripe
 vi.mock('@stripe/stripe-js', () => ({
   loadStripe: vi.fn(),
-}))
+}));
 
 // Mock environment variables
-vi.stubEnv('VITE_FIREBASE_API_KEY', 'test-api-key')
-vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'test-domain')
-vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'test-project')
-vi.stubEnv('VITE_STRIPE_PUBLISHABLE_KEY', 'test-stripe-key') 
+vi.stubEnv('VITE_FIREBASE_API_KEY', 'test-api-key');
+vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'test-domain');
+vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'test-project');
+vi.stubEnv('VITE_STRIPE_PUBLISHABLE_KEY', 'test-stripe-key');

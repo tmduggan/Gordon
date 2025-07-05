@@ -1,61 +1,87 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Search, 
-  Filter, 
-  Edit, 
-  RotateCcw, 
-  Save, 
-  X, 
-  Info,
-  Target,
-  Dumbbell,
-  User,
-  Tag,
-  Eye,
-  EyeOff
-} from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import useLibrary from '../../hooks/useLibrary';
-import useAuthStore from '../../store/useAuthStore';
-import { 
-  autoAssignSvgMappings, 
-  getAvailableSvgGroups, 
-  getAutoAssignedSvgGroups,
-  getSvgGroupDisplayName,
-  validateSvgMapping 
-} from '../../services/svgMappingService';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  Dumbbell,
+  Edit,
+  Eye,
+  EyeOff,
+  Filter,
+  Info,
+  RotateCcw,
+  Save,
+  Search,
+  Tag,
+  Target,
+  User,
+  X,
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../../firebase';
+import useLibrary from '../../hooks/useLibrary';
+import { useToast } from '../../hooks/useToast';
+import {
+  autoAssignSvgMappings,
+  getAutoAssignedSvgGroups,
+  getAvailableSvgGroups,
+  getSvgGroupDisplayName,
+  validateSvgMapping,
+} from '../../services/svgMappingService';
+import useAuthStore from '../../store/useAuthStore';
 
 // Equipment icon mapping (same as other components)
 const equipmentIconMap = {
   'smith machine': '/icons/smith.png',
-  'dumbbell': '/icons/dumbbell.png',
-  'barbell': '/icons/barbell.png',
-  'kettlebell': '/icons/kettlebell.png',
+  dumbbell: '/icons/dumbbell.png',
+  barbell: '/icons/barbell.png',
+  kettlebell: '/icons/kettlebell.png',
   'sled machine': '/icons/sled machine.jpg',
   'body weight': '/icons/bodyweight.png',
-  'machine': '/icons/machine.png',
+  machine: '/icons/machine.png',
 };
 
 const getEquipmentIcon = (equipmentName) => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
-  
-  if (lowerCaseEquipment.includes('dumbbell')) return equipmentIconMap['dumbbell'];
-  if (lowerCaseEquipment.includes('barbell')) return equipmentIconMap['barbell'];
-  if (lowerCaseEquipment.includes('kettlebell')) return equipmentIconMap['kettlebell'];
-  if (lowerCaseEquipment === 'smith machine') return equipmentIconMap['smith machine'];
-  if (lowerCaseEquipment === 'sled machine') return equipmentIconMap['sled machine'];
-  if (lowerCaseEquipment === 'body weight') return equipmentIconMap['body weight'];
-  if (lowerCaseEquipment === 'leverage machine' || lowerCaseEquipment === 'cable') {
+
+  if (lowerCaseEquipment.includes('dumbbell'))
+    return equipmentIconMap['dumbbell'];
+  if (lowerCaseEquipment.includes('barbell'))
+    return equipmentIconMap['barbell'];
+  if (lowerCaseEquipment.includes('kettlebell'))
+    return equipmentIconMap['kettlebell'];
+  if (lowerCaseEquipment === 'smith machine')
+    return equipmentIconMap['smith machine'];
+  if (lowerCaseEquipment === 'sled machine')
+    return equipmentIconMap['sled machine'];
+  if (lowerCaseEquipment === 'body weight')
+    return equipmentIconMap['body weight'];
+  if (
+    lowerCaseEquipment === 'leverage machine' ||
+    lowerCaseEquipment === 'cable'
+  ) {
     return equipmentIconMap['machine'];
   }
   return null;
@@ -63,20 +89,20 @@ const getEquipmentIcon = (equipmentName) => {
 
 // Muscle icon mapping (same as other components)
 const muscleIconMap = {
-  'quads': '/icons/Muscle-Quads.jpeg',
-  'abductors': '/icons/Muscle-Abductors.jpeg',
-  'abs': '/icons/Muscle-Abs.jpeg',
-  'adductors': '/icons/Muscle-Adductors.jpeg',
-  'biceps': '/icons/Muscle-Biceps.jpeg',
-  'calves': '/icons/Muscle-Calves.jpeg',
-  'delts': '/icons/Muscle-Deltoids.jpeg',
-  'forearms': '/icons/Muscle-Forearms.jpeg',
-  'hamstrings': '/icons/Muscle-Hamstrings.jpeg',
-  'pectorals': '/icons/Muscle-Pectorals.jpeg',
+  quads: '/icons/Muscle-Quads.jpeg',
+  abductors: '/icons/Muscle-Abductors.jpeg',
+  abs: '/icons/Muscle-Abs.jpeg',
+  adductors: '/icons/Muscle-Adductors.jpeg',
+  biceps: '/icons/Muscle-Biceps.jpeg',
+  calves: '/icons/Muscle-Calves.jpeg',
+  delts: '/icons/Muscle-Deltoids.jpeg',
+  forearms: '/icons/Muscle-Forearms.jpeg',
+  hamstrings: '/icons/Muscle-Hamstrings.jpeg',
+  pectorals: '/icons/Muscle-Pectorals.jpeg',
   'serratus anterior': '/icons/Muscle-serratus anterior.jpeg',
-  'traps': '/icons/Muscle-Traps.jpeg',
-  'triceps': '/icons/Muscle-Triceps.jpeg',
-  'glutes': '/icons/Muscle-glutes.jpeg',
+  traps: '/icons/Muscle-Traps.jpeg',
+  triceps: '/icons/Muscle-Triceps.jpeg',
+  glutes: '/icons/Muscle-glutes.jpeg',
 };
 
 const getMuscleIcon = (muscleName) => {
@@ -89,7 +115,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
   const { toast } = useToast();
   const exerciseLibrary = useLibrary('exercise');
   const { userProfile, saveUserProfile } = useAuthStore();
-  
+
   // State
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
@@ -97,7 +123,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     secondaryMuscles: 'all',
     equipment: 'all',
     bodyPart: 'all',
-    category: 'all'
+    category: 'all',
   });
   const [editingExercise, setEditingExercise] = useState(null);
   const [editingSvgMapping, setEditingSvgMapping] = useState([]);
@@ -111,22 +137,22 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
   // Get filter options from exercise library
   const filterOptions = useMemo(() => {
     if (!exerciseLibrary.items) return {};
-    
+
     const options = {
       targetMuscles: [],
       secondaryMuscles: [],
       equipments: [],
       bodyParts: [],
-      categories: []
+      categories: [],
     };
 
-    exerciseLibrary.items.forEach(exercise => {
+    exerciseLibrary.items.forEach((exercise) => {
       if (exercise.target) options.targetMuscles.push(exercise.target);
       if (exercise.secondaryMuscles) {
-        const secondary = Array.isArray(exercise.secondaryMuscles) 
-          ? exercise.secondaryMuscles 
+        const secondary = Array.isArray(exercise.secondaryMuscles)
+          ? exercise.secondaryMuscles
           : [exercise.secondaryMuscles];
-        secondary.forEach(muscle => {
+        secondary.forEach((muscle) => {
           if (muscle) options.secondaryMuscles.push(muscle);
         });
       }
@@ -136,7 +162,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     });
 
     // Remove duplicates and sort
-    Object.keys(options).forEach(key => {
+    Object.keys(options).forEach((key) => {
       options[key] = [...new Set(options[key])].sort();
     });
 
@@ -146,51 +172,68 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
   // Filter exercises
   const filteredExercises = useMemo(() => {
     if (!exerciseLibrary.items) return [];
-    
+
     let filtered = exerciseLibrary.items;
 
     // Filter out hidden exercises unless showHidden is true
     if (!showHidden) {
-      filtered = filtered.filter(exercise => !hiddenExercises.includes(exercise.id));
+      filtered = filtered.filter(
+        (exercise) => !hiddenExercises.includes(exercise.id)
+      );
     }
 
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(exercise =>
-        exercise.name.toLowerCase().includes(query) ||
-        exercise.target?.toLowerCase().includes(query) ||
-        exercise.bodyPart?.toLowerCase().includes(query) ||
-        exercise.equipment?.toLowerCase().includes(query) ||
-        exercise.category?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (exercise) =>
+          exercise.name.toLowerCase().includes(query) ||
+          exercise.target?.toLowerCase().includes(query) ||
+          exercise.bodyPart?.toLowerCase().includes(query) ||
+          exercise.equipment?.toLowerCase().includes(query) ||
+          exercise.category?.toLowerCase().includes(query)
       );
     }
 
     // Apply other filters
     if (filters.targetMuscle !== 'all') {
-      filtered = filtered.filter(exercise => exercise.target === filters.targetMuscle);
+      filtered = filtered.filter(
+        (exercise) => exercise.target === filters.targetMuscle
+      );
     }
     if (filters.equipment !== 'all') {
-      filtered = filtered.filter(exercise => exercise.equipment === filters.equipment);
+      filtered = filtered.filter(
+        (exercise) => exercise.equipment === filters.equipment
+      );
     }
     if (filters.bodyPart !== 'all') {
-      filtered = filtered.filter(exercise => exercise.bodyPart === filters.bodyPart);
+      filtered = filtered.filter(
+        (exercise) => exercise.bodyPart === filters.bodyPart
+      );
     }
     if (filters.category !== 'all') {
-      filtered = filtered.filter(exercise => exercise.category === filters.category);
+      filtered = filtered.filter(
+        (exercise) => exercise.category === filters.category
+      );
     }
     if (filters.secondaryMuscles !== 'all') {
-      filtered = filtered.filter(exercise => {
+      filtered = filtered.filter((exercise) => {
         if (!exercise.secondaryMuscles) return false;
-        const secondary = Array.isArray(exercise.secondaryMuscles) 
-          ? exercise.secondaryMuscles 
+        const secondary = Array.isArray(exercise.secondaryMuscles)
+          ? exercise.secondaryMuscles
           : [exercise.secondaryMuscles];
         return secondary.includes(filters.secondaryMuscles);
       });
     }
 
     return filtered;
-  }, [exerciseLibrary.items, searchQuery, filters, showHidden, hiddenExercises]);
+  }, [
+    exerciseLibrary.items,
+    searchQuery,
+    filters,
+    showHidden,
+    hiddenExercises,
+  ]);
 
   // Handle edit start
   const handleEditStart = (exercise) => {
@@ -211,9 +254,9 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     const validation = validateSvgMapping(editingSvgMapping);
     if (!validation.isValid) {
       toast({
-        title: "Invalid SVG Mapping",
+        title: 'Invalid SVG Mapping',
         description: validation.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
       return;
     }
@@ -222,17 +265,20 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     try {
       const exerciseRef = doc(db, 'exerciseLibrary', editingExercise.id);
       await updateDoc(exerciseRef, {
-        svgMapping: editingSvgMapping.length > 0 ? editingSvgMapping : null
+        svgMapping: editingSvgMapping.length > 0 ? editingSvgMapping : null,
       });
 
       // Update local state
-      const updatedExercise = { ...editingExercise, svgMapping: editingSvgMapping.length > 0 ? editingSvgMapping : null };
-      exerciseLibrary.items = exerciseLibrary.items.map(ex => 
+      const updatedExercise = {
+        ...editingExercise,
+        svgMapping: editingSvgMapping.length > 0 ? editingSvgMapping : null,
+      };
+      exerciseLibrary.items = exerciseLibrary.items.map((ex) =>
         ex.id === editingExercise.id ? updatedExercise : ex
       );
 
       toast({
-        title: "SVG Mapping Updated",
+        title: 'SVG Mapping Updated',
         description: `Updated mapping for "${editingExercise.name}"`,
       });
 
@@ -241,9 +287,9 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     } catch (error) {
       console.error('Error updating SVG mapping:', error);
       toast({
-        title: "Error",
-        description: "Failed to update SVG mapping",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update SVG mapping',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -254,22 +300,22 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
   const handleAutoAssign = async () => {
     setLoading(true);
     try {
-      const exercisesToUpdate = exerciseLibrary.items.filter(ex => 
-        ex.svgMapping === null || ex.svgMapping === undefined
+      const exercisesToUpdate = exerciseLibrary.items.filter(
+        (ex) => ex.svgMapping === null || ex.svgMapping === undefined
       );
-      
+
       if (exercisesToUpdate.length === 0) {
         toast({
-          title: "No Updates Needed",
-          description: "All exercises already have SVG mappings assigned",
+          title: 'No Updates Needed',
+          description: 'All exercises already have SVG mappings assigned',
         });
         return;
       }
 
       const batch = writeBatch(db);
       const updatedExercises = autoAssignSvgMappings(exercisesToUpdate);
-      
-      updatedExercises.forEach(exercise => {
+
+      updatedExercises.forEach((exercise) => {
         if (exercise.svgMapping !== null) {
           const exerciseRef = doc(db, 'exerciseLibrary', exercise.id);
           batch.update(exerciseRef, { svgMapping: exercise.svgMapping });
@@ -279,21 +325,21 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
       await batch.commit();
 
       // Update local state
-      exerciseLibrary.items = exerciseLibrary.items.map(ex => {
-        const updated = updatedExercises.find(u => u.id === ex.id);
+      exerciseLibrary.items = exerciseLibrary.items.map((ex) => {
+        const updated = updatedExercises.find((u) => u.id === ex.id);
         return updated || ex;
       });
 
       toast({
-        title: "Auto-Assignment Complete",
-        description: `Updated ${updatedExercises.filter(ex => ex.svgMapping !== null).length} exercises`,
+        title: 'Auto-Assignment Complete',
+        description: `Updated ${updatedExercises.filter((ex) => ex.svgMapping !== null).length} exercises`,
       });
     } catch (error) {
       console.error('Error auto-assigning SVG mappings:', error);
       toast({
-        title: "Error",
-        description: "Failed to auto-assign SVG mappings",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to auto-assign SVG mappings',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -304,24 +350,26 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
   const handleToggleHidden = async (exerciseId) => {
     try {
       const newHiddenExercises = hiddenExercises.includes(exerciseId)
-        ? hiddenExercises.filter(id => id !== exerciseId)
+        ? hiddenExercises.filter((id) => id !== exerciseId)
         : [...hiddenExercises, exerciseId];
 
       await saveUserProfile({
         ...userProfile,
-        adminHiddenExercises: newHiddenExercises
+        adminHiddenExercises: newHiddenExercises,
       });
 
       toast({
-        title: hiddenExercises.includes(exerciseId) ? "Exercise Shown" : "Exercise Hidden",
+        title: hiddenExercises.includes(exerciseId)
+          ? 'Exercise Shown'
+          : 'Exercise Hidden',
         description: `Exercise ${hiddenExercises.includes(exerciseId) ? 'shown' : 'hidden'} from admin view`,
       });
     } catch (error) {
       console.error('Error toggling exercise visibility:', error);
       toast({
-        title: "Error",
-        description: "Failed to update exercise visibility",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update exercise visibility',
+        variant: 'destructive',
       });
     }
   };
@@ -333,7 +381,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
       secondaryMuscles: 'all',
       equipment: 'all',
       bodyPart: 'all',
-      category: 'all'
+      category: 'all',
     });
     setSearchQuery('');
   };
@@ -343,7 +391,7 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
     if (exercise.svgMapping && exercise.svgMapping.length > 0) {
       return (
         <div className="flex flex-wrap gap-1">
-          {exercise.svgMapping.map(group => (
+          {exercise.svgMapping.map((group) => (
             <Badge key={group} variant="secondary" className="text-xs">
               {getSvgGroupDisplayName(group)}
             </Badge>
@@ -351,20 +399,24 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
         </div>
       );
     }
-    
+
     const autoGroups = getAutoAssignedSvgGroups(exercise);
     if (autoGroups.length > 0) {
       return (
         <div className="flex flex-wrap gap-1">
-          {autoGroups.map(group => (
-            <Badge key={group} variant="outline" className="text-xs text-gray-500">
+          {autoGroups.map((group) => (
+            <Badge
+              key={group}
+              variant="outline"
+              className="text-xs text-gray-500"
+            >
               {getSvgGroupDisplayName(group)} (auto)
             </Badge>
           ))}
         </div>
       );
     }
-    
+
     return <span className="text-gray-400 text-xs">None</span>;
   };
 
@@ -376,17 +428,31 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
         <div className="text-sm text-gray-600">{exercise.description}</div>
       )}
       <div className="text-xs space-y-1">
-        <div><strong>Target:</strong> {exercise.target || 'None'}</div>
+        <div>
+          <strong>Target:</strong> {exercise.target || 'None'}
+        </div>
         {exercise.secondaryMuscles && (
-          <div><strong>Secondary:</strong> {Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles.join(', ') : exercise.secondaryMuscles}</div>
+          <div>
+            <strong>Secondary:</strong>{' '}
+            {Array.isArray(exercise.secondaryMuscles)
+              ? exercise.secondaryMuscles.join(', ')
+              : exercise.secondaryMuscles}
+          </div>
         )}
-        <div><strong>Equipment:</strong> {exercise.equipment || 'None'}</div>
-        <div><strong>Body Part:</strong> {exercise.bodyPart || 'None'}</div>
-        <div><strong>Category:</strong> {exercise.category || 'None'}</div>
+        <div>
+          <strong>Equipment:</strong> {exercise.equipment || 'None'}
+        </div>
+        <div>
+          <strong>Body Part:</strong> {exercise.bodyPart || 'None'}
+        </div>
+        <div>
+          <strong>Category:</strong> {exercise.category || 'None'}
+        </div>
       </div>
       {exercise.instructions && (
         <div className="text-xs">
-          <strong>Instructions:</strong> {exercise.instructions.substring(0, 100)}...
+          <strong>Instructions:</strong>{' '}
+          {exercise.instructions.substring(0, 100)}...
         </div>
       )}
     </div>
@@ -401,7 +467,8 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
             Exercise Library Management
           </DialogTitle>
           <DialogDescription>
-            Manage SVG mappings and visibility for exercises. Hidden exercises are only hidden from this admin view.
+            Manage SVG mappings and visibility for exercises. Hidden exercises
+            are only hidden from this admin view.
           </DialogDescription>
         </DialogHeader>
 
@@ -425,9 +492,9 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
               >
                 <Filter className="h-4 w-4" />
                 Filters
-                {Object.values(filters).some(f => f !== 'all') && (
+                {Object.values(filters).some((f) => f !== 'all') && (
                   <Badge variant="secondary" className="ml-1">
-                    {Object.values(filters).filter(f => f !== 'all').length}
+                    {Object.values(filters).filter((f) => f !== 'all').length}
                   </Badge>
                 )}
               </Button>
@@ -436,7 +503,11 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
                 onClick={() => setShowHidden(!showHidden)}
                 className={`flex items-center gap-2 ${showHidden ? 'bg-equipment border-equipment' : ''}`}
               >
-                {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {showHidden ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
                 {showHidden ? 'Show Hidden' : 'Hide Hidden'}
                 {hiddenExercises.length > 0 && (
                   <Badge variant="secondary" className="ml-1">
@@ -459,55 +530,87 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <Select value={filters.targetMuscle} onValueChange={(value) => setFilters(prev => ({ ...prev, targetMuscle: value }))}>
+                    <Select
+                      value={filters.targetMuscle}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, targetMuscle: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Target Muscle" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Target Muscles</SelectItem>
-                        {filterOptions.targetMuscles?.map(muscle => (
-                          <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>
+                        {filterOptions.targetMuscles?.map((muscle) => (
+                          <SelectItem key={muscle} value={muscle}>
+                            {muscle}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
-                    <Select value={filters.equipment} onValueChange={(value) => setFilters(prev => ({ ...prev, equipment: value }))}>
+                    <Select
+                      value={filters.equipment}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, equipment: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Equipment" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Equipment</SelectItem>
-                        {filterOptions.equipments?.map(equipment => (
-                          <SelectItem key={equipment} value={equipment}>{equipment}</SelectItem>
+                        {filterOptions.equipments?.map((equipment) => (
+                          <SelectItem key={equipment} value={equipment}>
+                            {equipment}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
-                    <Select value={filters.bodyPart} onValueChange={(value) => setFilters(prev => ({ ...prev, bodyPart: value }))}>
+                    <Select
+                      value={filters.bodyPart}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, bodyPart: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Body Part" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Body Parts</SelectItem>
-                        {filterOptions.bodyParts?.map(part => (
-                          <SelectItem key={part} value={part}>{part}</SelectItem>
+                        {filterOptions.bodyParts?.map((part) => (
+                          <SelectItem key={part} value={part}>
+                            {part}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
-                    <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
+                    <Select
+                      value={filters.category}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({ ...prev, category: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Categories</SelectItem>
-                        {filterOptions.categories?.map(category => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
+                        {filterOptions.categories?.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
 
-                    <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={clearFilters}
+                      className="flex items-center gap-2"
+                    >
                       <X className="h-4 w-4" />
                       Clear
                     </Button>
@@ -519,14 +622,18 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
 
           {/* Results Summary */}
           <div className="flex justify-between items-center text-sm text-gray-600">
-            <span>Showing {filteredExercises.length} of {exerciseLibrary.items?.length || 0} exercises</span>
+            <span>
+              Showing {filteredExercises.length} of{' '}
+              {exerciseLibrary.items?.length || 0} exercises
+            </span>
             <div className="flex gap-4">
               <span>
-                {exerciseLibrary.items?.filter(ex => ex.svgMapping !== null && ex.svgMapping !== undefined).length || 0} with manual mappings
+                {exerciseLibrary.items?.filter(
+                  (ex) => ex.svgMapping !== null && ex.svgMapping !== undefined
+                ).length || 0}{' '}
+                with manual mappings
               </span>
-              <span>
-                {hiddenExercises.length} hidden
-              </span>
+              <span>{hiddenExercises.length} hidden</span>
             </div>
           </div>
 
@@ -548,7 +655,10 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
               {/* Table Body */}
               <div className="divide-y max-h-96 overflow-y-auto">
                 {filteredExercises.map((exercise) => (
-                  <div key={exercise.id} className="grid grid-cols-12 gap-4 p-3 text-sm hover:bg-gray-50">
+                  <div
+                    key={exercise.id}
+                    className="grid grid-cols-12 gap-4 p-3 text-sm hover:bg-gray-50"
+                  >
                     {/* Exercise Name */}
                     <div className="col-span-3">
                       <TooltipProvider>
@@ -569,13 +679,15 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
                     <div className="col-span-2">
                       <div className="flex items-center gap-1">
                         {getMuscleIcon(exercise.target) && (
-                          <img 
-                            src={getMuscleIcon(exercise.target)} 
+                          <img
+                            src={getMuscleIcon(exercise.target)}
                             alt={exercise.target}
                             className="w-4 h-4 rounded"
                           />
                         )}
-                        <span className="capitalize">{exercise.target || 'None'}</span>
+                        <span className="capitalize">
+                          {exercise.target || 'None'}
+                        </span>
                       </div>
                     </div>
 
@@ -583,19 +695,23 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
                     <div className="col-span-2">
                       <div className="flex items-center gap-1">
                         {getEquipmentIcon(exercise.equipment) && (
-                          <img 
-                            src={getEquipmentIcon(exercise.equipment)} 
+                          <img
+                            src={getEquipmentIcon(exercise.equipment)}
                             alt={exercise.equipment}
                             className="w-4 h-4 rounded"
                           />
                         )}
-                        <span className="capitalize">{exercise.equipment || 'None'}</span>
+                        <span className="capitalize">
+                          {exercise.equipment || 'None'}
+                        </span>
                       </div>
                     </div>
 
                     {/* Body Part */}
                     <div className="col-span-2">
-                      <span className="capitalize">{exercise.bodyPart || 'None'}</span>
+                      <span className="capitalize">
+                        {exercise.bodyPart || 'None'}
+                      </span>
                     </div>
 
                     {/* SVG Mapping */}
@@ -648,7 +764,11 @@ export default function ExerciseLibraryModal({ open, onOpenChange }) {
                               onClick={() => handleToggleHidden(exercise.id)}
                               className={`h-6 w-6 p-0 ${hiddenExercises.includes(exercise.id) ? 'text-blue-600' : 'text-gray-600'}`}
                             >
-                              {hiddenExercises.includes(exercise.id) ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                              {hiddenExercises.includes(exercise.id) ? (
+                                <Eye className="h-3 w-3" />
+                              ) : (
+                                <EyeOff className="h-3 w-3" />
+                              )}
                             </Button>
                           </>
                         )}
@@ -676,7 +796,7 @@ function SvgMappingEditor({ value, onChange }) {
   };
 
   const handleRemoveGroup = (group) => {
-    onChange(value.filter(g => g !== group));
+    onChange(value.filter((g) => g !== group));
   };
 
   return (
@@ -686,16 +806,16 @@ function SvgMappingEditor({ value, onChange }) {
           <SelectValue placeholder="Add SVG group" />
         </SelectTrigger>
         <SelectContent>
-          {availableGroups.map(group => (
+          {availableGroups.map((group) => (
             <SelectItem key={group} value={group}>
               {getSvgGroupDisplayName(group)}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      
+
       <div className="flex flex-wrap gap-1">
-        {value.map(group => (
+        {value.map((group) => (
           <Badge key={group} variant="secondary" className="text-xs">
             {getSvgGroupDisplayName(group)}
             <button
@@ -709,4 +829,4 @@ function SvgMappingEditor({ value, onChange }) {
       </div>
     </div>
   );
-} 
+}

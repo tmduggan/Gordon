@@ -1,16 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Lightbulb, Plus, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useToast } from '../../hooks/useToast';
+import {
+  generateExerciseSubmissionId,
+  submitExerciseSubmission,
+} from '../../services/exercise/exerciseSubmissionService';
 import useAuthStore from '../../store/useAuthStore';
-import { generateExerciseSubmissionId, submitExerciseSubmission } from '../../services/exercise/exerciseSubmissionService';
 
-export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searchQuery = '' }) {
-  const { user, userProfile, addExerciseSubmission, canSubmitExercise } = useAuthStore();
+export default function ExerciseLibraryAdditionModal({
+  open,
+  onOpenChange,
+  searchQuery = '',
+}) {
+  const { user, userProfile, addExerciseSubmission, canSubmitExercise } =
+    useAuthStore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,38 +43,46 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
     secondaryMuscles: [],
     description: '',
     instructions: [],
-    source: `user-${user?.uid || 'unknown'}`
+    source: `user-${user?.uid || 'unknown'}`,
   });
 
   // Auto-generate ID on mount
   useEffect(() => {
     if (open && !formData.id) {
-      generateExerciseSubmissionId().then(id => {
-        setFormData(prev => ({ ...prev, id }));
+      generateExerciseSubmissionId().then((id) => {
+        setFormData((prev) => ({ ...prev, id }));
       });
     }
   }, [open]);
 
   // Check user's submission limit
-  const submittedCount = userProfile?.exerciseSubmissions?.submitted?.length || 0;
+  const submittedCount =
+    userProfile?.exerciseSubmissions?.submitted?.length || 0;
   const canSubmit = canSubmitExercise();
 
   const handleSubmit = async () => {
     if (!canSubmit) {
       toast({
-        title: "Submission Limit Reached",
-        description: "You can only submit 3 exercises to the library.",
-        variant: "destructive"
+        title: 'Submission Limit Reached',
+        description: 'You can only submit 3 exercises to the library.',
+        variant: 'destructive',
       });
       return;
     }
 
     // Basic validation
-    if (!formData.name || !formData.target || !formData.bodyPart || !formData.category || !formData.difficulty || !formData.equipment) {
+    if (
+      !formData.name ||
+      !formData.target ||
+      !formData.bodyPart ||
+      !formData.category ||
+      !formData.difficulty ||
+      !formData.equipment
+    ) {
       toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields marked with *",
-        variant: "destructive"
+        title: 'Missing Required Fields',
+        description: 'Please fill in all required fields marked with *',
+        variant: 'destructive',
       });
       return;
     }
@@ -63,13 +90,13 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
     setLoading(true);
     try {
       await submitExerciseSubmission(formData, user.uid);
-      
+
       // Update user profile
       await addExerciseSubmission(formData.id);
 
       toast({
-        title: "Exercise Submitted!",
-        description: "Your exercise has been submitted for admin review.",
+        title: 'Exercise Submitted!',
+        description: 'Your exercise has been submitted for admin review.',
       });
 
       // Reset form
@@ -84,16 +111,16 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
         secondaryMuscles: [],
         description: '',
         instructions: [],
-        source: `user-${user?.uid || 'unknown'}`
+        source: `user-${user?.uid || 'unknown'}`,
       });
 
       onOpenChange(false);
     } catch (error) {
       console.error('Error submitting exercise:', error);
       toast({
-        title: "Submission Failed",
-        description: "There was an error submitting your exercise.",
-        variant: "destructive"
+        title: 'Submission Failed',
+        description: 'There was an error submitting your exercise.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -127,14 +154,21 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
               <label className="text-sm font-medium">Exercise Name *</label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="e.g., dumbbell waiter biceps curl"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Target Muscle *</label>
-              <Select value={formData.target} onValueChange={(value) => setFormData(prev => ({ ...prev, target: value }))}>
+              <Select
+                value={formData.target}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, target: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select target muscle" />
                 </SelectTrigger>
@@ -149,14 +183,21 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                   <SelectItem value="hamstrings">Hamstrings</SelectItem>
                   <SelectItem value="calves">Calves</SelectItem>
                   <SelectItem value="glutes">Glutes</SelectItem>
-                  <SelectItem value="cardiovascular system">Cardiovascular System</SelectItem>
+                  <SelectItem value="cardiovascular system">
+                    Cardiovascular System
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Body Part *</label>
-              <Select value={formData.bodyPart} onValueChange={(value) => setFormData(prev => ({ ...prev, bodyPart: value }))}>
+              <Select
+                value={formData.bodyPart}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, bodyPart: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select body part" />
                 </SelectTrigger>
@@ -176,7 +217,12 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Category *</label>
-              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <Select
+                value={formData.category}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, category: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -184,7 +230,9 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                   <SelectItem value="strength">Strength</SelectItem>
                   <SelectItem value="cardio">Cardio</SelectItem>
                   <SelectItem value="stretching">Stretching</SelectItem>
-                  <SelectItem value="olympic_weightlifting">Olympic Weightlifting</SelectItem>
+                  <SelectItem value="olympic_weightlifting">
+                    Olympic Weightlifting
+                  </SelectItem>
                   <SelectItem value="strongman">Strongman</SelectItem>
                   <SelectItem value="powerlifting">Powerlifting</SelectItem>
                   <SelectItem value="plyometrics">Plyometrics</SelectItem>
@@ -194,7 +242,12 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Difficulty *</label>
-              <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
+              <Select
+                value={formData.difficulty}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, difficulty: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
@@ -208,7 +261,12 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Equipment *</label>
-              <Select value={formData.equipment} onValueChange={(value) => setFormData(prev => ({ ...prev, equipment: value }))}>
+              <Select
+                value={formData.equipment}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, equipment: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select equipment" />
                 </SelectTrigger>
@@ -231,13 +289,21 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
             <label className="text-sm font-medium">Secondary Muscles</label>
             <div className="flex flex-wrap gap-2">
               {formData.secondaryMuscles.map((muscle, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
                   {muscle}
                   <button
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      secondaryMuscles: prev.secondaryMuscles.filter((_, i) => i !== index)
-                    }))}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        secondaryMuscles: prev.secondaryMuscles.filter(
+                          (_, i) => i !== index
+                        ),
+                      }))
+                    }
                     className="ml-1 hover:text-red-500"
                   >
                     <X className="h-3 w-3" />
@@ -245,14 +311,16 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                 </Badge>
               ))}
             </div>
-            <Select onValueChange={(value) => {
-              if (!formData.secondaryMuscles.includes(value)) {
-                setFormData(prev => ({
-                  ...prev,
-                  secondaryMuscles: [...prev.secondaryMuscles, value]
-                }));
-              }
-            }}>
+            <Select
+              onValueChange={(value) => {
+                if (!formData.secondaryMuscles.includes(value)) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    secondaryMuscles: [...prev.secondaryMuscles, value],
+                  }));
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Add secondary muscle" />
               </SelectTrigger>
@@ -260,7 +328,9 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                 <SelectItem value="forearms">Forearms</SelectItem>
                 <SelectItem value="shoulders">Shoulders</SelectItem>
                 <SelectItem value="traps">Traps</SelectItem>
-                <SelectItem value="serratus anterior">Serratus Anterior</SelectItem>
+                <SelectItem value="serratus anterior">
+                  Serratus Anterior
+                </SelectItem>
                 <SelectItem value="adductors">Adductors</SelectItem>
                 <SelectItem value="abductors">Abductors</SelectItem>
               </SelectContent>
@@ -272,7 +342,12 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
             <label className="text-sm font-medium">Description</label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Describe the exercise, its benefits, and target muscles..."
               rows={3}
               className="w-full border rounded p-2 text-sm"
@@ -290,17 +365,24 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
                     onChange={(e) => {
                       const newInstructions = [...formData.instructions];
                       newInstructions[index] = e.target.value;
-                      setFormData(prev => ({ ...prev, instructions: newInstructions }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        instructions: newInstructions,
+                      }));
                     }}
                     placeholder={`Step ${index + 1}`}
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      instructions: prev.instructions.filter((_, i) => i !== index)
-                    }))}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        instructions: prev.instructions.filter(
+                          (_, i) => i !== index
+                        ),
+                      }))
+                    }
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -309,10 +391,12 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFormData(prev => ({
-                  ...prev,
-                  instructions: [...prev.instructions, '']
-                }))}
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    instructions: [...prev.instructions, ''],
+                  }))
+                }
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -326,10 +410,7 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={loading || !canSubmit}
-            >
+            <Button onClick={handleSubmit} disabled={loading || !canSubmit}>
               {loading ? 'Submitting...' : 'Submit Exercise'}
             </Button>
           </div>
@@ -337,4 +418,4 @@ export default function ExerciseLibraryAdditionModal({ open, onOpenChange, searc
       </DialogContent>
     </Dialog>
   );
-} 
+}

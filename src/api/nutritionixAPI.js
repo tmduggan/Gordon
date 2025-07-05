@@ -1,8 +1,11 @@
 // This function now acts as a client for our own Firebase Functions,
 // which securely proxy the requests to the Nutritionix API.
-const INSTANT_SEARCH_URL = 'https://nutritionixinstantsearch-llkdth3zaa-uc.a.run.app';
-const FULL_NUTRITION_URL = 'https://nutritionixfullnutrition-llkdth3zaa-uc.a.run.app';
-const NUTRIENTS_URL = 'https://us-central1-food-tracker-19c9d.cloudfunctions.net/nutritionixNutrients';
+const INSTANT_SEARCH_URL =
+  'https://nutritionixinstantsearch-llkdth3zaa-uc.a.run.app';
+const FULL_NUTRITION_URL =
+  'https://nutritionixfullnutrition-llkdth3zaa-uc.a.run.app';
+const NUTRIENTS_URL =
+  'https://us-central1-food-tracker-19c9d.cloudfunctions.net/nutritionixNutrients';
 
 /**
  * Fetches a list of food suggestions from our secure Firebase Function proxy.
@@ -14,13 +17,13 @@ export async function fetchInstantResults(query) {
     const url = `${INSTANT_SEARCH_URL}?query=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     const data = await response.json();
-    
+
     const brandedResults = data.branded ? data.branded.slice(0, 4) : [];
     const commonResults = data.common ? data.common.slice(0, 4) : [];
-    
+
     const results = [...brandedResults, ...commonResults];
-    
-    return results.map(item => ({
+
+    return results.map((item) => ({
       food_name: item.food_name,
       brand_name: item.brand_name || null,
       photo: item.photo?.thumb || null,
@@ -43,14 +46,14 @@ export async function fetchFullNutrition(item) {
   try {
     let url;
     if (item.nix_item_id) {
-        url = `${FULL_NUTRITION_URL}?nix_item_id=${item.nix_item_id}`;
+      url = `${FULL_NUTRITION_URL}?nix_item_id=${item.nix_item_id}`;
     } else {
-        url = `${FULL_NUTRITION_URL}?food_name=${encodeURIComponent(item.food_name)}`;
+      url = `${FULL_NUTRITION_URL}?food_name=${encodeURIComponent(item.food_name)}`;
     }
 
     const response = await fetch(url);
     const data = await response.json();
-    
+
     if (data.foods && data.foods.length > 0) {
       return data.foods[0];
     }
@@ -71,7 +74,7 @@ export async function fetchNutrients(query) {
     const url = `${NUTRIENTS_URL}?query=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     const data = await response.json();
-    
+
     if (data.foods && data.foods.length > 0) {
       return data.foods;
     }
@@ -80,4 +83,4 @@ export async function fetchNutrients(query) {
     console.error('Failed to fetch nutrients from the proxy:', e);
     throw e;
   }
-} 
+}

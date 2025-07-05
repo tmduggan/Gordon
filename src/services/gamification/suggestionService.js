@@ -7,23 +7,23 @@ import { getMuscleRepsForPeriod } from './exerciseScoringService';
 const SUGGESTION_CONFIG = {
   // Bonus XP for working lagging muscle groups
   laggingMuscleBonus: {
-    neverTrained: 100,    // +100 XP for muscles never trained
-    underTrained: 50,     // +50 XP for muscles with low reps
-    neglected: 25         // +25 XP for muscles not trained recently
+    neverTrained: 100, // +100 XP for muscles never trained
+    underTrained: 50, // +50 XP for muscles with low reps
+    neglected: 25, // +25 XP for muscles not trained recently
   },
-  
+
   // Thresholds for determining lagging muscles (in reps)
   thresholds: {
-    neverTrained: 0,      // No reps in this muscle
-    underTrained: 100,    // Less than 100 reps
-    neglected: 500        // Less than 500 reps
+    neverTrained: 0, // No reps in this muscle
+    underTrained: 100, // Less than 100 reps
+    neglected: 500, // Less than 500 reps
   },
-  
+
   // How many days without training to consider "neglected"
   neglectedDays: 14,
-  
+
   // Maximum suggestions to show
-  maxSuggestions: 3
+  maxSuggestions: 3,
 };
 
 /**
@@ -33,34 +33,48 @@ const SUGGESTION_CONFIG = {
  * @param {Array} exerciseLibrary - Available exercises
  * @returns {Array} Array of lagging muscle objects
  */
-export function analyzeLaggingMuscles(muscleReps = {}, workoutLogs = [], exerciseLibrary = []) {
+export function analyzeLaggingMuscles(
+  muscleReps = {},
+  workoutLogs = [],
+  exerciseLibrary = []
+) {
   const laggingMuscles = [];
-  
+
   // Get all possible muscle groups from the library
   const allMuscles = new Set();
-  exerciseLibrary.forEach(exercise => {
+  exerciseLibrary.forEach((exercise) => {
     if (exercise.target) {
       allMuscles.add(exercise.target.toLowerCase().trim());
     }
     if (exercise.secondaryMuscles) {
       if (Array.isArray(exercise.secondaryMuscles)) {
-        exercise.secondaryMuscles.forEach(muscle => allMuscles.add(muscle.toLowerCase().trim()));
+        exercise.secondaryMuscles.forEach((muscle) =>
+          allMuscles.add(muscle.toLowerCase().trim())
+        );
       } else {
         allMuscles.add(exercise.secondaryMuscles.toLowerCase().trim());
       }
     }
   });
-  
+
   // Analyze each muscle group using time-based reps
-  allMuscles.forEach(muscle => {
-    const lifetimeReps = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, 'lifetime');
-    const hasWorkedToday = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, 'today') > 0;
-    const hasWorkedThisWeek = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '7day') > 0;
-    const hasWorkedRecently = getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '14day') > 0;
-    
+  allMuscles.forEach((muscle) => {
+    const lifetimeReps = getMuscleRepsForPeriod(
+      workoutLogs,
+      exerciseLibrary,
+      muscle,
+      'lifetime'
+    );
+    const hasWorkedToday =
+      getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, 'today') > 0;
+    const hasWorkedThisWeek =
+      getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '7day') > 0;
+    const hasWorkedRecently =
+      getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '14day') > 0;
+
     let laggingType = null;
     let bonus = 0;
-    
+
     if (lifetimeReps === 0) {
       laggingType = 'neverTrained';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.neverTrained;
@@ -71,7 +85,7 @@ export function analyzeLaggingMuscles(muscleReps = {}, workoutLogs = [], exercis
       laggingType = 'neglected';
       bonus = SUGGESTION_CONFIG.laggingMuscleBonus.neglected;
     }
-    
+
     if (laggingType) {
       laggingMuscles.push({
         muscle,
@@ -79,11 +93,15 @@ export function analyzeLaggingMuscles(muscleReps = {}, workoutLogs = [], exercis
         laggingType,
         bonus,
         daysSinceTrained: hasWorkedRecently ? 0 : 14, // Simplified for now
-        priority: getPriorityScore(laggingType, lifetimeReps, hasWorkedRecently ? 0 : 14)
+        priority: getPriorityScore(
+          laggingType,
+          lifetimeReps,
+          hasWorkedRecently ? 0 : 14
+        ),
       });
     }
   });
-  
+
   // Sort by priority (never trained first, then by days since trained)
   return laggingMuscles.sort((a, b) => b.priority - a.priority);
 }
@@ -99,9 +117,9 @@ function getPriorityScore(laggingType, reps, daysSinceTrained) {
   const baseScores = {
     neverTrained: 1000,
     underTrained: 500,
-    neglected: 100
+    neglected: 100,
   };
-  
+
   return baseScores[laggingType] + daysSinceTrained;
 }
 
@@ -141,18 +159,34 @@ export function generateWorkoutSuggestions(
 
   function hasAllEquipment(exerciseEquipment, selectedEquipment) {
     if (!exerciseEquipment) return true;
-    const required = exerciseEquipment.split(',').map(e => e.trim().toLowerCase());
-    return required.every(req => selectedEquipment.map(e => e.toLowerCase()).includes(req));
+    const required = exerciseEquipment
+      .split(',')
+      .map((e) => e.trim().toLowerCase());
+    return required.every((req) =>
+      selectedEquipment.map((e) => e.toLowerCase()).includes(req)
+    );
   }
 
   for (const laggingMuscle of laggingMuscles) {
     // Find all exercises for this muscle and category
-    let matchingExercises = exerciseLibrary.filter(exercise => {
-      const targets = [exercise.target, ...(Array.isArray(exercise.secondaryMuscles) ? exercise.secondaryMuscles : [exercise.secondaryMuscles])];
-      const targetsMuscle = targets.some(target => target && target.toLowerCase().trim() === laggingMuscle.muscle);
+    let matchingExercises = exerciseLibrary.filter((exercise) => {
+      const targets = [
+        exercise.target,
+        ...(Array.isArray(exercise.secondaryMuscles)
+          ? exercise.secondaryMuscles
+          : [exercise.secondaryMuscles]),
+      ];
+      const targetsMuscle = targets.some(
+        (target) =>
+          target && target.toLowerCase().trim() === laggingMuscle.muscle
+      );
       if (!targetsMuscle) return false;
       if (exerciseCategory === 'cardio') {
-        return (exercise.category && exercise.category.toLowerCase() === 'cardio') || (exercise.target && exercise.target.toLowerCase() === 'cardiovascular');
+        return (
+          (exercise.category && exercise.category.toLowerCase() === 'cardio') ||
+          (exercise.target &&
+            exercise.target.toLowerCase() === 'cardiovascular')
+        );
       } else if (exerciseCategory === 'bodyweight') {
         return hasAllEquipment(exercise.equipment, selectedBodyweight);
       } else if (exerciseCategory === 'gym') {
@@ -161,9 +195,13 @@ export function generateWorkoutSuggestions(
       return true;
     });
     // Remove already suggested
-    matchingExercises = matchingExercises.filter(ex => !usedExerciseIds.has(ex.id));
+    matchingExercises = matchingExercises.filter(
+      (ex) => !usedExerciseIds.has(ex.id)
+    );
     // 1. Pinned
-    const pinned = matchingExercises.filter(ex => pinnedExercises.includes(ex.id));
+    const pinned = matchingExercises.filter((ex) =>
+      pinnedExercises.includes(ex.id)
+    );
     for (const ex of pinned) {
       const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
       if (hiddenSuggestions.includes(suggestionId)) continue;
@@ -172,14 +210,18 @@ export function generateWorkoutSuggestions(
         exercise: ex,
         laggingMuscle,
         reason: getSuggestionReason(laggingMuscle),
-        bonus: laggingMuscle.bonus
+        bonus: laggingMuscle.bonus,
       });
       usedExerciseIds.add(ex.id);
       if (ex.equipment) usedEquipment.add(ex.equipment);
-      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
+      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions)
+        return suggestions;
     }
     // 2. Favorite (not pinned)
-    const favorite = matchingExercises.filter(ex => favoriteExercises.includes(ex.id) && !pinnedExercises.includes(ex.id));
+    const favorite = matchingExercises.filter(
+      (ex) =>
+        favoriteExercises.includes(ex.id) && !pinnedExercises.includes(ex.id)
+    );
     for (const ex of favorite) {
       const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
       if (hiddenSuggestions.includes(suggestionId)) continue;
@@ -188,14 +230,18 @@ export function generateWorkoutSuggestions(
         exercise: ex,
         laggingMuscle,
         reason: getSuggestionReason(laggingMuscle),
-        bonus: laggingMuscle.bonus
+        bonus: laggingMuscle.bonus,
       });
       usedExerciseIds.add(ex.id);
       if (ex.equipment) usedEquipment.add(ex.equipment);
-      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
+      if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions)
+        return suggestions;
     }
     // 3. Random (not pinned or favorite)
-    const regular = matchingExercises.filter(ex => !pinnedExercises.includes(ex.id) && !favoriteExercises.includes(ex.id));
+    const regular = matchingExercises.filter(
+      (ex) =>
+        !pinnedExercises.includes(ex.id) && !favoriteExercises.includes(ex.id)
+    );
     if (regular.length > 0) {
       const ex = getRandom(regular);
       const suggestionId = `${ex.id}-${laggingMuscle.muscle}`;
@@ -205,11 +251,12 @@ export function generateWorkoutSuggestions(
           exercise: ex,
           laggingMuscle,
           reason: getSuggestionReason(laggingMuscle),
-          bonus: laggingMuscle.bonus
+          bonus: laggingMuscle.bonus,
         });
         usedExerciseIds.add(ex.id);
         if (ex.equipment) usedEquipment.add(ex.equipment);
-        if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions) return suggestions;
+        if (suggestions.length >= SUGGESTION_CONFIG.maxSuggestions)
+          return suggestions;
       }
     }
     // Only move to next lagging muscle if we still need more suggestions
@@ -224,8 +271,10 @@ export function generateWorkoutSuggestions(
  * @returns {string} Reason for suggestion
  */
 function getSuggestionReason(laggingMuscle) {
-  const muscleName = laggingMuscle.muscle.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
+  const muscleName = laggingMuscle.muscle
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+
   switch (laggingMuscle.laggingType) {
     case 'neverTrained':
       return `You haven't trained ${muscleName} yet!`;
@@ -245,19 +294,30 @@ function getSuggestionReason(laggingMuscle) {
  * @param {Array} laggingMuscles - Array of lagging muscle objects
  * @returns {number} Bonus XP for targeting lagging muscles
  */
-export function calculateLaggingMuscleBonus(workoutData, exerciseDetails, laggingMuscles) {
+export function calculateLaggingMuscleBonus(
+  workoutData,
+  exerciseDetails,
+  laggingMuscles
+) {
   if (!laggingMuscles || laggingMuscles.length === 0) return 0;
-  
-  const targets = [exerciseDetails.target, ...(Array.isArray(exerciseDetails.secondaryMuscles) ? exerciseDetails.secondaryMuscles : [exerciseDetails.secondaryMuscles])];
-  
+
+  const targets = [
+    exerciseDetails.target,
+    ...(Array.isArray(exerciseDetails.secondaryMuscles)
+      ? exerciseDetails.secondaryMuscles
+      : [exerciseDetails.secondaryMuscles]),
+  ];
+
   let totalBonus = 0;
-  laggingMuscles.forEach(laggingMuscle => {
-    const targetsMuscle = targets.some(target => target && target.toLowerCase().trim() === laggingMuscle.muscle);
+  laggingMuscles.forEach((laggingMuscle) => {
+    const targetsMuscle = targets.some(
+      (target) => target && target.toLowerCase().trim() === laggingMuscle.muscle
+    );
     if (targetsMuscle) {
       totalBonus += laggingMuscle.bonus;
     }
   });
-  
+
   return totalBonus;
 }
 
@@ -268,12 +328,12 @@ export function calculateLaggingMuscleBonus(workoutData, exerciseDetails, laggin
  */
 export function getAvailableEquipmentOptions(exerciseLibrary) {
   const equipmentSet = new Set();
-  
-  exerciseLibrary.forEach(exercise => {
+
+  exerciseLibrary.forEach((exercise) => {
     if (exercise.equipment) {
       equipmentSet.add(exercise.equipment);
     }
   });
-  
+
   return Array.from(equipmentSet).sort();
-} 
+}

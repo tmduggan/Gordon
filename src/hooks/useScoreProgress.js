@@ -1,6 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-export default function useScoreProgress(logs, exercises, cartData = {}, userProfile = null) {
+export default function useScoreProgress(
+  logs,
+  exercises,
+  cartData = {},
+  userProfile = null
+) {
   const [expectedScores, setExpectedScores] = useState({});
 
   // Calculate daily score from logs
@@ -12,18 +17,21 @@ export default function useScoreProgress(logs, exercises, cartData = {}, userPro
     // Find the timestamp of the most recent log entry
     const mostRecentLog = logs.reduce((latest, current) => {
       const latestTime = latest.timestamp.seconds || latest.timestamp.getTime();
-      const currentTime = current.timestamp.seconds || current.timestamp.getTime();
+      const currentTime =
+        current.timestamp.seconds || current.timestamp.getTime();
       return currentTime > latestTime ? current : latest;
     });
-    
+
     // Determine the date string for that most recent day
     const mostRecentDateString = new Date(
-      mostRecentLog.timestamp.seconds ? mostRecentLog.timestamp.seconds * 1000 : mostRecentLog.timestamp
+      mostRecentLog.timestamp.seconds
+        ? mostRecentLog.timestamp.seconds * 1000
+        : mostRecentLog.timestamp
     ).toDateString();
 
     // Sum the scores for that day
     return logs
-      .filter(log => {
+      .filter((log) => {
         const logDate = new Date(
           log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp
         ).toDateString();
@@ -46,11 +54,19 @@ export default function useScoreProgress(logs, exercises, cartData = {}, userPro
     }
 
     setExpectedScores(newScores);
-  }, [cartData.currentLogData, cartData.exerciseCart, exercises, logs, cartData.datePart, cartData.timePart, userProfile]);
+  }, [
+    cartData.currentLogData,
+    cartData.exerciseCart,
+    exercises,
+    logs,
+    cartData.datePart,
+    cartData.timePart,
+    userProfile,
+  ]);
 
   return {
     dailyScore,
     expectedScores,
     setExpectedScores,
   };
-} 
+}

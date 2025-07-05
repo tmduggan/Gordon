@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Button } from './button';
-import { Info, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Info, Smartphone } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import ExerciseTooltip from '../exercise/ExerciseTooltip';
+import { Button } from './button';
 
 interface MobileTooltipProps {
   children: React.ReactNode;
@@ -14,7 +14,11 @@ interface MobileTooltipProps {
   side?: 'top' | 'bottom' | 'left' | 'right';
   delayDuration?: number;
   showInfoButton?: boolean;
-  infoButtonPosition?: 'top-right' | 'bottom-right' | 'bottom-left' | 'top-left';
+  infoButtonPosition?:
+    | 'top-right'
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-left';
   className?: string;
   triggerClassName?: string;
 }
@@ -30,12 +34,15 @@ export function MobileTooltip({
   showInfoButton = true,
   infoButtonPosition = 'top-right',
   className,
-  triggerClassName
+  triggerClassName,
 }: MobileTooltipProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isTouchHolding, setIsTouchHolding] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState<{top: number, left: number} | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [touchStartTime, setTouchStartTime] = useState(0);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -163,38 +170,41 @@ export function MobileTooltip({
 
   // Use ExerciseTooltip if exercise is provided, else fallback to content
   const tooltipContent = exercise ? (
-    <ExerciseTooltip exercise={exercise} bonusXP={bonusXP} laggingType={laggingType} />
+    <ExerciseTooltip
+      exercise={exercise}
+      bonusXP={bonusXP}
+      laggingType={laggingType}
+    />
   ) : (
     content
   );
 
   // Portalized tooltip for mobile with overlay for tap-away
-  const portalTooltip = showTooltip && isMobile && tooltipPos
-    ? createPortal(
-        <>
-          {/* Transparent overlay to close tooltip on tap-away */}
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              zIndex: 9998,
-              background: 'transparent',
-            }}
-            onClick={() => {
-              setShowTooltip(false);
-              setTooltipPos(null);
-            }}
-          />
-          <div style={getTooltipPositionStyle()}>
-            {tooltipContent}
-          </div>
-        </>,
-        document.getElementById('tooltip-root')!
-      )
-    : null;
+  const portalTooltip =
+    showTooltip && isMobile && tooltipPos
+      ? createPortal(
+          <>
+            {/* Transparent overlay to close tooltip on tap-away */}
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: 9998,
+                background: 'transparent',
+              }}
+              onClick={() => {
+                setShowTooltip(false);
+                setTooltipPos(null);
+              }}
+            />
+            <div style={getTooltipPositionStyle()}>{tooltipContent}</div>
+          </>,
+          document.getElementById('tooltip-root')!
+        )
+      : null;
 
   return (
     <div className={cn('relative', className)}>
@@ -252,11 +262,11 @@ export function useIsMobile() {
     const checkMobile = () => {
       setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   return isMobile;
-} 
+}

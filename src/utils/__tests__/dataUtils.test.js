@@ -1,4 +1,4 @@
-import { ensureAvailableEquipment, DEFAULT_EQUIPMENT } from '../dataUtils';
+import { DEFAULT_EQUIPMENT, ensureAvailableEquipment } from '../dataUtils';
 
 describe('ensureAvailableEquipment', () => {
   it('returns defaults if input is undefined', () => {
@@ -18,15 +18,17 @@ describe('ensureAvailableEquipment', () => {
   });
 
   it('fills empty arrays with defaults', () => {
-    expect(ensureAvailableEquipment({ gym: [], bodyweight: [], cardio: [] })).toEqual(DEFAULT_EQUIPMENT);
+    expect(
+      ensureAvailableEquipment({ gym: [], bodyweight: [], cardio: [] })
+    ).toEqual(DEFAULT_EQUIPMENT);
   });
 
   it('preserves non-empty arrays', () => {
     const input = {
       gym: ['barbell', 'dumbbell'],
       bodyweight: ['body weight', 'band'],
-      cardio: ['treadmill']
+      cardio: ['treadmill'],
     };
     expect(ensureAvailableEquipment(input)).toEqual(input);
   });
-}); 
+});

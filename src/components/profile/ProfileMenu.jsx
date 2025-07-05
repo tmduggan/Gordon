@@ -1,32 +1,56 @@
-import React, { useState } from 'react';
-import useAuthStore from '@/store/useAuthStore';
-import ProfileModal from './ProfileModal';
-import HiddenExercisesModal from './HiddenExercisesModal';
-import RecipeManagementModal from './RecipeManagementModal';
-import ExerciseLibraryModal from '../admin/ExerciseLibraryModal';
-import { auth } from '@/firebase';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from '@/components/ui/tooltip';
+import { auth } from '@/firebase';
+import useAuthStore from '@/store/useAuthStore';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Bug,
+  ChefHat,
+  Crown,
+  Dumbbell,
+  EyeOff,
+  LogOut,
+  Pencil,
+  RefreshCw,
+  Settings,
+  User,
+} from 'lucide-react';
+import React, { useState } from 'react';
 import { useToast } from '../../hooks/useToast';
-import { Crown, EyeOff, Settings, User, LogOut, Pencil, RefreshCw, Bug, Dumbbell, ChefHat } from 'lucide-react';
-import { getPendingSubmissions, approveExerciseSubmission, rejectExerciseSubmission } from '../../services/exercise/exerciseSubmissionService';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  approveExerciseSubmission,
+  getPendingSubmissions,
+  rejectExerciseSubmission,
+} from '../../services/exercise/exerciseSubmissionService';
+import ExerciseLibraryModal from '../admin/ExerciseLibraryModal';
+import HiddenExercisesModal from './HiddenExercisesModal';
+import ProfileModal from './ProfileModal';
+import RecipeManagementModal from './RecipeManagementModal';
 
 export default function ProfileMenu() {
-  const { user, userProfile, isAdmin, getRemainingHides, toggleSubscriptionStatus, ensureSubscriptionField } = useAuthStore();
+  const {
+    user,
+    userProfile,
+    isAdmin,
+    getRemainingHides,
+    toggleSubscriptionStatus,
+    ensureSubscriptionField,
+  } = useAuthStore();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showHiddenExercises, setShowHiddenExercises] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [simulatedStatus, setSimulatedStatus] = useState(null); // null = real, else 'basic' or 'premium' or 'admin'
-  const [showExerciseLibraryModal, setShowExerciseLibraryModal] = useState(false);
+  const [showExerciseLibraryModal, setShowExerciseLibraryModal] =
+    useState(false);
   const { toast } = useToast();
-  const [showAdminSubmissionsModal, setShowAdminSubmissionsModal] = useState(false);
+  const [showAdminSubmissionsModal, setShowAdminSubmissionsModal] =
+    useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
@@ -44,46 +68,66 @@ export default function ProfileMenu() {
 
   // Get subscription status display (simulate if admin is toggling)
   const getSubscriptionStatus = () => {
-    const status = simulatedStatus || userProfile.subscription?.status || 'basic';
+    const status =
+      simulatedStatus || userProfile.subscription?.status || 'basic';
     switch (status) {
       case 'admin':
-        return { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: Crown };
+        return {
+          label: 'Admin',
+          color: 'bg-purple-100 text-purple-800 border-purple-200',
+          icon: Crown,
+        };
       case 'premium':
-        return { label: 'Premium', color: 'bg-status-success text-status-success border-status-success', icon: Crown };
+        return {
+          label: 'Premium',
+          color: 'bg-status-success text-status-success border-status-success',
+          icon: Crown,
+        };
       case 'basic':
       default:
-        return { label: 'Basic', color: 'bg-gray-100 text-gray-800 border-gray-200', icon: User };
+        return {
+          label: 'Basic',
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          icon: User,
+        };
     }
   };
 
   const subscriptionInfo = getSubscriptionStatus();
-  const remainingHides = simulatedStatus === 'basic' ? 2 : simulatedStatus === 'premium' ? '∞' : getRemainingHides();
+  const remainingHides =
+    simulatedStatus === 'basic'
+      ? 2
+      : simulatedStatus === 'premium'
+        ? '∞'
+        : getRemainingHides();
   const isAdminUser = isAdmin();
-  
+
   // Calculate recipe count with max of 99
-  const recipeCount = Math.min((userProfile.recipes?.length || 0), 99);
+  const recipeCount = Math.min(userProfile.recipes?.length || 0, 99);
 
   React.useEffect(() => {
     if (isAdminUser) {
-      getPendingSubmissions().then(subs => {
-        setPendingSubmissions(subs);
-        setPendingCount(subs.length);
-      }).catch(() => setPendingCount(0));
+      getPendingSubmissions()
+        .then((subs) => {
+          setPendingSubmissions(subs);
+          setPendingCount(subs.length);
+        })
+        .catch(() => setPendingCount(0));
     }
   }, [isAdminUser]);
 
   // Only for admin: cycle simulated view
   const handleToggleSimulatedStatus = () => {
     if (!isAdminUser) return;
-    setSimulatedStatus(prev => {
+    setSimulatedStatus((prev) => {
       if (prev === null) return 'basic';
       if (prev === 'basic') return 'premium';
       if (prev === 'premium') return 'admin';
       return null; // back to real
     });
     toast({
-      title: "Simulated User Type Changed",
-      description: "You are now viewing the app as a different user type.",
+      title: 'Simulated User Type Changed',
+      description: 'You are now viewing the app as a different user type.',
     });
   };
 
@@ -93,14 +137,15 @@ export default function ProfileMenu() {
     try {
       await toggleSubscriptionStatus();
       toast({
-        title: "Subscription Status Updated",
-        description: "Your actual subscription status has been changed in the database.",
+        title: 'Subscription Status Updated',
+        description:
+          'Your actual subscription status has been changed in the database.',
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update subscription status.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update subscription status.',
+        variant: 'destructive',
       });
     }
   };
@@ -108,8 +153,8 @@ export default function ProfileMenu() {
   // Debug function to log current user profile
   const handleDebugProfile = () => {
     toast({
-      title: "Profile Debugged",
-      description: "Check the browser console for user profile details.",
+      title: 'Profile Debugged',
+      description: 'Check the browser console for user profile details.',
     });
   };
 
@@ -118,14 +163,15 @@ export default function ProfileMenu() {
     try {
       await ensureSubscriptionField();
       toast({
-        title: "Subscription Field Ensured",
-        description: "Subscription field has been created/verified in your profile.",
+        title: 'Subscription Field Ensured',
+        description:
+          'Subscription field has been created/verified in your profile.',
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to ensure subscription field.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to ensure subscription field.',
+        variant: 'destructive',
       });
     }
   };
@@ -139,9 +185,9 @@ export default function ProfileMenu() {
       setShowDropdown(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load submissions.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load submissions.',
+        variant: 'destructive',
       });
     }
   };
@@ -150,20 +196,22 @@ export default function ProfileMenu() {
     try {
       await approveExerciseSubmission(submission.id, user.uid);
       toast({
-        title: "Approved",
+        title: 'Approved',
         description: `Exercise "${submission.name}" has been approved and added to the library.`,
       });
       // Remove from pending list
-      setPendingSubmissions(prev => prev.filter(s => s.id !== submission.id));
-      setPendingCount(prev => prev - 1);
+      setPendingSubmissions((prev) =>
+        prev.filter((s) => s.id !== submission.id)
+      );
+      setPendingCount((prev) => prev - 1);
       if (currentSubmissionIndex >= pendingSubmissions.length - 1) {
         setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1));
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to approve submission.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to approve submission.',
+        variant: 'destructive',
       });
     }
   };
@@ -172,20 +220,22 @@ export default function ProfileMenu() {
     try {
       await rejectExerciseSubmission(submission.id, user.uid);
       toast({
-        title: "Rejected",
+        title: 'Rejected',
         description: `Exercise "${submission.name}" has been rejected.`,
       });
       // Remove from pending list
-      setPendingSubmissions(prev => prev.filter(s => s.id !== submission.id));
-      setPendingCount(prev => prev - 1);
+      setPendingSubmissions((prev) =>
+        prev.filter((s) => s.id !== submission.id)
+      );
+      setPendingCount((prev) => prev - 1);
       if (currentSubmissionIndex >= pendingSubmissions.length - 1) {
         setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1));
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to reject submission.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to reject submission.',
+        variant: 'destructive',
       });
     }
   };
@@ -217,16 +267,18 @@ export default function ProfileMenu() {
             </TooltipProvider>
             <AnimatePresence>
               {showDropdown && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50 p-1"
                 >
                   {/* User Info Header */}
                   <div className="px-3 py-2 border-b border-gray-200">
-                    <div className="text-sm font-medium">{user.displayName || user.email}</div>
+                    <div className="text-sm font-medium">
+                      {user.displayName || user.email}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       {isAdminUser ? (
                         <TooltipProvider>
@@ -243,7 +295,10 @@ export default function ProfileMenu() {
                               </button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <span>Click to cycle your actual subscription status (Basic → Premium → Admin → Basic)</span>
+                              <span>
+                                Click to cycle your actual subscription status
+                                (Basic → Premium → Admin → Basic)
+                              </span>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -260,7 +315,11 @@ export default function ProfileMenu() {
                       )}
                     </div>
                     {isAdminUser && simulatedStatus !== null && (
-                      <div className="text-xs text-blue-600 mt-1">Simulating: {simulatedStatus.charAt(0).toUpperCase() + simulatedStatus.slice(1)}</div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        Simulating:{' '}
+                        {simulatedStatus.charAt(0).toUpperCase() +
+                          simulatedStatus.slice(1)}
+                      </div>
                     )}
                   </div>
 
@@ -327,7 +386,9 @@ export default function ProfileMenu() {
                       >
                         <Dumbbell className="h-4 w-4 mr-2" />
                         View Submissions
-                        <Badge variant="secondary" className="ml-auto text-xs">{pendingCount}</Badge>
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          {pendingCount}
+                        </Badge>
                       </Button>
                     </>
                   )}
@@ -337,15 +398,15 @@ export default function ProfileMenu() {
           </div>
         </div>
       </div>
-      
+
       {/* Close dropdown when clicking outside */}
       {showDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => setShowDropdown(false)}
         />
       )}
-      
+
       {/* Modals */}
       {showProfileModal && (
         <ProfileModal
@@ -353,14 +414,14 @@ export default function ProfileMenu() {
           onOpenChange={setShowProfileModal}
         />
       )}
-      
+
       {showHiddenExercises && (
         <HiddenExercisesModal
           open={showHiddenExercises}
           onOpenChange={setShowHiddenExercises}
         />
       )}
-      
+
       {showRecipesModal && (
         <RecipeManagementModal
           open={showRecipesModal}
@@ -374,26 +435,43 @@ export default function ProfileMenu() {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Exercise Submissions Review</h2>
-              <Button variant="ghost" onClick={() => setShowAdminSubmissionsModal(false)}>×</Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowAdminSubmissionsModal(false)}
+              >
+                ×
+              </Button>
             </div>
 
             {pendingSubmissions.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No pending submissions to review.</p>
-                <Button onClick={() => setShowAdminSubmissionsModal(false)} className="mt-4">Close</Button>
+                <p className="text-gray-500">
+                  No pending submissions to review.
+                </p>
+                <Button
+                  onClick={() => setShowAdminSubmissionsModal(false)}
+                  className="mt-4"
+                >
+                  Close
+                </Button>
               </div>
             ) : currentSubmission ? (
               <div>
                 {/* Navigation */}
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm text-gray-600">
-                    Submission {currentSubmissionIndex + 1} of {pendingSubmissions.length}
+                    Submission {currentSubmissionIndex + 1} of{' '}
+                    {pendingSubmissions.length}
                   </span>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentSubmissionIndex(Math.max(0, currentSubmissionIndex - 1))}
+                      onClick={() =>
+                        setCurrentSubmissionIndex(
+                          Math.max(0, currentSubmissionIndex - 1)
+                        )
+                      }
                       disabled={currentSubmissionIndex === 0}
                     >
                       Previous
@@ -401,8 +479,17 @@ export default function ProfileMenu() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentSubmissionIndex(Math.min(pendingSubmissions.length - 1, currentSubmissionIndex + 1))}
-                      disabled={currentSubmissionIndex === pendingSubmissions.length - 1}
+                      onClick={() =>
+                        setCurrentSubmissionIndex(
+                          Math.min(
+                            pendingSubmissions.length - 1,
+                            currentSubmissionIndex + 1
+                          )
+                        )
+                      }
+                      disabled={
+                        currentSubmissionIndex === pendingSubmissions.length - 1
+                      }
                     >
                       Next
                     </Button>
@@ -412,71 +499,121 @@ export default function ProfileMenu() {
                 {/* Submission Details */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Exercise Name</label>
-                    <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.name}</p>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Exercise Name
+                    </label>
+                    <p className="mt-1 p-2 bg-gray-50 rounded">
+                      {currentSubmission.name}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Target Muscle</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.target}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Target Muscle
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.target}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Body Part</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.bodyPart}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Body Part
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.bodyPart}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Category</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.category}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Category
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.category}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Difficulty</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.difficulty}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Difficulty
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.difficulty}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Equipment</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.equipment}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Equipment
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.equipment}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">ID</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.id}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        ID
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.id}
+                      </p>
                     </div>
                   </div>
 
                   {currentSubmission.description && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Description</label>
-                      <p className="mt-1 p-2 bg-gray-50 rounded">{currentSubmission.description}</p>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Description
+                      </label>
+                      <p className="mt-1 p-2 bg-gray-50 rounded">
+                        {currentSubmission.description}
+                      </p>
                     </div>
                   )}
 
-                  {currentSubmission.instructions && currentSubmission.instructions.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Instructions</label>
-                      <ol className="mt-1 space-y-1">
-                        {currentSubmission.instructions.map((instruction, index) => (
-                          <li key={index} className="p-2 bg-gray-50 rounded">
-                            {index + 1}. {instruction}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {currentSubmission.secondaryMuscles && currentSubmission.secondaryMuscles.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Secondary Muscles</label>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {currentSubmission.secondaryMuscles.map((muscle, index) => (
-                          <Badge key={index} variant="outline">{muscle}</Badge>
-                        ))}
+                  {currentSubmission.instructions &&
+                    currentSubmission.instructions.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Instructions
+                        </label>
+                        <ol className="mt-1 space-y-1">
+                          {currentSubmission.instructions.map(
+                            (instruction, index) => (
+                              <li
+                                key={index}
+                                className="p-2 bg-gray-50 rounded"
+                              >
+                                {index + 1}. {instruction}
+                              </li>
+                            )
+                          )}
+                        </ol>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                  {currentSubmission.secondaryMuscles &&
+                    currentSubmission.secondaryMuscles.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Secondary Muscles
+                        </label>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {currentSubmission.secondaryMuscles.map(
+                            (muscle, index) => (
+                              <Badge key={index} variant="outline">
+                                {muscle}
+                              </Badge>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   <div className="text-sm text-gray-500">
                     <p>Submitted by: {currentSubmission.submittedBy}</p>
-                    <p>Submitted at: {new Date(currentSubmission.submittedAt).toLocaleString()}</p>
+                    <p>
+                      Submitted at:{' '}
+                      {new Date(currentSubmission.submittedAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
 
@@ -502,4 +639,4 @@ export default function ProfileMenu() {
       )}
     </>
   );
-} 
+}

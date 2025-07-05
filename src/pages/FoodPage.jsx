@@ -1,205 +1,240 @@
-import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import React, { useEffect, useMemo, useState } from 'react';
 import LevelDisplay from '../components/gamification/LevelDisplay';
 
 // Component Imports
-import CartContainer from '../components/shared/Cart/CartContainer';
-import FoodSearch from '../components/shared/Search/FoodSearch';
-import HistoryView from '../components/shared/HistoryView';
-import DateTimePicker, { useDateTimePicker } from '../components/ui/DateTimePicker.tsx';
 import DailySummary from '../components/nutrition/DailySummary';
 import DailyTotalsCard from '../components/nutrition/DailyTotalsCard';
 import SuggestedFoodsCard from '../components/nutrition/SuggestedFoodsCard';
+import CartContainer from '../components/shared/Cart/CartContainer';
+import HistoryView from '../components/shared/HistoryView';
+import FoodSearch from '../components/shared/Search/FoodSearch';
+import DateTimePicker, {
+  useDateTimePicker,
+} from '../components/ui/DateTimePicker.tsx';
 
 // Hook Imports
 import useCart from '../hooks/useCart';
-import useHistory from "../hooks/useHistory";
-import useLibrary from '../hooks/useLibrary';
-import useFoodSearch from '../hooks/useFoodSearch';
-import useAuthStore from "../store/useAuthStore";
 import useFoodLogging from '../hooks/useFoodLogging';
+import useFoodSearch from '../hooks/useFoodSearch';
+import useHistory from '../hooks/useHistory';
+import useLibrary from '../hooks/useLibrary';
+import useAuthStore from '../store/useAuthStore';
 
 // Utility Imports
 import { getFoodMacros } from '../utils/dataUtils';
 
 export default function FoodPage() {
-    const { userProfile, togglePinFood, addRecipe, deleteRecipe, user, saveUserProfile } = useAuthStore();
-    const dateTimePicker = useDateTimePicker('food');
-    
-    // Initialize hooks
-    const foodLibrary = useLibrary('food');
-    const foodHistory = useHistory('food');
-    const cart = useCart('food');
-    
-    // Use custom food logging hook with nutrients support
-    const { handleSelect, handleNutrientsAdd, logCart, showAllHistory, setShowAllHistory } = useFoodLogging(
-        foodLibrary, cart, null, dateTimePicker
-    );
-    
-    // Use dedicated food search hook
-    const search = useFoodSearch(foodLibrary, userProfile, {
-        onNutrientsAdd: handleNutrientsAdd
-    });
+  const {
+    userProfile,
+    togglePinFood,
+    addRecipe,
+    deleteRecipe,
+    user,
+    saveUserProfile,
+  } = useAuthStore();
+  const dateTimePicker = useDateTimePicker('food');
 
-    const pinnedItems = (userProfile?.pinnedFoods && foodLibrary.items)
-        ? userProfile.pinnedFoods.map(id => foodLibrary.items.find(f => f.id === id)).filter(Boolean)
-        : [];
-    
-    const recipes = userProfile?.recipes || [];
-    
-    const todayLogs = foodHistory.getLogsForToday();
-    const defaultGoals = { calories: 2300, fat: 65, carbs: 280, protein: 180, fiber: 32 };
+  // Initialize hooks
+  const foodLibrary = useLibrary('food');
+  const foodHistory = useHistory('food');
+  const cart = useCart('food');
 
-    const historyProps = {
-        logs: showAllHistory ? foodHistory.logs : todayLogs,
-        goals: userProfile?.goals || defaultGoals,
-        getFoodById: (id) => foodLibrary.items.find(f => f.id === id),
-        updateLog: foodHistory.updateLog,
-        deleteLog: foodHistory.deleteLog,
-    };
+  // Use custom food logging hook with nutrients support
+  const {
+    handleSelect,
+    handleNutrientsAdd,
+    logCart,
+    showAllHistory,
+    setShowAllHistory,
+  } = useFoodLogging(foodLibrary, cart, null, dateTimePicker);
 
-    const handleRecipeCreated = async (recipe) => {
-        await addRecipe(recipe);
-        cart.clearCart();
-        cart.addToCart(recipe, 1);
-    };
+  // Use dedicated food search hook
+  const search = useFoodSearch(foodLibrary, userProfile, {
+    onNutrientsAdd: handleNutrientsAdd,
+  });
 
-    const handleRecipeSelect = (recipe) => {
-        cart.addToCart(recipe, 1);
-    };
+  const pinnedItems =
+    userProfile?.pinnedFoods && foodLibrary.items
+      ? userProfile.pinnedFoods
+          .map((id) => foodLibrary.items.find((f) => f.id === id))
+          .filter(Boolean)
+      : [];
 
-    const handleRecipeDelete = async (recipeId) => {
-        await deleteRecipe(recipeId);
-    };
+  const recipes = userProfile?.recipes || [];
 
-    // Get account creation date (use user creation time or default to 30 days ago)
-    const accountCreationDate = useMemo(() => {
-        if (user?.metadata?.creationTime) {
-            return new Date(user.metadata.creationTime);
-        }
-        // Default to 30 days ago if no creation time available
-        return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    }, [user]);
+  const todayLogs = foodHistory.getLogsForToday();
+  const defaultGoals = {
+    calories: 2300,
+    fat: 65,
+    carbs: 280,
+    protein: 180,
+    fiber: 32,
+  };
 
-    const [aiUsage, setAiUsage] = useState(() => {
-        const today = new Date().toISOString().split('T')[0];
-        return userProfile?.aiFoodSuggestionUsage?.date === today
-            ? userProfile.aiFoodSuggestionUsage.count
-            : 0;
-    });
+  const historyProps = {
+    logs: showAllHistory ? foodHistory.logs : todayLogs,
+    goals: userProfile?.goals || defaultGoals,
+    getFoodById: (id) => foodLibrary.items.find((f) => f.id === id),
+    updateLog: foodHistory.updateLog,
+    deleteLog: foodHistory.deleteLog,
+  };
 
-    const isAdmin = userProfile?.subscription?.status === 'admin';
-    const isPremium = userProfile?.subscription?.status === 'premium';
+  const handleRecipeCreated = async (recipe) => {
+    await addRecipe(recipe);
+    cart.clearCart();
+    cart.addToCart(recipe, 1);
+  };
 
-    const handleUsage = async () => {
-        const today = new Date().toISOString().split('T')[0];
-        const newUsage = aiUsage + 1;
-        setAiUsage(newUsage);
-        const updatedProfile = {
-            ...userProfile,
-            aiFoodSuggestionUsage: { date: today, count: newUsage }
-        };
-        await saveUserProfile(updatedProfile);
-    };
+  const handleRecipeSelect = (recipe) => {
+    cart.addToCart(recipe, 1);
+  };
 
-    const handleResetUsage = async () => {
-        setAiUsage(0);
-        const today = new Date().toISOString().split('T')[0];
-        const updatedProfile = {
-            ...userProfile,
-            aiFoodSuggestionUsage: { date: today, count: 0 }
-        };
-        await saveUserProfile(updatedProfile);
-    };
+  const handleRecipeDelete = async (recipeId) => {
+    await deleteRecipe(recipeId);
+  };
 
-    if (foodLibrary.loading || foodHistory.loading) {
-        return <div>Loading food data...</div>;
+  // Get account creation date (use user creation time or default to 30 days ago)
+  const accountCreationDate = useMemo(() => {
+    if (user?.metadata?.creationTime) {
+      return new Date(user.metadata.creationTime);
     }
+    // Default to 30 days ago if no creation time available
+    return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  }, [user]);
 
-    return (
-        <div className="max-w-3xl mx-auto w-full">
-            {/* XP Progress at the very top */}
-            <LevelDisplay
-                totalXP={userProfile?.totalXP || 0}
-                workoutLogs={foodHistory.logs}
-                accountCreationDate={accountCreationDate}
-                className="mb-4"
-                userProfile={userProfile}
-            />
-            {(isPremium || isAdmin) && (
-                <SuggestedFoodsCard
-                    foodLog={todayLogs}
-                    nutritionGoals={userProfile?.goals || { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 }}
-                    onAddFoods={handleRecipeCreated}
-                    handleNutrientsAdd={handleNutrientsAdd}
-                    usage={aiUsage}
-                    onUsage={handleUsage}
-                    isAdmin={isAdmin}
-                    onResetUsage={handleResetUsage}
-                />
-            )}
-            <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
-                <FoodSearch
-                    searchQuery={search.searchQuery}
-                    setSearchQuery={search.setSearchQuery}
-                    searchResults={search.searchResults}
-                    handleApiSearch={search.handleApiSearch}
-                    handleNutrientsSearch={search.handleNutrientsSearch}
-                    handleSelect={handleSelect}
-                    isLoading={search.searchLoading}
-                    nutrientsLoading={search.nutrientsLoading}
-                    userProfile={userProfile}
-                    togglePin={togglePinFood}
-                    getFoodMacros={getFoodMacros}
-                    placeholder="e.g., 1 cup of oatmeal"
-                />
-                {cart.cart.length > 0 && (
-                    <CartContainer
-                        title="Your Food Cart"
-                        type="food"
-                        items={cart.cart}
-                        icon="🛒"
-                        footerControls={
-                            <DateTimePicker
-                                date={dateTimePicker.date}
-                                setDate={dateTimePicker.setDate}
-                                timePeriod={dateTimePicker.timePeriod}
-                                setTimePeriod={dateTimePicker.setTimePeriod}
-                                timePeriods={dateTimePicker.timePeriods}
-                            />
-                        }
-                        clearCart={cart.clearCart}
-                        updateCartItem={cart.updateCartItem}
-                        removeFromCart={cart.removeFromCart}
-                        logCart={logCart}
-                        onRecipeCreated={handleRecipeCreated}
-                    />
-                )}
-            </div>
-            
-            {/* <DailySummary 
+  const [aiUsage, setAiUsage] = useState(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return userProfile?.aiFoodSuggestionUsage?.date === today
+      ? userProfile.aiFoodSuggestionUsage.count
+      : 0;
+  });
+
+  const isAdmin = userProfile?.subscription?.status === 'admin';
+  const isPremium = userProfile?.subscription?.status === 'premium';
+
+  const handleUsage = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const newUsage = aiUsage + 1;
+    setAiUsage(newUsage);
+    const updatedProfile = {
+      ...userProfile,
+      aiFoodSuggestionUsage: { date: today, count: newUsage },
+    };
+    await saveUserProfile(updatedProfile);
+  };
+
+  const handleResetUsage = async () => {
+    setAiUsage(0);
+    const today = new Date().toISOString().split('T')[0];
+    const updatedProfile = {
+      ...userProfile,
+      aiFoodSuggestionUsage: { date: today, count: 0 },
+    };
+    await saveUserProfile(updatedProfile);
+  };
+
+  if (foodLibrary.loading || foodHistory.loading) {
+    return <div>Loading food data...</div>;
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto w-full">
+      {/* XP Progress at the very top */}
+      <LevelDisplay
+        totalXP={userProfile?.totalXP || 0}
+        workoutLogs={foodHistory.logs}
+        accountCreationDate={accountCreationDate}
+        className="mb-4"
+        userProfile={userProfile}
+      />
+      {(isPremium || isAdmin) && (
+        <SuggestedFoodsCard
+          foodLog={todayLogs}
+          nutritionGoals={
+            userProfile?.goals || {
+              calories: 2000,
+              protein: 150,
+              carbs: 200,
+              fat: 60,
+              fiber: 25,
+            }
+          }
+          onAddFoods={handleRecipeCreated}
+          handleNutrientsAdd={handleNutrientsAdd}
+          usage={aiUsage}
+          onUsage={handleUsage}
+          isAdmin={isAdmin}
+          onResetUsage={handleResetUsage}
+        />
+      )}
+      <div className="bg-white rounded-lg shadow p-4 mb-4 space-y-4">
+        <FoodSearch
+          searchQuery={search.searchQuery}
+          setSearchQuery={search.setSearchQuery}
+          searchResults={search.searchResults}
+          handleApiSearch={search.handleApiSearch}
+          handleNutrientsSearch={search.handleNutrientsSearch}
+          handleSelect={handleSelect}
+          isLoading={search.searchLoading}
+          nutrientsLoading={search.nutrientsLoading}
+          userProfile={userProfile}
+          togglePin={togglePinFood}
+          getFoodMacros={getFoodMacros}
+          placeholder="e.g., 1 cup of oatmeal"
+        />
+        {cart.cart.length > 0 && (
+          <CartContainer
+            title="Your Food Cart"
+            type="food"
+            items={cart.cart}
+            icon="🛒"
+            footerControls={
+              <DateTimePicker
+                date={dateTimePicker.date}
+                setDate={dateTimePicker.setDate}
+                timePeriod={dateTimePicker.timePeriod}
+                setTimePeriod={dateTimePicker.setTimePeriod}
+                timePeriods={dateTimePicker.timePeriods}
+              />
+            }
+            clearCart={cart.clearCart}
+            updateCartItem={cart.updateCartItem}
+            removeFromCart={cart.removeFromCart}
+            logCart={logCart}
+            onRecipeCreated={handleRecipeCreated}
+          />
+        )}
+      </div>
+
+      {/* <DailySummary 
                 foodLibrary={foodLibrary.items} 
                 cart={cart.cart}
                 cartTimePeriod={dateTimePicker.timePeriod}
             /> */}
-            
-            <DailyTotalsCard
-                logs={todayLogs}
-                goals={userProfile?.goals || { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 }}
-                getFoodById={(id) => foodLibrary.items.find(f => f.id === id)}
-            />
-            
-            <HistoryView
-                type="food"
-                {...historyProps}
-            />
-            {!showAllHistory && foodHistory.logs.length > todayLogs.length && (
-                <div className="text-center mt-4">
-                    <Button variant="link" onClick={() => setShowAllHistory(true)}>
-                        Show Full History
-                    </Button>
-                </div>
-            )}
+
+      <DailyTotalsCard
+        logs={todayLogs}
+        goals={
+          userProfile?.goals || {
+            calories: 2000,
+            protein: 150,
+            carbs: 200,
+            fat: 60,
+            fiber: 25,
+          }
+        }
+        getFoodById={(id) => foodLibrary.items.find((f) => f.id === id)}
+      />
+
+      <HistoryView type="food" {...historyProps} />
+      {!showAllHistory && foodHistory.logs.length > todayLogs.length && (
+        <div className="text-center mt-4">
+          <Button variant="link" onClick={() => setShowAllHistory(true)}>
+            Show Full History
+          </Button>
         </div>
-    );
-} 
+      )}
+    </div>
+  );
+}

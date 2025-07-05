@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Crown, ArrowRight } from 'lucide-react';
-import { verifyAndUpdateSubscription } from '../services/payment/paymentService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, CheckCircle, Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../hooks/useToast';
+import { verifyAndUpdateSubscription } from '../services/payment/paymentService';
 import useAuthStore from '../store/useAuthStore';
 
 export default function PaymentSuccessPage() {
@@ -17,12 +17,12 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
-    
+
     if (!sessionId) {
       toast({
-        title: "Error",
-        description: "No payment session found.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'No payment session found.',
+        variant: 'destructive',
       });
       navigate('/');
       return;
@@ -30,9 +30,9 @@ export default function PaymentSuccessPage() {
 
     if (!user) {
       toast({
-        title: "Error",
-        description: "Please sign in to complete your upgrade.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please sign in to complete your upgrade.',
+        variant: 'destructive',
       });
       navigate('/');
       return;
@@ -44,15 +44,15 @@ export default function PaymentSuccessPage() {
         await verifyAndUpdateSubscription(sessionId, user.uid);
         setIsSuccess(true);
         toast({
-          title: "Welcome to Premium!",
-          description: "Your subscription has been activated successfully.",
+          title: 'Welcome to Premium!',
+          description: 'Your subscription has been activated successfully.',
         });
       } catch (error) {
         console.error('Error verifying payment:', error);
         toast({
-          title: "Payment Verification Failed",
-          description: "Please contact support if you were charged.",
-          variant: "destructive",
+          title: 'Payment Verification Failed',
+          description: 'Please contact support if you were charged.',
+          variant: 'destructive',
         });
       } finally {
         setIsProcessing(false);
@@ -72,8 +72,12 @@ export default function PaymentSuccessPage() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold mb-2">Processing Your Payment</h2>
-            <p className="text-gray-600">Please wait while we verify your subscription...</p>
+            <h2 className="text-xl font-semibold mb-2">
+              Processing Your Payment
+            </h2>
+            <p className="text-gray-600">
+              Please wait while we verify your subscription...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -98,12 +102,15 @@ export default function PaymentSuccessPage() {
                   Premium Subscription Activated
                 </div>
                 <p className="text-gray-600">
-                  Your premium subscription has been successfully activated. You now have access to all premium features!
+                  Your premium subscription has been successfully activated. You
+                  now have access to all premium features!
                 </p>
               </div>
 
               <div className="bg-equipment p-4 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">What's Next?</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  What's Next?
+                </h3>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Explore advanced muscle analytics</li>
                   <li>• Hide exercises without limits</li>
@@ -112,7 +119,7 @@ export default function PaymentSuccessPage() {
                 </ul>
               </div>
 
-              <Button 
+              <Button
                 onClick={handleContinue}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
@@ -123,9 +130,14 @@ export default function PaymentSuccessPage() {
           ) : (
             <div className="text-center space-y-4">
               <p className="text-gray-600">
-                There was an issue processing your payment. Please contact support if you were charged.
+                There was an issue processing your payment. Please contact
+                support if you were charged.
               </p>
-              <Button onClick={handleContinue} variant="outline" className="w-full">
+              <Button
+                onClick={handleContinue}
+                variant="outline"
+                className="w-full"
+              >
                 Return to App
               </Button>
             </div>
@@ -134,4 +146,4 @@ export default function PaymentSuccessPage() {
       </Card>
     </div>
   );
-} 
+}

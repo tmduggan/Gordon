@@ -1,33 +1,47 @@
 // This file is now deprecated. Completed suggestions are rendered using ExerciseDisplay for consistent formatting.
 
-import React from 'react';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { CheckCircle, Target, Zap } from 'lucide-react';
+import React from 'react';
 
 // Equipment icon mapping (same as WorkoutSuggestions)
 const equipmentIconMap = {
   'smith machine': '/icons/smith.png',
-  'dumbbell': '/icons/dumbbell.png',
-  'barbell': '/icons/barbell.png',
-  'kettlebell': '/icons/kettlebell.png',
+  dumbbell: '/icons/dumbbell.png',
+  barbell: '/icons/barbell.png',
+  kettlebell: '/icons/kettlebell.png',
   'sled machine': '/icons/sled machine.jpg',
   'body weight': '/icons/bodyweight.png',
-  'machine': '/icons/machine.png',
+  machine: '/icons/machine.png',
 };
 
 const getEquipmentIcon = (equipmentName) => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
-  
-  if (lowerCaseEquipment.includes('dumbbell')) return equipmentIconMap['dumbbell'];
-  if (lowerCaseEquipment.includes('barbell')) return equipmentIconMap['barbell'];
-  if (lowerCaseEquipment.includes('kettlebell')) return equipmentIconMap['kettlebell'];
-  if (lowerCaseEquipment === 'smith machine') return equipmentIconMap['smith machine'];
-  if (lowerCaseEquipment === 'sled machine') return equipmentIconMap['sled machine'];
-  if (lowerCaseEquipment === 'body weight') return equipmentIconMap['body weight'];
-  if (lowerCaseEquipment === 'leverage machine' || lowerCaseEquipment === 'cable') {
+
+  if (lowerCaseEquipment.includes('dumbbell'))
+    return equipmentIconMap['dumbbell'];
+  if (lowerCaseEquipment.includes('barbell'))
+    return equipmentIconMap['barbell'];
+  if (lowerCaseEquipment.includes('kettlebell'))
+    return equipmentIconMap['kettlebell'];
+  if (lowerCaseEquipment === 'smith machine')
+    return equipmentIconMap['smith machine'];
+  if (lowerCaseEquipment === 'sled machine')
+    return equipmentIconMap['sled machine'];
+  if (lowerCaseEquipment === 'body weight')
+    return equipmentIconMap['body weight'];
+  if (
+    lowerCaseEquipment === 'leverage machine' ||
+    lowerCaseEquipment === 'cable'
+  ) {
     return equipmentIconMap['machine'];
   }
   return null;
@@ -35,20 +49,20 @@ const getEquipmentIcon = (equipmentName) => {
 
 // Muscle icon mapping (same as WorkoutSuggestions)
 const muscleIconMap = {
-  'quads': '/icons/Muscle-Quads.jpeg',
-  'abductors': '/icons/Muscle-Abductors.jpeg',
-  'abs': '/icons/Muscle-Abs.jpeg',
-  'adductors': '/icons/Muscle-Adductors.jpeg',
-  'biceps': '/icons/Muscle-Biceps.jpeg',
-  'calves': '/icons/Muscle-Calves.jpeg',
-  'delts': '/icons/Muscle-Deltoids.jpeg',
-  'forearms': '/icons/Muscle-Forearms.jpeg',
-  'hamstrings': '/icons/Muscle-Hamstrings.jpeg',
-  'pectorals': '/icons/Muscle-Pectorals.jpeg',
+  quads: '/icons/Muscle-Quads.jpeg',
+  abductors: '/icons/Muscle-Abductors.jpeg',
+  abs: '/icons/Muscle-Abs.jpeg',
+  adductors: '/icons/Muscle-Adductors.jpeg',
+  biceps: '/icons/Muscle-Biceps.jpeg',
+  calves: '/icons/Muscle-Calves.jpeg',
+  delts: '/icons/Muscle-Deltoids.jpeg',
+  forearms: '/icons/Muscle-Forearms.jpeg',
+  hamstrings: '/icons/Muscle-Hamstrings.jpeg',
+  pectorals: '/icons/Muscle-Pectorals.jpeg',
   'serratus anterior': '/icons/Muscle-serratus anterior.jpeg',
-  'traps': '/icons/Muscle-Traps.jpeg',
-  'triceps': '/icons/Muscle-Triceps.jpeg',
-  'glutes': '/icons/Muscle-glutes.jpeg',
+  traps: '/icons/Muscle-Traps.jpeg',
+  triceps: '/icons/Muscle-Triceps.jpeg',
+  glutes: '/icons/Muscle-glutes.jpeg',
 };
 
 const getMuscleIcon = (muscleName) => {
@@ -57,17 +71,26 @@ const getMuscleIcon = (muscleName) => {
   return muscleIconMap[lowerCaseMuscle] || null;
 };
 
-const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) => {
+const CompletedExerciseBar = ({
+  exercise,
+  completedAt,
+  bonus,
+  className = '',
+}) => {
   const { target, equipment, difficulty } = exercise;
   const equipmentIcon = getEquipmentIcon(equipment);
   const muscleIcon = getMuscleIcon(target);
-  
+
   const renderTooltipContent = () => (
     <div className="max-w-xs">
       <div className="font-semibold text-base mb-2">{exercise.name}</div>
       <div className="mb-2">
         <p className="text-sm text-green-600 font-medium">
-          <CheckCircle className="inline h-4 w-4 mr-1" />Completed {completedAt ? new Date(completedAt).toLocaleDateString() : 'recently'}
+          <CheckCircle className="inline h-4 w-4 mr-1" />
+          Completed{' '}
+          {completedAt
+            ? new Date(completedAt).toLocaleDateString()
+            : 'recently'}
         </p>
         {bonus && (
           <p className="text-sm text-green-700 font-semibold mt-1">
@@ -77,8 +100,12 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
       </div>
       {exercise.description && (
         <div className="mb-3">
-          <div className="font-medium text-sm mb-1 text-blue-600">Description:</div>
-          <p className="text-sm text-gray-700 leading-relaxed">{exercise.description}</p>
+          <div className="font-medium text-sm mb-1 text-blue-600">
+            Description:
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            {exercise.description}
+          </p>
         </div>
       )}
       <div className="flex items-center gap-4 text-xs text-gray-500 border-t pt-2">
@@ -90,30 +117,37 @@ const CompletedExerciseBar = ({ exercise, completedAt, bonus, className = "" }) 
   );
 
   return (
-    <Card className={`cursor-default py-2 px-4 flex items-center justify-between min-w-full relative bg-status-success border-status-success ${className}`}>
+    <Card
+      className={`cursor-default py-2 px-4 flex items-center justify-between min-w-full relative bg-status-success border-status-success ${className}`}
+    >
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center w-full gap-2">
               <div className="flex-1 min-w-0 w-full">
-                <strong className="block text-xs text-green-800">{exercise.name}</strong>
+                <strong className="block text-xs text-green-800">
+                  {exercise.name}
+                </strong>
               </div>
               <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
                 {muscleIcon && (
-                  <img 
-                    src={muscleIcon} 
-                    alt={target} 
-                    className="h-6 w-6 rounded-md border border-black" 
+                  <img
+                    src={muscleIcon}
+                    alt={target}
+                    className="h-6 w-6 rounded-md border border-black"
                   />
                 )}
                 {equipmentIcon && (
-                  <img 
-                    src={equipmentIcon} 
-                    alt={equipment} 
-                    className="h-6 w-6 p-0.5 bg-equipment rounded-md" 
+                  <img
+                    src={equipmentIcon}
+                    alt={equipment}
+                    className="h-6 w-6 p-0.5 bg-equipment rounded-md"
                   />
                 )}
-                <CheckCircle className="h-4 w-4 text-green-600" title="Completed" />
+                <CheckCircle
+                  className="h-4 w-4 text-green-600"
+                  title="Completed"
+                />
                 {bonus && <Zap className="h-4 w-4 text-green-600" title="XP" />}
               </div>
             </div>

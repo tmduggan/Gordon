@@ -1,34 +1,42 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Crown, Check, Star, Zap, BarChart3, Eye, Shield } from 'lucide-react';
-import { PREMIUM_PLANS, createCheckoutSession } from '../../services/payment/paymentService';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { BarChart3, Check, Crown, Eye, Shield, Star, Zap } from 'lucide-react';
+import React, { useState } from 'react';
 import { useToast } from '../../hooks/useToast';
+import {
+  PREMIUM_PLANS,
+  createCheckoutSession,
+} from '../../services/payment/paymentService';
 import useAuthStore from '../../store/useAuthStore';
 
 const PREMIUM_FEATURES = [
   {
     icon: BarChart3,
     title: 'Advanced Analytics',
-    description: 'Detailed muscle development tracking and insights'
+    description: 'Detailed muscle development tracking and insights',
   },
   {
     icon: Eye,
     title: 'Unlimited Exercise Hides',
-    description: 'Hide exercises you don\'t want to see without limits'
+    description: "Hide exercises you don't want to see without limits",
   },
   {
     icon: Zap,
     title: 'Priority Workout Suggestions',
-    description: 'AI-powered recommendations based on your progress'
+    description: 'AI-powered recommendations based on your progress',
   },
   {
     icon: Shield,
     title: 'Premium Support',
-    description: 'Priority customer support and feature requests'
-  }
+    description: 'Priority customer support and feature requests',
+  },
 ];
 
 export default function PremiumUpgradeModal({ open, onOpenChange }) {
@@ -40,9 +48,9 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
   const handleUpgrade = async () => {
     if (!user || !userProfile) {
       toast({
-        title: "Error",
-        description: "Please sign in to upgrade to premium.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please sign in to upgrade to premium.',
+        variant: 'destructive',
       });
       return;
     }
@@ -56,7 +64,9 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
       );
 
       // Redirect to Stripe checkout
-      const stripe = await import('@stripe/stripe-js').then(m => m.loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY));
+      const stripe = await import('@stripe/stripe-js').then((m) =>
+        m.loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+      );
       const { error } = await stripe.redirectToCheckout({
         sessionId: session.id,
       });
@@ -67,9 +77,10 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
     } catch (error) {
       console.error('Error starting checkout:', error);
       toast({
-        title: "Payment Error",
-        description: error.message || "Failed to start payment process. Please try again.",
-        variant: "destructive",
+        title: 'Payment Error',
+        description:
+          error.message || 'Failed to start payment process. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -100,8 +111,12 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
                       <feature.icon className="h-4 w-4 text-equipment" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">{feature.title}</h4>
-                      <p className="text-sm text-gray-600">{feature.description}</p>
+                      <h4 className="font-medium text-gray-900">
+                        {feature.title}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {feature.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -109,7 +124,9 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
             </div>
 
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">What you'll get:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                What you'll get:
+              </h4>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -135,14 +152,14 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Choose Your Plan</h3>
-              
+
               {/* Plan Selection */}
               <div className="grid grid-cols-1 gap-3 mb-6">
                 {Object.entries(PREMIUM_PLANS).map(([key, plan]) => (
                   <Card
                     key={key}
                     className={`relative p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedPlan === 'monthly' 
+                      selectedPlan === 'monthly'
                         ? 'ring-2 ring-primary bg-equipment'
                         : 'border-border hover:bg-accent'
                     }`}
@@ -151,12 +168,18 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-semibold text-lg">{plan.name}</div>
-                          <div className="text-sm text-gray-600">{plan.description}</div>
+                          <div className="font-semibold text-lg">
+                            {plan.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {plan.description}
+                          </div>
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-xl">${plan.price}</div>
-                          <div className="text-sm text-gray-600">per {plan.interval}</div>
+                          <div className="text-sm text-gray-600">
+                            per {plan.interval}
+                          </div>
                           {key === 'quarterly' && (
                             <Badge className="mt-1 bg-status-success text-status-success text-xs">
                               Save 17%
@@ -190,9 +213,13 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
                 <CardContent>
                   <div className="text-3xl font-bold mb-2">
                     ${selectedPlanData.price}
-                    <span className="text-lg font-normal">/{selectedPlanData.interval}</span>
+                    <span className="text-lg font-normal">
+                      /{selectedPlanData.interval}
+                    </span>
                   </div>
-                  <p className="text-blue-100">{selectedPlanData.description}</p>
+                  <p className="text-blue-100">
+                    {selectedPlanData.description}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -224,4 +251,4 @@ export default function PremiumUpgradeModal({ open, onOpenChange }) {
       </DialogContent>
     </Dialog>
   );
-} 
+}

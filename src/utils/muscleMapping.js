@@ -1,9 +1,9 @@
 export const muscleMapping = {
   // MAPPING STRUCTURE: {SVG_muscle_group}: [library_muscle_names]
-  // 
+  //
   // This maps SVG muscle groups (used in the visual chart) to exercise library muscle names.
   // When an exercise targets a library muscle name, it adds score to the corresponding SVG group.
-  // 
+  //
   // Example: Exercise with target="pectorals" will shade the "pectorals" SVG muscle group
   // Example: Exercise with target="shoulders" will shade the "deltoids" SVG muscle group
 
@@ -11,37 +11,62 @@ export const muscleMapping = {
   abs: ['upper abs', 'abs', 'abdominal', 'abdominals', 'core'],
   obliques: ['obliques', 'oblique'],
   lower_abs: ['lower abs'],
-  
+
   // Leg muscles
   quads: ['quads', 'quadriceps', 'quad', 'thighs', 'hip flexors'],
   hamstrings: ['hamstrings', 'hams', 'hamstring'],
   glutes: ['glutes', 'gluteus', 'butt', 'buttocks'],
   calves: ['calves', 'calf', 'gastrocnemius', 'soleus'],
-  adductors: ['adductors', 'adductor', 'inner thighs', 'groin', 'hip adductor', 'hip adductors'],
+  adductors: [
+    'adductors',
+    'adductor',
+    'inner thighs',
+    'groin',
+    'hip adductor',
+    'hip adductors',
+  ],
   abductors: ['abductors', 'abductor', 'hip abductor', 'hip abductors'],
-  
+
   // Upper body muscles
-  pectorals: ['chest', 'pectorals', 'pecs', 'upper pecs', 'lower pecs', 'middle pecs', 'pectoralis major', 'pectoralis minor'],
-  deltoids: ['side delts', 'front delts', 'shoulders', 'deltoids', 'delts', 'lateral deltoids', 'anterior deltoids', 'medial deltoids'],
+  pectorals: [
+    'chest',
+    'pectorals',
+    'pecs',
+    'upper pecs',
+    'lower pecs',
+    'middle pecs',
+    'pectoralis major',
+    'pectoralis minor',
+  ],
+  deltoids: [
+    'side delts',
+    'front delts',
+    'shoulders',
+    'deltoids',
+    'delts',
+    'lateral deltoids',
+    'anterior deltoids',
+    'medial deltoids',
+  ],
   rear_delts: ['rear deltoids', 'rear delts', 'rotator cuff'],
   biceps: ['biceps', 'bicep', 'biceps brachii'],
   triceps: ['triceps', 'tricep', 'triceps brachii'],
   forearms: ['forearms', 'forearm', 'wrist flexors', 'wrist extensors'],
-  
+
   // Back muscles
   lats: ['lats', 'latissimus dorsi', 'lat', 'back'],
   rhomboids: ['rhomboids', 'rhomboid'],
   upper_traps: ['upper traps', 'upper trapezius', 'traps'],
   lower_traps: ['lower traps', 'lower trapezius'],
   lower_back: ['lower back', 'erector spinae', 'spinal erectors'],
-  
+
   // Other muscles
   neck: ['neck', 'cervical'],
   hands: ['hands', 'grip'],
-  
+
   // Additional muscle groups that need SVG representation
   // These could be added to the SVG if needed, or mapped to existing groups
-  
+
   // Ankle/foot muscles - could be added as new SVG groups
   ankles: ['ankles', 'ankle stabilizers', 'feet', 'shins'],
 };
@@ -54,4 +79,4 @@ export const specialMuscleGroups = {
   serratus_anterior: ['serratus anterior'],
 };
 
-export default muscleMapping; 
+export default muscleMapping;
