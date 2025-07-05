@@ -16,6 +16,35 @@ import { MoreVertical } from 'lucide-react';
 import React, { useState } from 'react';
 import ExerciseLogInputs from '../../exercise/ExerciseLogInputs';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
+import type { Exercise, Log } from '../../../types';
+
+interface ExerciseLogData {
+  [exerciseId: string]: {
+    sets?: Array<{
+      weight?: number;
+      reps?: number;
+      [key: string]: any;
+    }>;
+    [key: string]: any;
+  };
+}
+
+interface LastSetPlaceholder {
+  weight?: number;
+  reps?: number;
+}
+
+interface ExerciseCartRowProps {
+  item: Exercise;
+  removeFromCart?: (id: string) => void;
+  logData?: ExerciseLogData;
+  onLogDataChange?: (id: string, newValues: any) => void;
+  userWorkoutHistory?: Log[];
+}
+
+interface InfoDialogProps {
+  item: Exercise;
+}
 
 export default function ExerciseCartRow({
   item,
@@ -23,18 +52,20 @@ export default function ExerciseCartRow({
   logData,
   onLogDataChange = () => {},
   userWorkoutHistory,
-}) {
+}: ExerciseCartRowProps) {
   // Runtime check: throw if not an exercise item
   if ('label' in item || item.type === 'recipe') {
     throw new Error('Tried to render a non-exercise item in ExerciseCartRow');
   }
   const { name, id } = item;
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirm, setShowConfirm] = useState<boolean>(false);
   const itemLogData = logData && logData[id] ? logData[id] : {};
-  const handleLogChange = (id, newValues) => {
+  
+  const handleLogChange = (id: string, newValues: any) => {
     onLogDataChange(id, newValues);
   };
-  let lastSetPlaceholder = null;
+  
+  let lastSetPlaceholder: LastSetPlaceholder | null = null;
   if (Array.isArray(userWorkoutHistory)) {
     const lastLog = userWorkoutHistory.find(
       (log) =>
@@ -47,13 +78,15 @@ export default function ExerciseCartRow({
       }
     }
   }
-  const InfoDialog = ({ item }) => (
+  
+  const InfoDialog = ({ item }: InfoDialogProps) => (
     <Dialog>
       <DialogContent className="w-auto max-w-sm p-0">
         <ExerciseTooltipContent exercise={item} />
       </DialogContent>
     </Dialog>
   );
+  
   return (
     <Card className="border">
       <CardContent className="p-4">
@@ -114,4 +147,4 @@ export default function ExerciseCartRow({
       </Dialog>
     </Card>
   );
-}
+} 

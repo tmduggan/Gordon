@@ -1,6 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Progress } from './progress';
 
+interface AnimatedProgressBarProps {
+  value: number;
+  previousValue: number;
+  className?: string;
+  onAnimationEnd?: () => void;
+  [key: string]: any;
+}
+
+interface AnimationStep {
+  start: number;
+  end: number;
+}
+
 /**
  * AnimatedProgressBar animates from previousValue to value, showing the gained portion in green.
  * - Delayed start (300ms)
@@ -13,18 +26,18 @@ export default function AnimatedProgressBar({
   className = '',
   onAnimationEnd,
   ...props
-}) {
-  const [displayValue, setDisplayValue] = useState(previousValue);
-  const [animating, setAnimating] = useState(false);
-  const [gainStart, setGainStart] = useState(previousValue);
-  const [gainEnd, setGainEnd] = useState(value);
-  const [step, setStep] = useState(0);
-  const animationRef = useRef();
+}: AnimatedProgressBarProps) {
+  const [displayValue, setDisplayValue] = useState<number>(previousValue);
+  const [animating, setAnimating] = useState<boolean>(false);
+  const [gainStart, setGainStart] = useState<number>(previousValue);
+  const [gainEnd, setGainEnd] = useState<number>(value);
+  const [step, setStep] = useState<number>(0);
+  const animationRef = useRef<number | null>(null);
 
   // Helper: animate from start to end
-  const animateTo = (start, end, duration, cb) => {
+  const animateTo = (start: number, end: number, duration: number, cb?: () => void) => {
     const startTime = performance.now();
-    function animate(now) {
+    function animate(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const current = start + (end - start) * progress;
@@ -41,7 +54,7 @@ export default function AnimatedProgressBar({
   // Multi-level/tier handling
   useEffect(() => {
     let cancelled = false;
-    let levels = [];
+    let levels: AnimationStep[] = [];
     let prev = previousValue;
     let target = value;
     // If gain crosses 100, split into steps
@@ -110,4 +123,4 @@ export default function AnimatedProgressBar({
       )}
     </div>
   );
-}
+} 

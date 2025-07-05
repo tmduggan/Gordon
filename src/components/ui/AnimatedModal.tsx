@@ -2,12 +2,19 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 
+interface AnimatedModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+  [key: string]: any;
+}
+
 export default function AnimatedModal({
   open,
   onOpenChange,
   children,
   ...props
-}) {
+}: AnimatedModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} {...props}>
       <AnimatePresence>
@@ -26,4 +33,4 @@ export default function AnimatedModal({
       </AnimatePresence>
     </Dialog>
   );
-}
+} 

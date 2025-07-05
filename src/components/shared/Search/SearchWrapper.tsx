@@ -1,6 +1,43 @@
 import React from 'react';
 import ExerciseSearch from './ExerciseSearch';
 import FoodSearch from './FoodSearch';
+import type { Food, Exercise, UserProfile } from '../../../types';
+
+export type SearchType = 'food' | 'exercise';
+
+interface SearchFilters {
+  targetCategory: string;
+  equipmentCategory: string;
+}
+
+interface SetFilters {
+  targetCategory: (category: string) => void;
+  equipmentCategory: (category: string) => void;
+}
+
+interface FilterOptions {
+  [key: string]: any;
+}
+
+interface SearchWrapperProps {
+  type: SearchType;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: Food[] | Exercise[];
+  handleApiSearch?: () => Promise<void>;
+  handleNutrientsSearch?: () => Promise<void>;
+  handleSelect: (item: Food | Exercise) => void;
+  isLoading?: boolean;
+  nutrientsLoading?: boolean;
+  userProfile: UserProfile | null;
+  togglePin: (item: Food | Exercise) => void;
+  getFoodMacros?: (food: Food) => any;
+  placeholder?: string;
+  filters?: SearchFilters;
+  setFilters?: SetFilters;
+  filterOptions?: FilterOptions;
+  laggingMuscles?: string[];
+}
 
 export default function SearchWrapper({
   type,
@@ -20,13 +57,13 @@ export default function SearchWrapper({
   setFilters,
   filterOptions,
   laggingMuscles = [],
-}) {
+}: SearchWrapperProps) {
   if (type === 'food') {
     return (
       <FoodSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        searchResults={searchResults}
+        searchResults={searchResults as Food[]}
         handleApiSearch={handleApiSearch}
         handleNutrientsSearch={handleNutrientsSearch}
         handleSelect={handleSelect}
@@ -45,7 +82,7 @@ export default function SearchWrapper({
       <ExerciseSearch
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        searchResults={searchResults}
+        searchResults={searchResults as Exercise[]}
         handleSelect={handleSelect}
         userProfile={userProfile}
         togglePin={togglePin}
@@ -59,4 +96,4 @@ export default function SearchWrapper({
   }
 
   return null;
-}
+} 
