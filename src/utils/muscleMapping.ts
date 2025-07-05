@@ -79,4 +79,25 @@ export const specialMuscleGroups: Record<string, string[]> = {
   serratus_anterior: ['serratus anterior'],
 };
 
-export default muscleMapping; 
+export default muscleMapping;
+
+// Example: Map muscle group names to display names
+export const muscleGroupDisplayNames: Record<string, string> = {
+  quads: 'Quadriceps',
+  hamstrings: 'Hamstrings',
+  calves: 'Calves',
+  glutes: 'Glutes',
+  abs: 'Abdominals',
+  lower_back: 'Lower Back',
+  upper_back: 'Upper Back',
+  chest: 'Chest',
+  shoulders: 'Shoulders',
+  biceps: 'Biceps',
+  triceps: 'Triceps',
+  forearms: 'Forearms',
+};
+
+// Example: Get display name for a muscle group
+export function getMuscleGroupDisplayName(muscle: string): string {
+  return muscleGroupDisplayNames[muscle] || muscle;
+} 

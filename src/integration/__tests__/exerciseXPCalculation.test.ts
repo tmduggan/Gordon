@@ -35,7 +35,7 @@ vi.mock('../../services/gamification/suggestionService', () => ({
 }));
 
 // Helper function to match the app's XP logic
-function calculateExpectedXP(sets = [], duration = null) {
+function calculateExpectedXP(sets: any[] = [], duration: number | null = null) {
   let totalXP = 0;
   if (sets && sets.length > 0) {
     sets.forEach((set) => {
@@ -49,7 +49,7 @@ function calculateExpectedXP(sets = [], duration = null) {
     });
   }
   if (duration) {
-    totalXP += parseInt(duration) * 2;
+    totalXP += parseInt(duration.toString()) * 2;
   }
   return totalXP;
 }
@@ -58,7 +58,7 @@ describe('Exercise XP Calculation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCalculateExerciseScore.mockImplementation(
-      (workoutData, exerciseDetails) => {
+      (workoutData: any, exerciseDetails: any) => {
         if (workoutData.sets && workoutData.sets.length > 0) {
           const set = workoutData.sets[0];
           const weight = parseFloat(set.weight) || 0;
@@ -106,7 +106,7 @@ describe('Exercise XP Calculation', () => {
       />
     );
     const xpElement = screen.getByText(expectedXP.toString());
-    expect(parseInt(xpElement.textContent)).toBe(expectedXP);
+    expect(parseInt(xpElement.textContent || '0')).toBe(expectedXP);
     const logButton = screen.getByRole('button', { name: /log items/i });
     await user.click(logButton);
     expect(mockAddXP).toHaveBeenCalledWith(expectedXP);
@@ -142,7 +142,7 @@ describe('Exercise XP Calculation', () => {
       />
     );
     const xpElement = screen.getByText(expectedXP.toString());
-    expect(parseInt(xpElement.textContent)).toBe(expectedXP);
+    expect(parseInt(xpElement.textContent || '0')).toBe(expectedXP);
     const logButton = screen.getByRole('button', { name: /log items/i });
     await user.click(logButton);
     expect(mockAddXP).toHaveBeenCalledWith(expectedXP);
@@ -174,7 +174,7 @@ describe('Exercise XP Calculation', () => {
       />
     );
     const xpElement = screen.getByText(expectedXP.toString());
-    expect(parseInt(xpElement.textContent)).toBe(expectedXP);
+    expect(parseInt(xpElement.textContent || '0')).toBe(expectedXP);
     const logButton = screen.getByRole('button', { name: /log items/i });
     await user.click(logButton);
     expect(mockAddXP).toHaveBeenCalledWith(expectedXP);
@@ -214,18 +214,18 @@ describe('Exercise XP Calculation', () => {
       />
     );
     const xpElement = screen.getByText(expectedXP.toString());
-    expect(parseInt(xpElement.textContent)).toBe(expectedXP);
+    expect(parseInt(xpElement.textContent || '0')).toBe(expectedXP);
     const logButton = screen.getByRole('button', { name: /log items/i });
     await user.click(logButton);
     expect(mockAddXP).toHaveBeenCalledWith(expectedXP);
   });
 
-  it('returns 0 XP for empty or invalid data', async () => {
+  it('handles exercises with no sets or duration', async () => {
     const user = userEvent.setup();
-    const exerciseItems = [{ id: 'bench-press', name: 'Bench Press' }];
-    const logData = { 'bench-press': {} };
+    const exerciseItems = [{ id: 'stretching', name: 'Stretching' }];
+    const logData = { stretching: {} };
     const exerciseLibrary = [
-      { id: 'bench-press', name: 'Bench Press', target: 'chest' },
+      { id: 'stretching', name: 'Stretching', target: 'flexibility' },
     ];
     const expectedXP = 0;
     render(
@@ -238,13 +238,16 @@ describe('Exercise XP Calculation', () => {
           mockClearCart();
         }}
         clearCart={mockClearCart}
-        icon="💪"
+        icon="🧘"
         logData={logData}
         exerciseLibrary={exerciseLibrary}
         onLogDataChange={vi.fn()}
       />
     );
-    const xpElement = screen.getByText('0');
-    expect(parseInt(xpElement.textContent)).toBe(expectedXP);
+    const xpElement = screen.getByText(expectedXP.toString());
+    expect(parseInt(xpElement.textContent || '0')).toBe(expectedXP);
+    const logButton = screen.getByRole('button', { name: /log items/i });
+    await user.click(logButton);
+    expect(mockAddXP).toHaveBeenCalledWith(expectedXP);
   });
-});
+}); 

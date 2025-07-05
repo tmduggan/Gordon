@@ -30,6 +30,8 @@ interface UseLibraryReturn {
   fetchAndSave: (item: any) => Promise<Food | null>;
   // Exercise-specific
   handleSelectExercise: (exercise: Exercise) => any;
+  addExercise: (exercise: Exercise) => void;
+  removeExercise: (id: string) => void;
 }
 
 export default function useLibrary(
@@ -146,6 +148,14 @@ export default function useLibrary(
     [libraryType, options]
   );
 
+  function addExercise(exercise: Exercise) {
+    setItems((prev) => [...prev, exercise]);
+  }
+
+  function removeExercise(id: string) {
+    setItems((prev) => prev.filter((ex) => ex.id !== id));
+  }
+
   // Return consistent structure
   return {
     items,
@@ -163,5 +173,7 @@ export default function useLibrary(
 
     // Exercise-specific
     handleSelectExercise,
+    addExercise,
+    removeExercise,
   };
 } 

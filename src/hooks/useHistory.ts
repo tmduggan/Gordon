@@ -7,7 +7,7 @@ import {
   updateLog,
 } from '../services/firebase/fetchHistoryService';
 import useAuthStore from '../store/useAuthStore';
-import type { Log, Exercise } from '../types';
+import type { Log, Exercise, ExerciseLog, FoodLog } from '../types';
 
 export type LogType = 'food' | 'exercise';
 
@@ -16,6 +16,10 @@ interface LogWithName extends Log {
 }
 
 interface UseHistoryReturn {
+  exerciseHistory: ExerciseLog[];
+  foodHistory: FoodLog[];
+  addExerciseLog: (log: ExerciseLog) => void;
+  addFoodLog: (log: FoodLog) => void;
   logs: LogWithName[];
   loading: boolean;
   deleteLog: (id: string) => Promise<void>;
@@ -31,6 +35,8 @@ export default function useHistory(
   const { user } = useAuthStore();
   const [logs, setLogs] = useState<LogWithName[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [exerciseHistory, setExerciseHistory] = useState<ExerciseLog[]>([]);
+  const [foodHistory, setFoodHistory] = useState<FoodLog[]>([]);
 
   useEffect(() => {
     if (!user || !logType) {
@@ -105,7 +111,19 @@ export default function useHistory(
     [logType]
   );
 
+  function addExerciseLog(log: ExerciseLog) {
+    setExerciseHistory((prev) => [...prev, log]);
+  }
+
+  function addFoodLog(log: FoodLog) {
+    setFoodHistory((prev) => [...prev, log]);
+  }
+
   return {
+    exerciseHistory,
+    foodHistory,
+    addExerciseLog,
+    addFoodLog,
     logs,
     loading,
     deleteLog: handleDeleteLog,

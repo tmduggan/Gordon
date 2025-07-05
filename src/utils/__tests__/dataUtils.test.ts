@@ -31,4 +31,4 @@ describe('ensureAvailableEquipment', () => {
     };
     expect(ensureAvailableEquipment(input)).toEqual(input);
   });
-});
+}); 

@@ -1,4 +1,4 @@
-import type { Food, ExerciseLog } from '../types';
+import type { Food, ExerciseLog, Exercise } from '../types';
 
 interface Macros {
   calories: number;
@@ -246,4 +246,9 @@ export function getPrestigeMilestoneProgress(
   
   const adjustedValue = value / baseIncrement;
   return getMilestoneProgress(adjustedValue, milestones);
+}
+
+// Example: Get main muscle group for an exercise
+export function getMainMuscleGroup(exercise: Exercise): string {
+  return exercise.target || 'unknown';
 } 

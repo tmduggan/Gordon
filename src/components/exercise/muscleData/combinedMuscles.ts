@@ -1,5 +1,5 @@
 // Muscles that appear in both front and back views
-export const combinedMuscles = {
+export const combinedMuscles: Record<string, string[]> = {
   forearms: [
     // Front view paths
     'M157.27,1494.35c159.23-135.97,78.75-370.3,224.46-424.25c2.42,13.34,7.49,25.54,24.15,26.67c14.92,1.01,22.43-11.81,34.45-19.7c3.21,31.37-23.04,49.23-41.35,70.07c-82.3,80.78-103.09,200.21-176.97,287.62c-9.98,14.95-22.28,29.85-25.6,47.97',

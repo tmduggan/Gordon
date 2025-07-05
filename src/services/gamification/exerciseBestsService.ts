@@ -1,4 +1,4 @@
-import type { UserProfile, PersonalBests, PersonalBest, Exercise } from '../../types';
+import type { UserProfile, PersonalBests, PersonalBest, Exercise, ExerciseLog } from '../../types';
 
 interface TimeRange {
   start: Date;
@@ -166,6 +166,28 @@ const calculatePersonalBestBonus = (
 
   return bonus;
 };
+
+// Example: Get personal best for an exercise
+export function getPersonalBest(
+  logs: ExerciseLog[],
+  exerciseId: string
+): number {
+  return logs
+    .filter((log) => log.exerciseId === exerciseId)
+    .reduce((max, log) => (log.weight && log.weight > max ? log.weight : max), 0);
+}
+
+// Example: Get all personal bests for a user
+export function getAllPersonalBests(
+  logs: ExerciseLog[],
+  exercises: Exercise[]
+): Record<string, number> {
+  const bests: Record<string, number> = {};
+  exercises.forEach((exercise) => {
+    bests[exercise.id] = getPersonalBest(logs, exercise.id);
+  });
+  return bests;
+}
 
 // Export all functions
 export {

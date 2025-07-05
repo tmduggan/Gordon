@@ -12,7 +12,7 @@ export const timeZoneOptions = [
 ];
 
 // Helper function to determine time segment
-export const getTimeSegment = (date) => {
+export const getTimeSegment = (date: Date) => {
   const hours = date.getHours();
   if (hours >= 0 && hours < 9) return 'Morning';
   if (hours >= 9 && hours < 16) return 'Midday';
@@ -20,7 +20,7 @@ export const getTimeSegment = (date) => {
 };
 
 // Helper to get current time segment in Eastern US time
-export function getDefaultTimeSegment(timezone = 'America/New_York') {
+export function getDefaultTimeSegment(timezone: string = 'America/New_York'): string {
   const now = new Date();
   const options = { timeZone: timezone, hour: 'numeric', hour12: false };
   const hour = parseInt(now.toLocaleString('en-US', options), 10);
@@ -30,7 +30,7 @@ export function getDefaultTimeSegment(timezone = 'America/New_York') {
 }
 
 // Add helper functions for time format conversion
-export const formatTimeForDisplay = (hours, minutes) => {
+export const formatTimeForDisplay = (hours: number, minutes: number) => {
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
   const displayMinutes = minutes.toString().padStart(2, '0');
@@ -100,7 +100,7 @@ export const parseTimestamp = (isoString: string): { date: string; time: string 
  * @param {string} dateString - The date string in YYYY-MM-DD format.
  * @returns {string} The date formatted as Month Day, Year.
  */
-export const formatDateForDisplay = (dateString) => {
+export const formatDateForDisplay = (dateString: string) => {
   if (!dateString) return '';
   const [year, month, day] = dateString.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -111,7 +111,7 @@ export const formatDateForDisplay = (dateString) => {
   });
 };
 
-export const groupAndEnrichLogs = (logs, exercises) => {
+export const groupAndEnrichLogs = (logs: any[], exercises: any[]) => {
   if (!logs || !exercises || !logs.length || !exercises.length) return {};
 
   return logs.reduce((acc, log) => {
@@ -138,13 +138,13 @@ export const groupAndEnrichLogs = (logs, exercises) => {
  * @param {Function} dateFormatter - Function to format dates (e.g., formatSmartDate)
  * @returns {Object} Object with formatted date strings as keys and arrays of logs as values
  */
-export const groupLogsByDate = (logs, dateFormatter) => {
+export const groupLogsByDate = (logs: any[], dateFormatter: (date: Date) => string) => {
   if (!logs || !Array.isArray(logs) || logs.length === 0) {
     return {};
   }
 
   return logs.reduce((acc, log) => {
-    let logDate;
+    let logDate: Date;
     
     // Handle different timestamp formats
     if (log.timestamp instanceof Date) {
@@ -179,7 +179,7 @@ export const groupLogsByDate = (logs, dateFormatter) => {
  * @param {Date} date - The date to format.
  * @returns {string} The formatted date string.
  */
-export function formatSmartDate(date) {
+export function formatSmartDate(date: Date) {
   if (!(date instanceof Date) || isNaN(date)) {
     return 'Invalid Date';
   }
@@ -212,7 +212,7 @@ export function formatSmartDate(date) {
  * @param {Date} date2 The second date.
  * @returns {boolean} True if they are the same day.
  */
-export function isSameDayLocal(date1, date2) {
+export function isSameDayLocal(date1: Date, date2: Date) {
   if (!date1 || !date2) return false;
   return (
     date1.getFullYear() === date2.getFullYear() &&
@@ -235,3 +235,14 @@ export const foodTimePeriods: Record<string, number> = {
   Supper: 17, // 5:00 PM
   Dinner: 20, // 8:00 PM
 };
+
+// Example: Format a date as YYYY-MM-DD
+export function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+// Example: Get the difference in days between two dates
+export function daysBetween(date1: Date, date2: Date): number {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.floor((date2.getTime() - date1.getTime()) / msPerDay);
+}

@@ -9,7 +9,9 @@ import type {
   ExerciseLibraryItem,
   MuscleReps,
   PersonalBests,
-  TimePeriod
+  TimePeriod,
+  Exercise,
+  ExerciseLog
 } from '../../types';
 
 /**
@@ -187,4 +189,31 @@ export function calculatePersonalBestBonus(
   if (personalBests.week && currentReps > personalBests.week.reps) return 1;
 
   return 0;
+}
+
+// Example: Calculate XP for a single exercise log
+export function calculateExerciseXP(
+  log: ExerciseLog,
+  exercise: Exercise,
+  userProfile: UserProfile
+): number {
+  // XP calculation logic (placeholder)
+  let baseXP = 100;
+  if (exercise.difficulty === 'advanced') baseXP += 50;
+  if (log.reps) baseXP += log.reps * 2;
+  if (userProfile.isPremium) baseXP *= 1.1;
+  return Math.round(baseXP);
+}
+
+// Example: Calculate total XP for a workout
+export function calculateWorkoutXP(
+  logs: ExerciseLog[],
+  exercises: Exercise[],
+  userProfile: UserProfile
+): number {
+  return logs.reduce((total, log) => {
+    const exercise = exercises.find((ex) => ex.id === log.exerciseId);
+    if (!exercise) return total;
+    return total + calculateExerciseXP(log, exercise, userProfile);
+  }, 0);
 } 

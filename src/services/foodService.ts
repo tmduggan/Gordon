@@ -1,7 +1,7 @@
 import { getAuth } from 'firebase/auth';
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Food } from '../types';
+import type { Food, UserProfile } from '../types';
 
 /**
  * A utility to create a URL-friendly "slug" from a string.
@@ -91,4 +91,15 @@ export async function saveFoodToLibrary(food: Partial<Food>): Promise<Food> {
     console.error('Error saving food to Firestore:', error, foodToSave);
     throw error;
   }
+}
+
+// Example: Calculate total calories for a list of foods
+export function calculateTotalCalories(foods: Food[]): number {
+  return foods.reduce((total, food) => total + (food.calories || 0), 0);
+}
+
+// Example: Get favorite foods for a user
+export function getFavoriteFoods(userProfile: UserProfile, allFoods: Food[]): Food[] {
+  if (!userProfile.favoriteFoods) return [];
+  return allFoods.filter(food => userProfile.favoriteFoods.includes(food.id));
 } 

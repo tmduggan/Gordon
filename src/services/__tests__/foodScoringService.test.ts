@@ -111,8 +111,8 @@ describe('Food Scoring Service', () => {
   });
 
   describe('calculateDailyFoodXP', () => {
-    const mockGetFoodById = (id) => {
-      const foods = {
+    const mockGetFoodById = (id: string) => {
+      const foods: any = {
         chicken: {
           id: 'chicken',
           food_name: 'Chicken Breast',
@@ -170,7 +170,7 @@ describe('Food Scoring Service', () => {
     });
 
     it('should handle empty logs', () => {
-      const logs = [];
+      const logs: any[] = [];
 
       const result = calculateDailyFoodXP(logs, mockGetFoodById, mockGoals);
 
@@ -186,4 +186,4 @@ describe('Food Scoring Service', () => {
       expect(result.totalXP).toBe(0);
     });
   });
-});
+}); 

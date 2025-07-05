@@ -196,4 +196,4 @@ describe('Food Logging Service', () => {
       );
     });
   });
-});
+}); 

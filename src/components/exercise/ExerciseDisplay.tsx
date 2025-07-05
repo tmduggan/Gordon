@@ -18,39 +18,39 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import ExerciseTooltip from './ExerciseTooltip';
+import type { Exercise, UserProfile } from '../../types';
 
-/**
- * ExerciseDisplay - unified component for rendering an exercise in any context (pinned, suggestion, detailed, etc.)
- * Props:
- *   - exercise: object (required)
- *   - variant: 'row' | 'card' | 'detailed' (default: 'row')
- *   - showXP: bool
- *   - showPinIcon: bool
- *   - showUnhideButton: bool
- *   - showSecondaryMuscles: bool
- *   - showBodyPart: bool
- *   - showCategory: bool
- *   - bonusXP: number
- *   - laggingType: string
- *   - reason: string
- *   - showTooltip: bool
- *   - onPinToggle: function
- *   - onUnhide: function
- *   - onClick: function
- *   - loading: bool
- *   - className: string
- *   - nameClassName: string
- *   - children: node
- *   - showHideButton: bool
- *   - onHide: function
- *   - showRefreshButton: bool
- *   - onRefresh: function
- *   - userProfile: object
- */
+export interface ExerciseDisplayProps {
+  exercise: Exercise;
+  variant?: 'row' | 'card' | 'detailed';
+  showXP?: boolean;
+  showPinIcon?: boolean;
+  showUnhideButton?: boolean;
+  showSecondaryMuscles?: boolean;
+  showBodyPart?: boolean;
+  showCategory?: boolean;
+  bonusXP?: number;
+  laggingType?: string;
+  reason?: string;
+  showTooltip?: boolean;
+  onPinToggle?: () => void;
+  onUnhide?: (id: string) => void;
+  onClick?: () => void;
+  loading?: boolean;
+  className?: string;
+  nameClassName?: string;
+  children?: ReactNode;
+  showHideButton?: boolean;
+  onHide?: (id: string) => void;
+  showRefreshButton?: boolean;
+  onRefresh?: () => void;
+  userProfile?: UserProfile;
+}
+
 export default function ExerciseDisplay({
   exercise,
   variant = 'row',
@@ -76,7 +76,7 @@ export default function ExerciseDisplay({
   showRefreshButton = false,
   onRefresh,
   userProfile = undefined,
-}) {
+}: ExerciseDisplayProps) {
   if (!exercise) return null;
 
   const {
@@ -96,7 +96,7 @@ export default function ExerciseDisplay({
   const { logs: workoutLog } = useExerciseLogStore();
 
   // Lagging type badge/icon logic
-  const getLaggingTypeIcon = (type) => {
+  const getLaggingTypeIcon = (type: string) => {
     switch (type) {
       case 'neverTrained':
         return <Target className="h-4 w-4 text-red-500" />;
@@ -108,7 +108,7 @@ export default function ExerciseDisplay({
         return <Target className="h-4 w-4 text-gray-500" />;
     }
   };
-  const getLaggingTypeColor = (laggingType) => {
+  const getLaggingTypeColor = (laggingType?: string) => {
     switch (laggingType) {
       case 'neverTrained':
         return 'bg-status-error text-status-error border-status-error';
@@ -121,8 +121,8 @@ export default function ExerciseDisplay({
     }
   };
 
-  // Utility: Convert string to Title Case (capitalize first letter of each word, leave numbers/symbols as-is)
-  function toTitleCase(str) {
+  // Utility: Convert string to Title Case
+  function toTitleCase(str: string) {
     return str.replace(
       /\w\S*/g,
       (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
@@ -198,153 +198,121 @@ export default function ExerciseDisplay({
     <div className="flex items-center justify-between">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
         {/* Exercise Name */}
-        <ExerciseTooltip
-          exercise={exercise}
-          bonusXP={bonusXP}
-          laggingType={laggingType}
-          userProfile={userProfile}
-          workoutLog={workoutLog}
-        >
-          <div className="flex flex-1 min-w-0 w-full sm:w-auto items-center justify-between">
-            <strong className={`block mr-2 ${nameClassName}`}>
-              {toTitleCase(name)}
-            </strong>
-            <div className="flex flex-row items-center gap-2 flex-shrink-0 justify-end">
-              {muscleIcon && (
-                <img
-                  src={muscleIcon}
-                  alt={target}
-                  className="h-6 w-6 rounded-md border border-black"
-                />
-              )}
-              {equipmentIcon && (
-                <img
-                  src={equipmentIcon}
-                  alt={equipment}
-                  className="h-6 w-6 p-0.5 bg-equipment rounded-md"
-                />
-              )}
-              {bonusXP !== undefined && (
-                <Zap className="h-4 w-4 text-green-600" title="XP" />
-              )}
-              {laggingType === 'neverTrained' && (
-                <Target
-                  className="h-4 w-4 text-red-500"
-                  title="Never Trained"
-                />
-              )}
-              {laggingType === 'underTrained' && (
-                <TrendingUp
-                  className="h-4 w-4 text-orange-500"
-                  title="Under Trained"
-                />
-              )}
-              {laggingType === 'neglected' && (
-                <Clock className="h-4 w-4 text-yellow-500" title="Neglected" />
-              )}
-            </div>
-          </div>
-        </ExerciseTooltip>
+        <strong className={nameClassName}>{toTitleCase(name)}</strong>
+        {/* Exercise Details */}
+        <div className="flex flex-row items-center gap-2">
+          {muscleIcon && (
+            <img
+              src={muscleIcon}
+              alt={target}
+              className="h-6 w-6 rounded-md border border-black"
+            />
+          )}
+          {equipmentIcon && (
+            <img
+              src={equipmentIcon}
+              alt={equipment}
+              className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+            />
+          )}
+          {showXP && xp !== undefined && (
+            <Badge variant="secondary" className="text-sm">
+              <Zap className="h-4 w-4 mr-1" />
+              {xp} XP
+            </Badge>
+          )}
+          {bonusXP !== undefined && (
+            <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
+              <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
+            </Badge>
+          )}
+          {laggingType && (
+            <Badge
+              variant="outline"
+              className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
+            >
+              {getLaggingTypeIcon(laggingType)}
+              <span className="ml-1 capitalize">
+                {laggingType.replace(/([A-Z])/g, ' $1')}
+              </span>
+            </Badge>
+          )}
+        </div>
       </div>
-      {/* Action Buttons */}
-      <div className="flex-shrink-0 ml-4 flex gap-2">
-        {/* Pin/Unpin Button */}
-        {showPinIcon && onPinToggle && (
+      {/* Exercise Actions */}
+      <div className="flex items-center gap-2">
+        {showPinIcon && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPinToggle(exercise)}
-                  disabled={loading}
-                  className="h-8 px-3"
+                  variant="ghost"
+                  size="icon"
+                  onClick={e => { e.stopPropagation(); onPinToggle && onPinToggle(); }}
+                  className="text-gray-500 hover:text-gray-900"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                  ) : (
-                    <>
-                      <Pin className="h-4 w-4" />
-                    </>
-                  )}
+                  {onPinToggle ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Unpin exercise</p>
+                {onPinToggle ? 'Unpin' : 'Pin'}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
-        {/* Unhide Button */}
-        {showUnhideButton && onUnhide && (
+        {showUnhideButton && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onUnhide(id)}
-                  disabled={loading}
-                  className="h-8 px-3"
+                  variant="ghost"
+                  size="icon"
+                  onClick={e => { e.stopPropagation(); onUnhide?.(id); }}
+                  className="text-gray-500 hover:text-gray-900"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-1" />
-                      Unhide
-                    </>
-                  )}
+                  <EyeOff className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Show this exercise in suggestions again</p>
+                Unhide
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
-        {/* Hide Button */}
-        {showHideButton && onHide && (
+        {showHideButton && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onHide(id)}
-                  disabled={loading}
-                  className="h-8 px-3"
+                  variant="ghost"
+                  size="icon"
+                  onClick={e => { e.stopPropagation(); onHide?.(id); }}
+                  className="text-gray-500 hover:text-gray-900"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                  ) : (
-                    <EyeOff className="h-4 w-4 mr-1" />
-                  )}
+                  <EyeOff className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Hide this exercise from suggestions and search</p>
+                Hide
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
-        {/* Per-suggestion Refresh Button */}
-        {showRefreshButton && onRefresh && (
+        {showRefreshButton && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onRefresh}
-                  disabled={loading}
-                  className="h-8 px-3"
+                  variant="ghost"
+                  size="icon"
+                  onClick={e => { e.stopPropagation(); onRefresh && onRefresh(); }}
+                  className="text-gray-500 hover:text-gray-900"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Refresh this suggestion</p>
+                Refresh
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -353,25 +321,9 @@ export default function ExerciseDisplay({
     </div>
   );
 
-  const cardProps = onClick
-    ? {
-        role: 'button',
-        tabIndex: 0,
-        onClick: (e) => {
-          if (onClick) onClick(e);
-        },
-        className: `cursor-pointer ${className}`,
-      }
-    : { className };
-
-  // Optionally wrap in a tooltip for reason
-  if (showTooltip) {
-    return (
-      <ExerciseTooltip exercise={exercise}>
-        <Card {...cardProps}>{content}</Card>
-      </ExerciseTooltip>
-    );
-  }
-
-  return <Card {...cardProps}>{content}</Card>;
-}
+  return (
+    <Card className={`p-4 ${className}`} onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
+      {content}
+    </Card>
+  );
+} 

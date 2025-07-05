@@ -108,7 +108,15 @@ export default function AnimatedProgressBar({
       style={{ height: 'inherit' }}
     >
       {/* Base bar */}
-      <Progress value={displayValue} className={className} {...props} />
+      <Progress
+        value={
+          typeof displayValue === 'number' && isFinite(displayValue)
+            ? Math.max(0, Math.min(displayValue, 100))
+            : 0
+        }
+        className={className}
+        {...props}
+      />
       {/* Green gain overlay */}
       {animating && gainWidth > 0 && (
         <div

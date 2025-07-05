@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getFoodMacros } from '../utils/dataUtils';
 import type { Food, CartItem, Recipe } from '../types';
+import { useState } from 'react';
 
 export type CartType = 'food' | 'exercise';
 

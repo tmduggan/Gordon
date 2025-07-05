@@ -53,6 +53,7 @@ export default function useExerciseLogging(
   const { user, userProfile, saveUserProfile, addXP } = useAuthStore();
   const { toast } = useToast();
   const [currentLogData, setCurrentLogData] = useState<LogData>({});
+  const [logs, setLogs] = useState<ExerciseLog[]>([]);
 
   const handleSelect = (exercise: Exercise): void => {
     cart.addToCart(exercise);
@@ -158,9 +159,20 @@ export default function useExerciseLogging(
       setCurrentLogData((prev) => ({ ...prev, [id]: data })),
   };
 
+  function addLog(log: ExerciseLog) {
+    setLogs((prev) => [...prev, log]);
+  }
+
+  function removeLog(id: string) {
+    setLogs((prev) => prev.filter((log) => log.id !== id));
+  }
+
   return {
     handleSelect,
     logCart,
     cartProps,
+    logs,
+    addLog,
+    removeLog,
   };
 } 

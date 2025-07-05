@@ -4,16 +4,18 @@ import { db } from '../firebase';
 import useAuthStore from './useAuthStore';
 import type { ExerciseLog } from '../types';
 
-interface ExerciseLogStore {
+interface ExerciseLogState {
   logs: ExerciseLog[];
-  loading: boolean;
-  fetchLogs: () => Promise<void>;
+  addLog: (log: ExerciseLog) => void;
+  removeLog: (id: string) => void;
   clearLogs: () => void;
 }
 
-const useExerciseLogStore = create<ExerciseLogStore>((set, get) => ({
+const useExerciseLogStore = create<ExerciseLogState>((set, get) => ({
   logs: [],
-  loading: false,
+  addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
+  removeLog: (id) => set((state) => ({ logs: state.logs.filter((log) => log.id !== id) })),
+  clearLogs: () => set({ logs: [] }),
 
   fetchLogs: async () => {
     const user = useAuthStore.getState().user;
@@ -33,8 +35,6 @@ const useExerciseLogStore = create<ExerciseLogStore>((set, get) => ({
       set({ loading: false });
     }
   },
-
-  clearLogs: () => set({ logs: [] }),
 }));
 
 export default useExerciseLogStore; 

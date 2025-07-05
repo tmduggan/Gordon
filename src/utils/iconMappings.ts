@@ -10,31 +10,9 @@ export const equipmentIconMap: Record<string, string> = {
 };
 
 // Helper function to get equipment icon based on equipment name
-export const getEquipmentIcon = (equipmentName: string | null | undefined): string | null => {
-  if (!equipmentName) return null;
-  const lowerCaseEquipment = equipmentName.toLowerCase();
-
-  if (lowerCaseEquipment.includes('dumbbell'))
-    return equipmentIconMap['dumbbell'];
-  if (lowerCaseEquipment.includes('barbell'))
-    return equipmentIconMap['barbell'];
-  if (lowerCaseEquipment.includes('kettlebell'))
-    return equipmentIconMap['kettlebell'];
-  if (lowerCaseEquipment === 'smith machine')
-    return equipmentIconMap['smith machine'];
-  if (lowerCaseEquipment === 'sled machine')
-    return equipmentIconMap['sled machine'];
-  if (lowerCaseEquipment === 'body weight')
-    return equipmentIconMap['body weight'];
-  if (
-    lowerCaseEquipment === 'leverage machine' ||
-    lowerCaseEquipment === 'cable'
-  ) {
-    return equipmentIconMap['machine'];
-  }
-
-  return null;
-};
+export function getEquipmentIcon(equipment: string): string | undefined {
+  return equipmentIconMap[equipment.toLowerCase()] || undefined;
+}
 
 // Icon mappings for muscle groups
 export const muscleIconMap: Record<string, string> = {

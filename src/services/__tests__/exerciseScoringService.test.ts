@@ -6,9 +6,9 @@ import {
 } from '../gamification/exerciseScoringService';
 
 describe('Exercise Scoring Service', () => {
-  let mockMuscleReps;
-  let mockExerciseDetails;
-  let mockWorkoutData;
+  let mockMuscleReps: any;
+  let mockExerciseDetails: any;
+  let mockWorkoutData: any;
 
   beforeEach(() => {
     mockMuscleReps = {
@@ -206,36 +206,56 @@ describe('Exercise Scoring Service', () => {
       expect(result).toBe(3);
     });
 
-    it('should return 1 for week best improvement', () => {
-      const workoutNoRecord = {
-        sets: [{ weight: 135, reps: 8 }],
+    it('should return 2 for month best', () => {
+      const workoutWithRecord = {
+        sets: [{ weight: 135, reps: 10 }],
       };
 
       const result = calculatePersonalBestBonus(
-        workoutNoRecord,
+        workoutWithRecord,
+        mockExerciseDetails,
+        mockUserProfile
+      );
+      expect(result).toBe(2);
+    });
+
+    it('should return 1 for week best', () => {
+      const workoutWithRecord = {
+        sets: [{ weight: 125, reps: 8 }],
+      };
+
+      const result = calculatePersonalBestBonus(
+        workoutWithRecord,
         mockExerciseDetails,
         mockUserProfile
       );
       expect(result).toBe(1);
     });
 
-    it('should handle missing personal bests', () => {
-      const result = calculatePersonalBestBonus(
-        mockWorkoutData,
-        mockExerciseDetails,
-        {}
-      );
-      expect(result).toBe(0);
-    });
+    it('should return 0 for no record', () => {
+      const workoutWithNoRecord = {
+        sets: [{ weight: 100, reps: 5 }],
+      };
 
-    it('should handle workout without sets', () => {
-      const workoutNoSets = { duration: 30 };
       const result = calculatePersonalBestBonus(
-        workoutNoSets,
+        workoutWithNoRecord,
         mockExerciseDetails,
         mockUserProfile
       );
       expect(result).toBe(0);
     });
+
+    it('should handle missing personal bests', () => {
+      const workoutWithRecord = {
+        sets: [{ weight: 155, reps: 15 }],
+      };
+
+      const result = calculatePersonalBestBonus(
+        workoutWithRecord,
+        mockExerciseDetails,
+        { personalBests: {} }
+      );
+      expect(result).toBe(0);
+    });
   });
-});
+}); 

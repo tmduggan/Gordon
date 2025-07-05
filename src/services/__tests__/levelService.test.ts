@@ -169,4 +169,4 @@ describe('Level Service', () => {
       expect(result.isValid).toBe(true); // 0.1 difference is within tolerance
     });
   });
-});
+}); 

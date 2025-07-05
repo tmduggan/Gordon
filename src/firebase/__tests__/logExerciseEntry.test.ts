@@ -103,4 +103,4 @@ describe('Exercise Logging Service', () => {
       );
     });
   });
-});
+}); 

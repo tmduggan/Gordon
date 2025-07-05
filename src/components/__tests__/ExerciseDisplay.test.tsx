@@ -194,4 +194,4 @@ describe('ExerciseDisplay', () => {
 
     expect(screen.queryByText('triceps')).not.toBeInTheDocument();
   });
-});
+}); 

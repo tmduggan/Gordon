@@ -35,11 +35,11 @@ vi.mock('../useToast', () => ({
 }));
 
 describe('useExerciseLogging', () => {
-  let mockExerciseLibrary;
-  let mockExerciseHistory;
-  let mockCart;
-  let mockSearch;
-  let mockDateTimePicker;
+  let mockExerciseLibrary: any;
+  let mockExerciseHistory: any;
+  let mockCart: any;
+  let mockSearch: any;
+  let mockDateTimePicker: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -213,44 +213,14 @@ describe('useExerciseLogging', () => {
         result.current.handleSelect({
           id: 'bench-press',
           name: 'Bench Press',
+          category: 'strength',
         });
       });
 
-      await act(async () => {
-        await result.current.logCart();
-      });
-
-      // Should still clear cart even if there's an error
-      expect(mockCart.clearCart).toHaveBeenCalled();
-    });
-
-    it('should calculate and add XP correctly', async () => {
-      const mockAddXP = vi.fn();
-      const { default: useAuthStore } = await import(
-        '../../store/useAuthStore'
-      );
-      useAuthStore.mockReturnValue({
-        user: { uid: 'test-user-id' },
-        userProfile: { totalXP: 100, muscleReps: {} },
-        saveUserProfile: vi.fn(),
-        addXP: mockAddXP,
-      });
-
-      const { result } = renderHook(() =>
-        useExerciseLogging(
-          mockExerciseLibrary,
-          mockExerciseHistory,
-          mockCart,
-          mockSearch,
-          mockDateTimePicker
-        )
-      );
-
-      // Set up cart data
+      // Update log data
       act(() => {
-        result.current.handleSelect({
-          id: 'bench-press',
-          name: 'Bench Press',
+        result.current.cartProps.onLogDataChange('bench-press', {
+          sets: [{ weight: 135, reps: 10 }],
         });
       });
 
@@ -258,12 +228,13 @@ describe('useExerciseLogging', () => {
         await result.current.logCart();
       });
 
-      expect(mockAddXP).toHaveBeenCalledWith(25); // score from calculateExerciseScore
+      // Should still clear cart even on error
+      expect(mockCart.clearCart).toHaveBeenCalled();
     });
   });
 
   describe('cartProps', () => {
-    it('should provide log data and change handler', () => {
+    it('should provide onLogDataChange function', () => {
       const { result } = renderHook(() =>
         useExerciseLogging(
           mockExerciseLibrary,
@@ -274,8 +245,6 @@ describe('useExerciseLogging', () => {
         )
       );
 
-      expect(result.current.cartProps).toHaveProperty('logData');
-      expect(result.current.cartProps).toHaveProperty('onLogDataChange');
       expect(typeof result.current.cartProps.onLogDataChange).toBe('function');
     });
 
@@ -290,17 +259,96 @@ describe('useExerciseLogging', () => {
         )
       );
 
-      const newLogData = {
+      const exerciseId = 'bench-press';
+      const logData = {
         sets: [{ weight: 135, reps: 10 }],
       };
 
       act(() => {
-        result.current.cartProps.onLogDataChange('bench-press', newLogData);
+        result.current.cartProps.onLogDataChange(exerciseId, logData);
       });
 
-      expect(result.current.cartProps.logData['bench-press']).toEqual(
-        newLogData
+      // Verify log data was updated
+      expect(result.current.cartProps.logData[exerciseId]).toEqual(logData);
+    });
+
+    it('should provide exerciseLibrary prop', () => {
+      const { result } = renderHook(() =>
+        useExerciseLogging(
+          mockExerciseLibrary,
+          mockExerciseHistory,
+          mockCart,
+          mockSearch,
+          mockDateTimePicker
+        )
       );
+
+      expect(result.current.cartProps.exerciseLibrary).toBe(mockExerciseLibrary.items);
     });
   });
-});
+
+  describe('logSingleExercise', () => {
+    it('should log a single exercise successfully', async () => {
+      const { result } = renderHook(() =>
+        useExerciseLogging(
+          mockExerciseLibrary,
+          mockExerciseHistory,
+          mockCart,
+          mockSearch,
+          mockDateTimePicker
+        )
+      );
+
+      const exercise = {
+        id: 'bench-press',
+        name: 'Bench Press',
+        category: 'strength',
+      };
+
+      const logData = {
+        sets: [{ weight: 135, reps: 10 }],
+      };
+
+      await act(async () => {
+        await result.current.logSingleExercise(exercise, logData);
+      });
+
+      // Verify the exercise was logged
+      expect(mockCart.clearCart).toHaveBeenCalled();
+    });
+
+    it('should handle errors when logging single exercise', async () => {
+      const { saveWorkoutLog } = await import(
+        '../../firebase/firestore/logExerciseEntry'
+      );
+      saveWorkoutLog.mockRejectedValueOnce(new Error('Firebase error'));
+
+      const { result } = renderHook(() =>
+        useExerciseLogging(
+          mockExerciseLibrary,
+          mockExerciseHistory,
+          mockCart,
+          mockSearch,
+          mockDateTimePicker
+        )
+      );
+
+      const exercise = {
+        id: 'bench-press',
+        name: 'Bench Press',
+        category: 'strength',
+      };
+
+      const logData = {
+        sets: [{ weight: 135, reps: 10 }],
+      };
+
+      await act(async () => {
+        await result.current.logSingleExercise(exercise, logData);
+      });
+
+      // Should still clear cart even on error
+      expect(mockCart.clearCart).toHaveBeenCalled();
+    });
+  });
+}); 

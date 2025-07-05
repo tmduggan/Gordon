@@ -8,7 +8,7 @@ import { combinedMuscles } from './combinedMuscles';
 import MuscleTooltip from './MuscleTooltip';
 
 // Helper to compute color based on score
-const getMuscleColor = (score) => {
+const getMuscleColor = (score: number) => {
   if (!score || score === 0) return '#000000'; // black = untrained
   const red = 100 + Math.floor(score * 155); // score from 0 to 1
   return `rgb(${Math.min(red, 255)}, 0, 0)`; // max out at red
@@ -43,11 +43,16 @@ const INTERACTIVE_MUSCLES = [
 // Define which should be rendered as background/outline (non-interactive)
 const BACKGROUND_MUSCLES = ['body_outline'];
 
-export default function MuscleChart({ className = '', onMuscleClick }) {
+interface MuscleChartProps {
+  className?: string;
+  onMuscleClick?: (id: string) => void;
+}
+
+export default function MuscleChart({ className = '', onMuscleClick }: MuscleChartProps) {
   const { userProfile } = useAuthStore();
-  const [hovered, setHovered] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const containerRef = useRef(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate muscle scores from user profile
   const { normalizedScores, rawScores, extraScores, specialScores } =
@@ -55,10 +60,10 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
       const libraryScores = userProfile?.muscleScores || {};
 
       // Map library muscle scores to SVG muscle scores
-      const svgScores = {};
-      const svg3DayScores = {};
-      const svg7DayScores = {};
-      const specialMuscleScores = {};
+      const svgScores: Record<string, number> = {};
+      const svg3DayScores: Record<string, number> = {};
+      const svg7DayScores: Record<string, number> = {};
+      const specialMuscleScores: Record<string, any> = {};
 
       // For each SVG muscle group, sum up scores from all mapped library muscles
       Object.entries(muscleMapping).forEach(([svgMuscle, libraryMuscles]) => {
@@ -131,7 +136,7 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
     }, [userProfile]);
 
   // Get contributing muscles for tooltip
-  const getContributingMuscles = (svgMuscle) => {
+  const getContributingMuscles = (svgMuscle: string) => {
     const libraryMuscles = muscleMapping[svgMuscle] || [];
     return libraryMuscles;
   };
@@ -157,14 +162,14 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
     return {
       top,
       left,
-      pointerEvents: 'none',
+      pointerEvents: 'none' as const,
       zIndex: 1000,
-      position: 'fixed',
+      position: 'fixed' as const,
     };
   };
 
   // Handle muscle hover
-  const handleMuscleHover = (id, e) => {
+  const handleMuscleHover = (id: string, e: React.MouseEvent<SVGGElement>) => {
     setHovered(id);
     setMousePos({ x: e.clientX, y: e.clientY });
   };
@@ -175,7 +180,7 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
   };
 
   // Handle muscle click
-  const handleMuscleClick = (id) => {
+  const handleMuscleClick = (id: string) => {
     onMuscleClick?.(id);
   };
 
@@ -201,7 +206,7 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
               onClick={isInteractive ? () => handleMuscleClick(id) : undefined}
               style={{ cursor: isInteractive ? 'pointer' : 'default' }}
             >
-              {paths.map((d, i) => (
+              {(paths as string[]).map((d, i) => (
                 <path
                   key={i}
                   d={d}
@@ -230,4 +235,4 @@ export default function MuscleChart({ className = '', onMuscleClick }) {
       />
     </div>
   );
-}
+} 

@@ -16,11 +16,11 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useToast } from '../../hooks/useToast';
-import { analyzeLaggingMuscles } from '../../services/gamification/suggestionService';
 import useAuthStore from '../../store/useAuthStore';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import CompletedExerciseBar from './CompletedExerciseBar';
 import ExerciseDisplay from './ExerciseDisplay';
+import { sampleSize, shuffle } from 'lodash';
 
 const difficultyColorMap = {
   beginner: 'bg-sky-500',
@@ -103,51 +103,39 @@ export default function WorkoutSuggestions({
     await saveUserProfile(newProfile);
   };
 
-  // Modified refreshSuggestions to enforce limit
+  // Replace refreshSuggestions with new logic
   const refreshSuggestions = async () => {
-    if (
-      !authUserProfile.subscription?.status === 'admin' &&
-      !authUserProfile.subscription?.status === 'premium'
-    ) {
-      const remaining = getRemainingRefreshes();
-      if (remaining <= 0) {
-        toast({
-          title: 'Daily Refresh Limit Reached',
-          description:
-            'You can only refresh suggestions once per day as a Basic user. Upgrade to Premium for unlimited refreshes.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      await incrementRefreshCount();
-    }
+    if (!userProfile || !userProfile.muscleReps) return;
     setLoading(true);
-    setTimeout(async () => {
-      const laggingMuscles = analyzeLaggingMuscles(
-        muscleScores,
-        workoutLogs,
-        exerciseLibrary
-      );
-      let selectedEquipment = [];
-      if (exerciseCategory === 'bodyweight')
-        selectedEquipment = selectedBodyweight;
-      else if (exerciseCategory === 'gym') selectedEquipment = selectedGym;
-      else if (exerciseCategory === 'cardio')
-        selectedEquipment = selectedCardio;
-      const newSuggestions = generateWorkoutSuggestions(
-        laggingMuscles,
-        exerciseLibrary,
-        availableEquipment,
-        hiddenSuggestions,
-        exerciseCategory,
-        selectedBodyweight,
-        selectedGym,
-        selectedCardio,
-        authUserProfile?.pinnedExercises || [],
-        authUserProfile?.favoriteExercises || []
-      );
+    setTimeout(() => {
+      // 1. Find 3 lowest-trained muscles
+      const sortedMuscles = Object.entries(userProfile.muscleReps)
+        .sort((a, b) => a[1] - b[1])
+        .map(([muscle]) => muscle);
+      const laggingMuscles = sortedMuscles.slice(0, 3);
+
+      // 2. For each, find all matching exercises
+      const usedExerciseIds = new Set();
+      const newSuggestions = laggingMuscles.map((muscle) => {
+        let matchingExercises = exerciseLibrary.filter((ex) => {
+          const targets = [ex.target, ...(Array.isArray(ex.secondaryMuscles) ? ex.secondaryMuscles : [ex.secondaryMuscles])];
+          return targets.some((t) => t && t.toLowerCase() === muscle.toLowerCase());
+        });
+        // Exclude hidden and already suggested
+        matchingExercises = matchingExercises.filter((ex) => !hiddenSuggestions.includes(ex.id) && !usedExerciseIds.has(ex.id));
+        if (matchingExercises.length === 0) return null;
+        // 3. Randomly pick one
+        const exercise = shuffle(matchingExercises)[0];
+        usedExerciseIds.add(exercise.id);
+        return {
+          id: `${exercise.id}-${muscle}`,
+          exercise,
+          laggingMuscle: { muscle, reps: userProfile.muscleReps[muscle], laggingType: 'lagging', bonus: 0, daysSinceTrained: 0, priority: 0 },
+          reason: 'This muscle is lagging in your training.',
+          bonus: 0,
+        };
+      }).filter(Boolean);
       setSuggestions(newSuggestions);
-      await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
       setLoading(false);
     }, 800);
   };
@@ -227,18 +215,7 @@ export default function WorkoutSuggestions({
         let newSuggestions = [];
         // If not enough alternatives, allow reuse
         if (allExercises.length < suggestions.length) {
-          newSuggestions = generateWorkoutSuggestions(
-            analyzeLaggingMuscles(muscleScores, workoutLogs, exerciseLibrary),
-            exerciseLibrary,
-            availableEquipment,
-            hiddenSuggestions,
-            exerciseCategory,
-            selectedBodyweight,
-            selectedGym,
-            selectedCardio,
-            authUserProfile?.pinnedExercises || [],
-            authUserProfile?.favoriteExercises || []
-          );
+          newSuggestions = refreshSuggestions();
         } else {
           // Pick new unique exercises
           for (let i = 0; i < suggestions.length; i++) {

@@ -34,7 +34,7 @@ vi.mock('../../services/firebase/firestore/logFoodEntry', () => ({
 }));
 
 vi.mock('../../services/gamification/foodScoringService', () => ({
-  calculateFoodXP: vi.fn((food, quantity) => {
+  calculateFoodXP: vi.fn((food: any, quantity: number) => {
     // Realistic calculation: calories * 2
     const calories =
       (food.nutritionix_data?.nf_calories || food.calories || 0) *
@@ -89,4 +89,4 @@ describe('Food Cart XP Integration Workflow', () => {
     // Assert: cart is cleared
     expect(mockClearCart).toHaveBeenCalled();
   });
-});
+}); 

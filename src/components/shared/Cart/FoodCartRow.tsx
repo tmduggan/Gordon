@@ -198,8 +198,19 @@ export default function FoodCartRow({
       <Card className="border">
         <CardContent className="p-4">
           <div className="flex flex-col gap-2">
-            {/* Serving Size Editor */}
-            <ServingSizeEditor food={item as FoodItem} onUpdate={handleServingChange} />
+            {/* Serving Size Editor and Remove Button Row */}
+            <div className="flex items-center justify-between gap-2">
+              <ServingSizeEditor food={item as FoodItem} onUpdate={handleServingChange} />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeFromCart(item.id)}
+                title="Remove item"
+                className="h-8 w-8"
+              >
+                <XCircle className="h-5 w-5 text-red-500" />
+              </Button>
+            </div>
             {/* Food Info Row: name left, calories right */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-wrap">
@@ -215,18 +226,6 @@ export default function FoodCartRow({
               <span className="text-sm font-mono text-gray-700">
                 Cal: {calories}
               </span>
-            </div>
-            {/* Remove Button Row */}
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeFromCart(item.id)}
-                title="Remove item"
-                className="h-8 w-8"
-              >
-                <XCircle className="h-5 w-5 text-red-500" />
-              </Button>
             </div>
           </div>
         </CardContent>

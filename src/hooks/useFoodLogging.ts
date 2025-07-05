@@ -7,7 +7,8 @@ import type {
   Food, 
   CartItem,
   UserProfile,
-  Recipe
+  Recipe,
+  FoodLog
 } from '../types';
 
 interface FoodLibrary {
@@ -50,15 +51,22 @@ interface LoggedEntry {
   xp: number;
 }
 
+interface UseFoodLoggingReturn {
+  logs: FoodLog[];
+  addLog: (log: FoodLog) => void;
+  removeLog: (id: string) => void;
+}
+
 export default function useFoodLogging(
   foodLibrary: FoodLibrary,
   cart: Cart,
   search?: Search,
   dateTimePicker?: DateTimePicker
-) {
+): UseFoodLoggingReturn {
   const { user, userProfile, addXP } = useAuthStore();
   const [showAllHistory, setShowAllHistory] = useState(false);
   const { toast } = useToast();
+  const [logs, setLogs] = useState<FoodLog[]>([]);
 
   const handleSelect = async (food: Food): Promise<void> => {
     let foodToLog = food;
@@ -240,11 +248,22 @@ export default function useFoodLogging(
     cart.clearCart();
   };
 
+  function addLog(log: FoodLog) {
+    setLogs((prev) => [...prev, log]);
+  }
+
+  function removeLog(id: string) {
+    setLogs((prev) => prev.filter((log) => log.id !== id));
+  }
+
   return {
     handleSelect,
     handleNutrientsAdd,
     logCart,
     showAllHistory,
     setShowAllHistory,
+    logs,
+    addLog,
+    removeLog,
   };
 } 
