@@ -155,7 +155,7 @@ const ExerciseLogInputs = ({ exercise, logData, onLogDataChange, lastSetPlacehol
             height={64}
             transitionDuration={250}
             rtl={false}
-            disabled={sets.length === 1}
+            disabled={sets.length === 1 || set.completed}
             deleteSwipe={0.85}
             deleteComponent={
               <div className="flex items-center justify-end h-full pr-6 bg-red-500 text-white rounded">
