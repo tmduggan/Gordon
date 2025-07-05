@@ -29,11 +29,54 @@ import {
 } from '../../utils/dataUtils';
 import LevelTooltip from './LevelTooltip';
 
+interface WorkoutLog {
+  name?: string;
+  exerciseName?: string;
+  exerciseId?: string;
+  sets?: Array<{
+    reps?: string | number;
+    weight?: number;
+  }>;
+  duration?: string | number;
+}
+
+interface UserProfile {
+  subscription?: {
+    status?: string;
+  };
+}
+
+interface ProgressInfo {
+  progress: number;
+  next: number;
+  displayTier: string;
+  prestigeIndex: number;
+}
+
+interface LevelInfo {
+  level: number;
+  progress: number;
+  xpToNext: number;
+}
+
+interface LevelDisplayProps {
+  totalXP: number;
+  workoutLogs?: WorkoutLog[];
+  accountCreationDate?: string;
+  className?: string;
+  userProfile?: UserProfile;
+}
+
+interface TierTooltipProps {
+  repProgress: ProgressInfo;
+  cardioProgress: ProgressInfo;
+}
+
 // Helper for tier tooltip content
-function TierTooltip({ repProgress, cardioProgress }) {
+function TierTooltip({ repProgress, cardioProgress }: TierTooltipProps) {
   // Helper to build tier progress string
-  const buildTierString = (progress, label) => {
-    let completed = [];
+  const buildTierString = (progress: ProgressInfo, label: string) => {
+    let completed: string[] = [];
     if (progress.prestigeIndex > 0) {
       completed.push('Base');
       for (let i = 0; i < progress.prestigeIndex - 1; i++) {
@@ -69,13 +112,13 @@ export default function LevelDisplay({
   accountCreationDate,
   className = '',
   userProfile,
-}) {
+}: LevelDisplayProps) {
   const levelInfo = calculateLevelFromXP(totalXP, accountCreationDate);
   const streakInfo = calculateStreakBonuses(workoutLogs);
   const levelDisplay = getLevelInfo(levelInfo.level);
 
   // Determine if user is capped (basic and at or above level 5)
-  const isBasicCapped = (userProfile) => {
+  const isBasicCapped = (userProfile: UserProfile | undefined): boolean => {
     if (!userProfile) return false;
     const status = userProfile.subscription?.status;
     if (status !== 'basic') return false;
@@ -94,8 +137,8 @@ export default function LevelDisplay({
   );
   const strengthSummary = strengthLogs.map((l) => {
     const name = l.name || l.exerciseName || l.exerciseId;
-    const reps = l.sets.reduce((sum, set) => {
-      const r = parseInt(set.reps);
+    const reps = l.sets!.reduce((sum, set) => {
+      const r = parseInt(set.reps?.toString() || '0');
       return sum + (isNaN(r) ? 0 : r);
     }, 0);
     return { name, reps };
@@ -111,7 +154,7 @@ export default function LevelDisplay({
   );
   const cardioSummary = cardioLogs.map((l) => {
     const name = l.name || l.exerciseName || l.exerciseId;
-    const mins = parseInt(l.duration);
+    const mins = parseInt(l.duration?.toString() || '0');
     return { name, mins: isNaN(mins) ? 0 : mins };
   });
   const totalCardioMins = cardioSummary.reduce(
@@ -133,7 +176,7 @@ export default function LevelDisplay({
   );
 
   // Cap and round numbers for display
-  const safeInt = (n) => Math.min(999, Math.round(n || 0));
+  const safeInt = (n: number): number => Math.min(999, Math.round(n || 0));
   const displayReps = safeInt(weeklyReps);
   const displayCardio = safeInt(weeklyCardio);
   const displayRepNext = safeInt(repProgress.next);
@@ -312,4 +355,4 @@ export default function LevelDisplay({
       </TooltipProvider>
     </div>
   );
-}
+} 

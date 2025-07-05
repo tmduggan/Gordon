@@ -2,8 +2,61 @@ import { Calendar, Flame, TrendingUp, Trophy } from 'lucide-react';
 import React from 'react';
 import { getLevelInfo } from '../../services/gamification/levelService';
 
+interface WorkoutLog {
+  name?: string;
+  exerciseName?: string;
+  exerciseId?: string;
+  category?: string;
+  duration?: string | number;
+  sets?: any[];
+  timestamp?: {
+    seconds?: number;
+  } | string | Date;
+}
+
+interface LevelInfo {
+  level: number;
+  xpToNext: number;
+}
+
+interface StreakInfo {
+  dailyStreak: number;
+  dailyBonus: number;
+  weeklyStreak: number;
+  weeklyBonus: number;
+}
+
+interface LevelDisplay {
+  isMilestone?: boolean;
+  title: string;
+  nextMilestone?: number;
+}
+
+interface ProgressInfo {
+  progress: number;
+  displayTier: string;
+  prestigeIndex: number;
+}
+
+interface UserProfile {
+  subscription?: {
+    status?: string;
+  };
+}
+
+interface LevelTooltipProps {
+  levelInfo: LevelInfo;
+  streakInfo: StreakInfo;
+  levelDisplay: LevelDisplay;
+  totalXP: number;
+  userProfile?: UserProfile;
+  workoutLogs?: WorkoutLog[];
+  repProgress?: ProgressInfo;
+  cardioProgress?: ProgressInfo;
+}
+
 // Helper to convert string to title case
-function toTitleCase(str) {
+function toTitleCase(str: string): string {
   return (str || '').replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
@@ -11,13 +64,13 @@ function toTitleCase(str) {
 }
 
 // Helper to format relative date
-function formatRelativeDate(timestamp) {
+function formatRelativeDate(timestamp: any): string {
   if (!timestamp) return '';
   const now = new Date();
   const date = timestamp.seconds
     ? new Date(timestamp.seconds * 1000)
     : new Date(timestamp);
-  const diffMs = now - date;
+  const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (diffDays < 1) return 'Today';
   if (diffDays === 1) return 'Yesterday';
@@ -38,9 +91,9 @@ export default function LevelTooltip({
   workoutLogs = [],
   repProgress,
   cardioProgress,
-}) {
+}: LevelTooltipProps) {
   // Determine if user is capped (basic and at or above level 5)
-  const isBasicCapped = (userProfile) => {
+  const isBasicCapped = (userProfile: UserProfile | undefined): boolean => {
     if (!userProfile) return false;
     const status = userProfile.subscription?.status;
     if (status !== 'basic') return false;
@@ -170,7 +223,7 @@ export default function LevelTooltip({
           <ul className="text-xs text-gray-700 list-disc pl-4">
             {last3Strength.map((log, idx) => (
               <li key={idx}>
-                {toTitleCase(log.name || log.exerciseName || log.exerciseId)}{' '}
+                {toTitleCase(log.name || log.exerciseName || log.exerciseId || '')}{' '}
                 <span className="text-gray-400">
                   ({formatRelativeDate(log.timestamp)})
                 </span>
@@ -190,8 +243,8 @@ export default function LevelTooltip({
           <ul className="text-xs text-gray-700 list-disc pl-4">
             {last3Cardio.map((log, idx) => (
               <li key={idx}>
-                {toTitleCase(log.name || log.exerciseName || log.exerciseId)}
-                {log.duration ? ` - ${parseInt(log.duration)} min` : ''}
+                {toTitleCase(log.name || log.exerciseName || log.exerciseId || '')}
+                {log.duration ? ` - ${parseInt(log.duration.toString())} min` : ''}
                 <span className="text-gray-400">
                   {' '}
                   ({formatRelativeDate(log.timestamp)})
@@ -203,4 +256,4 @@ export default function LevelTooltip({
       </div>
     </div>
   );
-}
+} 
