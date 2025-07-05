@@ -3,6 +3,13 @@
 
 import { muscleMapping } from '../../utils/muscleMapping';
 import { getMuscleRepsForPeriod } from './exerciseScoringService';
+import type { 
+  Exercise, 
+  WorkoutLog, 
+  LaggingMuscle, 
+  WorkoutSuggestion,
+  MuscleReps
+} from '../../types';
 
 const SUGGESTION_CONFIG = {
   // Bonus XP for working lagging muscle groups
@@ -24,24 +31,23 @@ const SUGGESTION_CONFIG = {
 
   // Maximum suggestions to show
   maxSuggestions: 3,
-};
+} as const;
+
+type LaggingType = 'neverTrained' | 'underTrained' | 'neglected';
+type ExerciseCategory = 'bodyweight' | 'gym' | 'cardio';
 
 /**
  * Analyze user's muscle reps to find lagging muscle groups
- * @param {object} muscleReps - User's current muscle reps
- * @param {Array} workoutLogs - User's workout history
- * @param {Array} exerciseLibrary - Available exercises
- * @returns {Array} Array of lagging muscle objects
  */
 export function analyzeLaggingMuscles(
-  muscleReps = {},
-  workoutLogs = [],
-  exerciseLibrary = []
-) {
-  const laggingMuscles = [];
+  muscleReps: MuscleReps = {},
+  workoutLogs: WorkoutLog[] = [],
+  exerciseLibrary: Exercise[] = []
+): LaggingMuscle[] {
+  const laggingMuscles: LaggingMuscle[] = [];
 
   // Get all possible muscle groups from the library
-  const allMuscles = new Set();
+  const allMuscles = new Set<string>();
   exerciseLibrary.forEach((exercise) => {
     if (exercise.target) {
       allMuscles.add(exercise.target.toLowerCase().trim());
@@ -72,7 +78,7 @@ export function analyzeLaggingMuscles(
     const hasWorkedRecently =
       getMuscleRepsForPeriod(workoutLogs, exerciseLibrary, muscle, '14day') > 0;
 
-    let laggingType = null;
+    let laggingType: LaggingType | null = null;
     let bonus = 0;
 
     if (lifetimeReps === 0) {
@@ -108,13 +114,9 @@ export function analyzeLaggingMuscles(
 
 /**
  * Calculate priority score for sorting lagging muscles
- * @param {string} laggingType - Type of lagging (neverTrained, underTrained, neglected)
- * @param {number} reps - Current muscle reps
- * @param {number} daysSinceTrained - Days since last trained
- * @returns {number} Priority score
  */
-function getPriorityScore(laggingType, reps, daysSinceTrained) {
-  const baseScores = {
+function getPriorityScore(laggingType: LaggingType, reps: number, daysSinceTrained: number): number {
+  const baseScores: Record<LaggingType, number> = {
     neverTrained: 1000,
     underTrained: 500,
     neglected: 100,
@@ -125,39 +127,28 @@ function getPriorityScore(laggingType, reps, daysSinceTrained) {
 
 /**
  * Generate workout suggestions based on lagging muscles, available equipment, and selected category
- * @param {Array} laggingMuscles - Array of lagging muscle objects
- * @param {Array} exerciseLibrary - Available exercises
- * @param {Array} availableEquipment - User's available equipment (legacy, not used in new logic)
- * @param {Array} hiddenSuggestions - Previously hidden suggestion IDs
- * @param {string} exerciseCategory - 'bodyweight', 'gym', or 'cardio'
- * @param {Array} selectedBodyweight - Selected equipment for bodyweight
- * @param {Array} selectedGym - Selected equipment for gym
- * @param {Array} selectedCardio - Selected equipment for cardio
- * @param {Array} pinnedExercises - Array of pinned exercise IDs
- * @param {Array} favoriteExercises - Array of favorite exercise IDs
- * @returns {Array} Array of workout suggestions
  */
 export function generateWorkoutSuggestions(
-  laggingMuscles,
-  exerciseLibrary,
-  availableEquipment = [],
-  hiddenSuggestions = [],
-  exerciseCategory = 'bodyweight',
-  selectedBodyweight = [],
-  selectedGym = [],
-  selectedCardio = [],
-  pinnedExercises = [],
-  favoriteExercises = []
-) {
-  const suggestions = [];
-  const usedExerciseIds = new Set();
-  const usedEquipment = new Set();
+  laggingMuscles: LaggingMuscle[],
+  exerciseLibrary: Exercise[],
+  availableEquipment: string[] = [],
+  hiddenSuggestions: string[] = [],
+  exerciseCategory: ExerciseCategory = 'bodyweight',
+  selectedBodyweight: string[] = [],
+  selectedGym: string[] = [],
+  selectedCardio: string[] = [],
+  pinnedExercises: string[] = [],
+  favoriteExercises: string[] = []
+): WorkoutSuggestion[] {
+  const suggestions: WorkoutSuggestion[] = [];
+  const usedExerciseIds = new Set<string>();
+  const usedEquipment = new Set<string>();
 
-  function getRandom(arr) {
+  function getRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  function hasAllEquipment(exerciseEquipment, selectedEquipment) {
+  function hasAllEquipment(exerciseEquipment: string | undefined, selectedEquipment: string[]): boolean {
     if (!exerciseEquipment) return true;
     const required = exerciseEquipment
       .split(',')
@@ -267,10 +258,8 @@ export function generateWorkoutSuggestions(
 
 /**
  * Get a human-readable reason for the suggestion
- * @param {object} laggingMuscle - Lagging muscle object
- * @returns {string} Reason for suggestion
  */
-function getSuggestionReason(laggingMuscle) {
+function getSuggestionReason(laggingMuscle: LaggingMuscle): string {
   const muscleName = laggingMuscle.muscle
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -289,16 +278,12 @@ function getSuggestionReason(laggingMuscle) {
 
 /**
  * Check if a workout targets lagging muscles for bonus XP
- * @param {object} workoutData - Workout data
- * @param {object} exerciseDetails - Exercise details
- * @param {Array} laggingMuscles - Array of lagging muscle objects
- * @returns {number} Bonus XP for targeting lagging muscles
  */
 export function calculateLaggingMuscleBonus(
-  workoutData,
-  exerciseDetails,
-  laggingMuscles
-) {
+  workoutData: any,
+  exerciseDetails: Exercise,
+  laggingMuscles: LaggingMuscle[]
+): number {
   if (!laggingMuscles || laggingMuscles.length === 0) return 0;
 
   const targets = [
@@ -323,11 +308,9 @@ export function calculateLaggingMuscleBonus(
 
 /**
  * Get available equipment options from exercise library
- * @param {Array} exerciseLibrary - Available exercises
- * @returns {Array} Array of unique equipment types
  */
-export function getAvailableEquipmentOptions(exerciseLibrary) {
-  const equipmentSet = new Set();
+export function getAvailableEquipmentOptions(exerciseLibrary: Exercise[]): string[] {
+  const equipmentSet = new Set<string>();
 
   exerciseLibrary.forEach((exercise) => {
     if (exercise.equipment) {
@@ -336,4 +319,4 @@ export function getAvailableEquipmentOptions(exerciseLibrary) {
   });
 
   return Array.from(equipmentSet).sort();
-}
+} 
