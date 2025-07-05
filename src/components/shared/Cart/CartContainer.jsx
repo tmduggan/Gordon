@@ -240,14 +240,17 @@ const CartExerciseSummary = ({
   items,
   logData,
   history,
-  library,
+  library = [],
   userProfile,
 }) => {
+  // Ensure library is always an array to prevent undefined.find errors
+  const safeLibrary = Array.isArray(library) ? library : [];
+  
   // Calculate XP for each exercise in the cart
   let totalScore = 0;
   const scoreBreakdown = items.map((item) => {
     const workoutData = logData[item.id] || {};
-    const exerciseDetails = library.find((e) => e.id === item.id) || {};
+    const exerciseDetails = safeLibrary.find((e) => e.id === item.id) || {};
     let lines = [];
     let hasData = false;
     if (workoutData.sets && Array.isArray(workoutData.sets)) {
@@ -369,9 +372,10 @@ export default function CartContainer({
   logCart,
   clearCart,
   icon,
-  logData,
+  logData = {},
   userWorkoutHistory,
-  exerciseLibrary,
+  exerciseLibrary = [],
+  library = [],
   userProfile,
   onRecipeCreated,
   onLogDataChange,
@@ -380,6 +384,9 @@ export default function CartContainer({
   if (items.length === 0) {
     return null;
   }
+
+  // Use library prop if provided, otherwise fall back to exerciseLibrary
+  const exerciseLibraryData = library.length > 0 ? library : exerciseLibrary;
 
   return (
     <Card>
@@ -395,7 +402,7 @@ export default function CartContainer({
               items={items}
               logData={logData}
               history={userWorkoutHistory}
-              library={exerciseLibrary}
+              library={exerciseLibraryData}
               userProfile={userProfile}
             />
           )}

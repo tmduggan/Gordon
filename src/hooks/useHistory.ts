@@ -7,11 +7,30 @@ import {
   updateLog,
 } from '../services/firebase/fetchHistoryService';
 import useAuthStore from '../store/useAuthStore';
+import type { Log, Exercise } from '../types';
 
-export default function useHistory(logType, exerciseLibrary = null) {
+export type LogType = 'food' | 'exercise';
+
+interface LogWithName extends Log {
+  name?: string;
+}
+
+interface UseHistoryReturn {
+  logs: LogWithName[];
+  loading: boolean;
+  deleteLog: (id: string) => Promise<void>;
+  updateLog: (id: string, field: string, value: any) => Promise<void>;
+  getLogsForToday: () => LogWithName[];
+  groupLogsByTimeSegment: (dayLogs: LogWithName[]) => any;
+}
+
+export default function useHistory(
+  logType: LogType,
+  exerciseLibrary: Exercise[] | null = null
+): UseHistoryReturn {
   const { user } = useAuthStore();
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<LogWithName[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!user || !logType) {
@@ -25,13 +44,13 @@ export default function useHistory(logType, exerciseLibrary = null) {
     const unsubscribe = subscribeToHistoryLogs(
       user.uid,
       logType,
-      (fetchedLogs) => {
+      (fetchedLogs: Log[]) => {
         // Attach exercise name from library if available
-        let logsWithNames = fetchedLogs;
+        let logsWithNames: LogWithName[] = fetchedLogs;
         if (exerciseLibrary && Array.isArray(exerciseLibrary)) {
-          logsWithNames = fetchedLogs.map((log) => {
+          logsWithNames = fetchedLogs.map((log: Log) => {
             if (log.exerciseId) {
-              const ex = exerciseLibrary.find((e) => e.id === log.exerciseId);
+              const ex = exerciseLibrary.find((e: Exercise) => e.id === log.exerciseId);
               if (ex) {
                 return { ...log, name: ex.name };
               }
@@ -42,7 +61,7 @@ export default function useHistory(logType, exerciseLibrary = null) {
         setLogs(logsWithNames);
         setLoading(false);
       },
-      (error) => {
+      (error: Error) => {
         console.error(`Error fetching ${logType} logs: `, error);
         setLoading(false);
       }
@@ -52,7 +71,7 @@ export default function useHistory(logType, exerciseLibrary = null) {
   }, [user, logType, exerciseLibrary]);
 
   const handleDeleteLog = useCallback(
-    async (id) => {
+    async (id: string): Promise<void> => {
       if (!user) return;
       try {
         await deleteLog(user.uid, logType, id);
@@ -64,7 +83,7 @@ export default function useHistory(logType, exerciseLibrary = null) {
   );
 
   const handleUpdateLog = useCallback(
-    async (id, field, value) => {
+    async (id: string, field: string, value: any): Promise<void> => {
       if (!user) return;
       try {
         await updateLog(user.uid, logType, id, field, value, logs);
@@ -75,12 +94,12 @@ export default function useHistory(logType, exerciseLibrary = null) {
     [user, logType, logs]
   );
 
-  const getTodayLogs = useCallback(() => {
+  const getTodayLogs = useCallback((): LogWithName[] => {
     return getLogsForToday(logs, logType);
   }, [logs, logType]);
 
   const groupByTimeSegment = useCallback(
-    (dayLogs) => {
+    (dayLogs: LogWithName[]) => {
       return groupLogsByTimeSegment(dayLogs, logType);
     },
     [logType]
@@ -94,4 +113,4 @@ export default function useHistory(logType, exerciseLibrary = null) {
     getLogsForToday: getTodayLogs,
     groupLogsByTimeSegment: groupByTimeSegment,
   };
-}
+} 
