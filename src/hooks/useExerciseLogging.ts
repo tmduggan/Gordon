@@ -5,19 +5,56 @@ import { updatePersonalBests } from '../services/gamification/exerciseBestsServi
 import { addWorkoutToMuscleReps } from '../services/gamification/exerciseScoringService';
 import useAuthStore from '../store/useAuthStore';
 import { useToast } from './useToast';
+import type { 
+  Exercise, 
+  WorkoutData, 
+  ExerciseLog,
+  UserProfile,
+  UseExerciseLoggingReturn,
+  CartItem
+} from '../types';
+
+interface ExerciseLibrary {
+  items: Exercise[];
+}
+
+interface ExerciseHistory {
+  logs: ExerciseLog[];
+}
+
+interface Cart {
+  cart: CartItem[];
+  addToCart: (item: Exercise) => void;
+  clearCart: () => void;
+}
+
+interface Search {
+  clearSearch?: () => void;
+}
+
+interface DateTimePicker {
+  getLogTimestamp: () => Date;
+}
+
+interface LogData {
+  [exerciseId: string]: {
+    sets?: Array<{ weight: string | number; reps: string | number }>;
+    duration?: string | number;
+  };
+}
 
 export default function useExerciseLogging(
-  exerciseLibrary,
-  exerciseHistory,
-  cart,
-  search,
-  dateTimePicker
-) {
+  exerciseLibrary: ExerciseLibrary,
+  exerciseHistory: ExerciseHistory,
+  cart: Cart,
+  search?: Search,
+  dateTimePicker?: DateTimePicker
+): UseExerciseLoggingReturn {
   const { user, userProfile, saveUserProfile, addXP } = useAuthStore();
   const { toast } = useToast();
-  const [currentLogData, setCurrentLogData] = useState({}); // For exercise cart inputs
+  const [currentLogData, setCurrentLogData] = useState<LogData>({});
 
-  const handleSelect = (exercise) => {
+  const handleSelect = (exercise: Exercise): void => {
     cart.addToCart(exercise);
     setCurrentLogData((prev) => ({
       ...prev,
@@ -31,10 +68,12 @@ export default function useExerciseLogging(
     }
   };
 
-  const logCart = async () => {
+  const logCart = async (): Promise<void> => {
+    if (!dateTimePicker) return;
+    
     const timestamp = dateTimePicker.getLogTimestamp();
-    const userWorkoutHistory = exerciseHistory.logs; // All past logs
-    let updatedProfile = { ...userProfile };
+    const userWorkoutHistory = exerciseHistory.logs;
+    let updatedProfile: UserProfile = { ...userProfile };
     let profileReps = updatedProfile.muscleReps || {};
     let totalXP = 0;
 
@@ -43,7 +82,7 @@ export default function useExerciseLogging(
       const exerciseDetailsFromLib =
         exerciseLibrary.items.find((e) => e.id === item.id) || {};
 
-      const workoutToScore = {
+      const workoutToScore: WorkoutData = {
         sets: exerciseDetailsFromCart.sets || [],
         duration: exerciseDetailsFromCart.duration || null,
         timestamp,
@@ -67,10 +106,10 @@ export default function useExerciseLogging(
       // Update personal bests if this workout has sets
       if (workoutToScore.sets && workoutToScore.sets.length > 0) {
         const bestSet = workoutToScore.sets.reduce((best, set) => {
-          const setValue = (set.weight || 0) * (1 + (set.reps || 0) / 30); // 1RM calculation
-          const bestValue = (best.weight || 0) * (1 + (best.reps || 0) / 30);
+          const setValue = (Number(set.weight) || 0) * (1 + (Number(set.reps) || 0) / 30); // 1RM calculation
+          const bestValue = (Number(best.weight) || 0) * (1 + (Number(best.reps) || 0) / 30);
           return setValue > bestValue ? set : best;
-        }, {});
+        }, workoutToScore.sets[0]);
 
         updatedProfile = updatePersonalBests(
           item.id,
@@ -80,7 +119,7 @@ export default function useExerciseLogging(
         );
       }
 
-      const logToSave = {
+      const logToSave: ExerciseLog = {
         userId: user.uid,
         exerciseId: item.id,
         timestamp,
@@ -115,7 +154,7 @@ export default function useExerciseLogging(
 
   const cartProps = {
     logData: currentLogData,
-    onLogDataChange: (id, data) =>
+    onLogDataChange: (id: string, data: any) =>
       setCurrentLogData((prev) => ({ ...prev, [id]: data })),
   };
 
@@ -124,4 +163,4 @@ export default function useExerciseLogging(
     logCart,
     cartProps,
   };
-}
+} 
