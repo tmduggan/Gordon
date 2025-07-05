@@ -1,12 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { Log, Exercise, UserProfile } from '../types';
+
+interface CartData {
+  exerciseCart?: Array<{ id: string; [key: string]: any }>;
+  currentLogData?: any;
+  datePart?: string;
+  timePart?: string;
+  [key: string]: any;
+}
+
+interface ExpectedScores {
+  [exerciseId: string]: number;
+}
+
+interface UseScoreProgressReturn {
+  dailyScore: number;
+  expectedScores: ExpectedScores;
+  setExpectedScores: (scores: ExpectedScores) => void;
+}
 
 export default function useScoreProgress(
-  logs,
-  exercises,
-  cartData = {},
-  userProfile = null
-) {
-  const [expectedScores, setExpectedScores] = useState({});
+  logs: Log[],
+  exercises: Exercise[],
+  cartData: CartData = {},
+  userProfile: UserProfile | null = null
+): UseScoreProgressReturn {
+  const [expectedScores, setExpectedScores] = useState<ExpectedScores>({});
 
   // Calculate daily score from logs
   const dailyScore = useMemo(() => {
@@ -48,7 +67,7 @@ export default function useScoreProgress(
     }
 
     // TODO: Implement XP scoring separately from muscle scores
-    const newScores = {};
+    const newScores: ExpectedScores = {};
     for (const exerciseInCart of cartData.exerciseCart) {
       newScores[exerciseInCart.id] = 0; // Placeholder until XP scoring is implemented
     }
@@ -69,4 +88,4 @@ export default function useScoreProgress(
     expectedScores,
     setExpectedScores,
   };
-}
+} 
