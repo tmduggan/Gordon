@@ -4,8 +4,14 @@ import useHistory from '../../hooks/useHistory';
 import useLibrary from '../../hooks/useLibrary';
 import useScoreProgress from '../../hooks/useScoreProgress';
 import useAuthStore from '../../store/useAuthStore';
+import type { LogType } from '../../hooks/useHistory';
 
-export default function ScoreDisplay({ type, className = '' }) {
+interface ScoreDisplayProps {
+  type: LogType;
+  className?: string;
+}
+
+export default function ScoreDisplay({ type, className = '' }: ScoreDisplayProps) {
   const { user, userProfile } = useAuthStore();
   const { logs } = useHistory(type);
   const library = useLibrary(type);
@@ -23,4 +29,4 @@ export default function ScoreDisplay({ type, className = '' }) {
       <div className="text-xs text-gray-500">Points Today</div>
     </div>
   );
-}
+} 

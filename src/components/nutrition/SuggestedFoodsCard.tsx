@@ -3,6 +3,32 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getNextMealSuggestion } from '@/services/AISuggestionService';
 import { parseNutritionString } from '@/services/nutrition/nutritionStringParser';
 import React, { useState } from 'react';
+import type { Food, Log, UserProfile } from '../../types';
+
+interface NutritionGoals {
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  [key: string]: any;
+}
+
+interface ParsedFood {
+  qty: number;
+  unit: string;
+  name: string;
+}
+
+interface SuggestedFoodsCardProps {
+  foodLog: Log[];
+  nutritionGoals: NutritionGoals;
+  onAddFoods: (foods: ParsedFood[]) => void;
+  handleNutrientsAdd?: (foods: ParsedFood[]) => void;
+  usage: number;
+  onUsage: () => void;
+  isAdmin?: boolean;
+  onResetUsage?: () => void;
+}
 
 export default function SuggestedFoodsCard({
   foodLog,
@@ -13,11 +39,11 @@ export default function SuggestedFoodsCard({
   onUsage,
   isAdmin,
   onResetUsage,
-}) {
-  const [suggestion, setSuggestion] = useState('');
-  const [loading, setLoading] = useState(false);
+}: SuggestedFoodsCardProps) {
+  const [suggestion, setSuggestion] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleBuildNextMeal = async () => {
+  const handleBuildNextMeal = async (): Promise<void> => {
     if (usage >= 3) return;
     setLoading(true);
     const result = await getNextMealSuggestion({ foodLog, nutritionGoals });
@@ -26,9 +52,9 @@ export default function SuggestedFoodsCard({
     onUsage();
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (): void => {
     if (!suggestion) return;
-    const parsedFoods = parseNutritionString(suggestion);
+    const parsedFoods: ParsedFood[] = parseNutritionString(suggestion);
     if (handleNutrientsAdd) {
       handleNutrientsAdd(parsedFoods);
     } else {
@@ -76,4 +102,4 @@ export default function SuggestedFoodsCard({
       </CardContent>
     </Card>
   );
-}
+} 

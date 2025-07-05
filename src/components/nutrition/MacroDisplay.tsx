@@ -1,24 +1,41 @@
 import React from 'react';
 
+interface Macros {
+  calories: number;
+  fat: number;
+  carbs: number;
+  protein: number;
+  fiber?: number;
+}
+
+type DisplayFormat = 'inline-text' | 'stacked' | 'table-row-cells';
+
+interface MacroDisplayProps {
+  macros: Macros;
+  format?: DisplayFormat;
+  truncateLength?: number | null;
+  children?: React.ReactNode;
+}
+
 /**
  * A centralized component for displaying macronutrient information
  * in various formats throughout the application.
- * @param {object} macros - An object with calorie, fat, carb, protein, and fiber values.
- * @param {string} format - Controls the display style ('inline-text', 'stacked', 'table-row-cells').
- * @param {number} [truncateLength=null] - The length at which to truncate the children text.
- * @param {React.ReactNode} children - Optional content, like a food name, to display with the macros.
+ * @param macros - An object with calorie, fat, carb, protein, and fiber values.
+ * @param format - Controls the display style ('inline-text', 'stacked', 'table-row-cells').
+ * @param truncateLength - The length at which to truncate the children text.
+ * @param children - Optional content, like a food name, to display with the macros.
  */
 const MacroDisplay = ({
   macros,
   format = 'inline-text',
   truncateLength = null,
   children,
-}) => {
+}: MacroDisplayProps) => {
   if (!macros) return null;
 
   const { calories, fat, carbs, protein, fiber } = macros;
 
-  let displayText = children;
+  let displayText: React.ReactNode = children;
   if (
     truncateLength &&
     typeof children === 'string' &&
@@ -87,4 +104,4 @@ const MacroDisplay = ({
   }
 };
 
-export default MacroDisplay;
+export default MacroDisplay; 
