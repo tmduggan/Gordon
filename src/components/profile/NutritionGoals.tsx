@@ -1,7 +1,15 @@
 import { Button } from '@/components/ui/button';
 import React from 'react';
+import type { NutritionGoals as NutritionGoalsType } from '../../types';
 
-export default function NutritionGoals({ goals, setGoals, onSave, onCancel }) {
+interface NutritionGoalsProps {
+  goals: NutritionGoalsType;
+  setGoals: (goals: NutritionGoalsType) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+const NutritionGoals: React.FC<NutritionGoalsProps> = ({ goals, setGoals, onSave, onCancel }) => {
   return (
     <div className="mb-4">
       <h3 className="font-semibold mb-2">Daily Nutrition Goals</h3>
@@ -28,4 +36,6 @@ export default function NutritionGoals({ goals, setGoals, onSave, onCancel }) {
       </div>
     </div>
   );
-}
+};
+
+export default NutritionGoals; 

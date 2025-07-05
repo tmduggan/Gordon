@@ -1,6 +1,20 @@
 import React from 'react';
 
-const MuscleTooltip = ({
+interface ExtraScores {
+  svg3DayScores?: Record<string, number>;
+  svg7DayScores?: Record<string, number>;
+}
+
+interface MuscleTooltipProps {
+  hovered: string | null;
+  mousePos: { x: number; y: number };
+  rawMuscleScores: Record<string, number>;
+  extraScores: ExtraScores;
+  getContributingMuscles: (muscle: string) => string[];
+  getTooltipStyle: () => React.CSSProperties;
+}
+
+const MuscleTooltip: React.FC<MuscleTooltipProps> = ({
   hovered,
   mousePos,
   rawMuscleScores,
@@ -9,6 +23,7 @@ const MuscleTooltip = ({
   getTooltipStyle,
 }) => {
   if (!hovered) return null;
+  
   // Calculate total training percentage
   const score =
     rawMuscleScores && rawMuscleScores[hovered] !== undefined
@@ -68,4 +83,4 @@ const MuscleTooltip = ({
   );
 };
 
-export default MuscleTooltip;
+export default MuscleTooltip; 

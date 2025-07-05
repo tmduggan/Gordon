@@ -4,8 +4,40 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import useAuthStore from '../../store/useAuthStore';
 import timeZones, { getCurrentTimeInZone } from '../../utils/timeZones';
+import type { UserProfile } from '../../types';
 
-const activityLevels = [
+interface ActivityLevel {
+  value: string;
+  label: string;
+}
+
+interface BodyStats {
+  heightCm: number;
+  heightFt: number;
+  heightIn: number;
+  weightKg: number;
+  weightLbs: number;
+  dob: string;
+  gender: string;
+  bodyFat: string;
+  timeZone?: string;
+  activityLevel?: string;
+}
+
+interface FormData {
+  timeZone: string;
+  activityLevel: string;
+}
+
+interface ProfileInfoFormProps {
+  userProfile?: UserProfile;
+  user: any; // Firebase user type
+  onSave: (profile: Partial<UserProfile>) => void;
+  onCancel: () => void;
+  showActivityLevel?: boolean;
+}
+
+const activityLevels: ActivityLevel[] = [
   { value: 'sedentary', label: 'Sedentary (little or no exercise)' },
   { value: 'light', label: 'Lightly Active (light exercise 1-3 days/week)' },
   {
@@ -16,18 +48,18 @@ const activityLevels = [
   { value: 'athlete', label: 'Athlete (very hard exercise, physical job)' },
 ];
 
-export default function ProfileInfoForm({
+const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
   userProfile,
   user,
   onSave,
   onCancel,
   showActivityLevel,
-}) {
+}) => {
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
-  } = useForm({
+  } = useForm<FormData>({
     defaultValues: {
       timeZone:
         userProfile?.timeZone ||
@@ -41,43 +73,44 @@ export default function ProfileInfoForm({
 
   // Body Update modal state
   const [showBodyModal, setShowBodyModal] = useState(false);
-  const [unitSystem, setUnitSystem] = useState('imperial'); // 'imperial' or 'metric'
-  const defaultBody = {
+  const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
+  const defaultBody: BodyStats = {
     heightCm: 178,
     heightFt: 5,
     heightIn: 10,
     weightKg: 68,
     weightLbs: 150,
-    age: 25,
+    dob: '',
     gender: 'male',
     bodyFat: '',
   };
-  const [bodyStats, setBodyStats] = useState({
+  const [bodyStats, setBodyStats] = useState<BodyStats>({
     heightCm: userProfile?.heightCm || defaultBody.heightCm,
     heightFt: userProfile?.heightFt || defaultBody.heightFt,
     heightIn: userProfile?.heightIn || defaultBody.heightIn,
     weightKg: userProfile?.weightKg || defaultBody.weightKg,
     weightLbs: userProfile?.weightLbs || defaultBody.weightLbs,
-    dob: userProfile?.dob || '',
+    dob: userProfile?.dob || defaultBody.dob,
     gender: userProfile?.gender || defaultBody.gender,
     bodyFat: userProfile?.bodyFat || defaultBody.bodyFat,
   });
 
   // Conversion helpers
-  const toMetric = (ft, inch, lbs) => ({
-    heightCm: Math.round((parseInt(ft) * 12 + parseInt(inch)) * 2.54),
-    weightKg: Math.round(parseFloat(lbs) * 0.453592),
+  const toMetric = (ft: number, inch: number, lbs: number) => ({
+    heightCm: Math.round((parseInt(ft.toString()) * 12 + parseInt(inch.toString())) * 2.54),
+    weightKg: Math.round(parseFloat(lbs.toString()) * 0.453592),
   });
-  const toImperial = (cm, kg) => {
-    const totalInches = Math.round(parseFloat(cm) / 2.54);
+  
+  const toImperial = (cm: number, kg: number) => {
+    const totalInches = Math.round(parseFloat(cm.toString()) / 2.54);
     return {
       heightFt: Math.floor(totalInches / 12),
       heightIn: totalInches % 12,
-      weightLbs: Math.round(parseFloat(kg) / 0.453592),
+      weightLbs: Math.round(parseFloat(kg.toString()) / 0.453592),
     };
   };
 
-  const handleUnitToggle = (unit) => {
+  const handleUnitToggle = (unit: 'imperial' | 'metric') => {
     if (unit === unitSystem) return;
     if (unit === 'metric') {
       // Convert imperial to metric
@@ -126,13 +159,15 @@ export default function ProfileInfoForm({
       dob: bodyStats.dob,
       gender: bodyStats.gender,
       bodyFat: bodyStats.bodyFat,
+      timeZone: bodyStats.timeZone,
+      activityLevel: bodyStats.activityLevel,
     };
     saveUserProfile(updatedProfile);
     onSave(updatedProfile);
     setShowBodyModal(false);
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: FormData) => {
     onSave({ ...userProfile, ...data });
   };
 
@@ -232,7 +267,7 @@ export default function ProfileInfoForm({
                       type="number"
                       value={bodyStats.heightCm}
                       onChange={(e) =>
-                        setBodyStats({ ...bodyStats, heightCm: e.target.value })
+                        setBodyStats({ ...bodyStats, heightCm: Number(e.target.value) })
                       }
                       className="border rounded px-2 py-1 w-full"
                     />
@@ -245,7 +280,7 @@ export default function ProfileInfoForm({
                       type="number"
                       value={bodyStats.weightKg}
                       onChange={(e) =>
-                        setBodyStats({ ...bodyStats, weightKg: e.target.value })
+                        setBodyStats({ ...bodyStats, weightKg: Number(e.target.value) })
                       }
                       className="border rounded px-2 py-1 w-full"
                     />
@@ -265,7 +300,7 @@ export default function ProfileInfoForm({
                         onChange={(e) =>
                           setBodyStats({
                             ...bodyStats,
-                            heightFt: e.target.value,
+                            heightFt: Number(e.target.value),
                           })
                         }
                         className="border rounded px-2 py-1 w-16"
@@ -277,7 +312,7 @@ export default function ProfileInfoForm({
                         onChange={(e) =>
                           setBodyStats({
                             ...bodyStats,
-                            heightIn: e.target.value,
+                            heightIn: Number(e.target.value),
                           })
                         }
                         className="border rounded px-2 py-1 w-16"
@@ -294,7 +329,7 @@ export default function ProfileInfoForm({
                       onChange={(e) =>
                         setBodyStats({
                           ...bodyStats,
-                          weightLbs: e.target.value,
+                          weightLbs: Number(e.target.value),
                         })
                       }
                       className="border rounded px-2 py-1 w-full"
@@ -405,4 +440,6 @@ export default function ProfileInfoForm({
       )}
     </>
   );
-}
+};
+
+export default ProfileInfoForm; 

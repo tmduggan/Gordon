@@ -1,5 +1,31 @@
-// Personal Bests Helper Functions
-const getTimeRanges = () => {
+import type { UserProfile, PersonalBests, PersonalBest, Exercise } from '../../types';
+
+interface TimeRange {
+  start: Date;
+  end: Date;
+}
+
+interface TimeRanges {
+  current: TimeRange;
+  quarter: TimeRange;
+  year: TimeRange;
+  allTime: TimeRange;
+}
+
+interface ExerciseValue {
+  value: number;
+  type: '1rm' | 'reps' | 'duration' | 'pace' | 'unknown';
+  unit: string;
+}
+
+interface ExerciseData {
+  weight?: number;
+  reps?: number;
+  duration?: number;
+  distance?: number;
+}
+
+const getTimeRanges = (): TimeRanges => {
   const now = new Date();
   const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
@@ -13,7 +39,10 @@ const getTimeRanges = () => {
   };
 };
 
-const calculateExerciseValue = (exerciseData, exerciseDetails) => {
+const calculateExerciseValue = (
+  exerciseData: ExerciseData, 
+  exerciseDetails: Exercise
+): ExerciseValue => {
   const { weight, reps, duration, distance } = exerciseData;
   const { category, target } = exerciseDetails;
 
@@ -49,16 +78,16 @@ const calculateExerciseValue = (exerciseData, exerciseDetails) => {
 };
 
 const updatePersonalBests = (
-  exerciseId,
-  exerciseData,
-  exerciseDetails,
-  userProfile
-) => {
+  exerciseId: string,
+  exerciseData: ExerciseData,
+  exerciseDetails: Exercise,
+  userProfile: UserProfile
+): UserProfile => {
   const newValue = calculateExerciseValue(exerciseData, exerciseDetails);
   if (newValue.value === 0) return userProfile;
 
-  const personalBests = userProfile.personalBests || {};
-  const exerciseBests = personalBests[exerciseId] || {};
+  const personalBests: PersonalBests = userProfile.personalBests || {};
+  const exerciseBests: PersonalBests = personalBests[exerciseId] || {};
 
   const timeRanges = getTimeRanges();
   const now = new Date();
@@ -66,25 +95,25 @@ const updatePersonalBests = (
 
   // Update all-time best if this is better
   if (!exerciseBests.allTime || newValue.value > exerciseBests.allTime.value) {
-    exerciseBests.allTime = { ...newValue, date: now };
+    exerciseBests.allTime = { ...newValue, date: now } as PersonalBest;
     updated = true;
   }
 
   // Update year best if this is better
   if (!exerciseBests.year || newValue.value > exerciseBests.year.value) {
-    exerciseBests.year = { ...newValue, date: now };
+    exerciseBests.year = { ...newValue, date: now } as PersonalBest;
     updated = true;
   }
 
   // Update quarter best if this is better
   if (!exerciseBests.quarter || newValue.value > exerciseBests.quarter.value) {
-    exerciseBests.quarter = { ...newValue, date: now };
+    exerciseBests.quarter = { ...newValue, date: now } as PersonalBest;
     updated = true;
   }
 
   // Update current (month) best if this is better
   if (!exerciseBests.current || newValue.value > exerciseBests.current.value) {
-    exerciseBests.current = { ...newValue, date: now };
+    exerciseBests.current = { ...newValue, date: now } as PersonalBest;
     updated = true;
   }
 
@@ -102,16 +131,16 @@ const updatePersonalBests = (
 };
 
 const calculatePersonalBestBonus = (
-  exerciseId,
-  exerciseData,
-  exerciseDetails,
-  userProfile
-) => {
+  exerciseId: string,
+  exerciseData: ExerciseData,
+  exerciseDetails: Exercise,
+  userProfile: UserProfile
+): number => {
   const newValue = calculateExerciseValue(exerciseData, exerciseDetails);
   if (newValue.value === 0) return 0;
 
-  const personalBests = userProfile.personalBests || {};
-  const exerciseBests = personalBests[exerciseId] || {};
+  const personalBests: PersonalBests = userProfile.personalBests || {};
+  const exerciseBests: PersonalBests = personalBests[exerciseId] || {};
 
   let bonus = 0;
 
@@ -144,4 +173,4 @@ export {
   calculatePersonalBestBonus,
   getTimeRanges,
   updatePersonalBests,
-};
+}; 

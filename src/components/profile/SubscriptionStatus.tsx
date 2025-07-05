@@ -1,8 +1,17 @@
 import { Crown, User } from 'lucide-react';
 import React from 'react';
 
-export default function SubscriptionStatus({ status }) {
-  let label, color, Icon;
+type SubscriptionStatusType = 'admin' | 'premium' | 'basic';
+
+interface SubscriptionStatusProps {
+  status: SubscriptionStatusType;
+}
+
+const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({ status }) => {
+  let label: string;
+  let color: string;
+  let Icon: React.ComponentType<{ className?: string }>;
+  
   switch (status) {
     case 'admin':
       label = 'Admin';
@@ -21,6 +30,7 @@ export default function SubscriptionStatus({ status }) {
       Icon = User;
       break;
   }
+  
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${color}`}
@@ -29,4 +39,6 @@ export default function SubscriptionStatus({ status }) {
       {label}
     </span>
   );
-}
+};
+
+export default SubscriptionStatus; 

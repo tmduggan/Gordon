@@ -4,12 +4,13 @@ import React, { useEffect, useState } from 'react';
 import useLibrary from '../../hooks/useLibrary';
 import useAuthStore from '../../store/useAuthStore';
 import ExerciseDisplay from '../exercise/ExerciseDisplay';
+import type { Exercise } from '../../types';
 
-export default function HiddenExercisesContainer() {
+const HiddenExercisesContainer: React.FC = () => {
   const { userProfile, unhideExercise, getRemainingHides } = useAuthStore();
   const exerciseLibrary = useLibrary('exercise');
-  const [hiddenExercises, setHiddenExercises] = useState([]);
-  const [loading, setLoading] = useState({});
+  const [hiddenExercises, setHiddenExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   // Get hidden exercises with full details
   useEffect(() => {
@@ -21,12 +22,12 @@ export default function HiddenExercisesContainer() {
           );
           return exercise ? { ...exercise, id: exerciseId } : null;
         })
-        .filter(Boolean);
+        .filter((exercise): exercise is Exercise => exercise !== null);
       setHiddenExercises(hiddenWithDetails);
     }
   }, [exerciseLibrary.items, userProfile?.hiddenExercises]);
 
-  const handleUnhide = async (exerciseId) => {
+  const handleUnhide = async (exerciseId: string) => {
     setLoading((prev) => ({ ...prev, [exerciseId]: true }));
     try {
       await unhideExercise(exerciseId);
@@ -72,4 +73,6 @@ export default function HiddenExercisesContainer() {
       </div>
     </div>
   );
-}
+};
+
+export default HiddenExercisesContainer; 

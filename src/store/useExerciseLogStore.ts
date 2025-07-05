@@ -2,8 +2,16 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { create } from 'zustand';
 import { db } from '../firebase';
 import useAuthStore from './useAuthStore';
+import type { ExerciseLog } from '../types';
 
-const useExerciseLogStore = create((set, get) => ({
+interface ExerciseLogStore {
+  logs: ExerciseLog[];
+  loading: boolean;
+  fetchLogs: () => Promise<void>;
+  clearLogs: () => void;
+}
+
+const useExerciseLogStore = create<ExerciseLogStore>((set, get) => ({
   logs: [],
   loading: false,
 
@@ -15,7 +23,10 @@ const useExerciseLogStore = create((set, get) => ({
       const logsRef = collection(db, 'exerciseLogs');
       const q = query(logsRef, where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
-      const logs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const logs = snapshot.docs.map((doc) => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      })) as ExerciseLog[];
       set({ logs, loading: false });
     } catch (error) {
       console.error('Error fetching exercise logs:', error);
@@ -26,4 +37,4 @@ const useExerciseLogStore = create((set, get) => ({
   clearLogs: () => set({ logs: [] }),
 }));
 
-export default useExerciseLogStore;
+export default useExerciseLogStore; 
