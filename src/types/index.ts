@@ -35,6 +35,8 @@ export interface PersonalBests {
   current?: PersonalBest;
   quarter?: PersonalBest;
   year?: PersonalBest;
+  month?: PersonalBest;
+  week?: PersonalBest;
   allTime?: PersonalBest;
 }
 
@@ -43,6 +45,8 @@ export interface PersonalBest {
   type: '1rm' | 'reps' | 'duration' | 'pace';
   unit: string;
   date: Date;
+  reps?: number;
+  weight?: number;
 }
 
 // Exercise types
@@ -57,6 +61,30 @@ export interface Exercise {
   difficulty?: string;
   muscleGroups?: string[];
 }
+
+export interface ExerciseDetails extends Exercise {
+  // Additional properties for exercise details
+}
+
+export interface ExerciseLibraryItem extends Exercise {
+  // Additional properties for library items
+}
+
+export interface WorkoutLog {
+  id?: string;
+  userId: string;
+  exerciseId: string;
+  timestamp: Date | { seconds: number };
+  recordedTime?: Date;
+  sets?: ExerciseSet[];
+  reps?: string | number;
+  duration?: number | null;
+  score: number;
+}
+
+export type TimePeriod = 'today' | '3day' | '7day' | '14day' | '30day' | 'lifetime';
+
+export type MuscleReps = Record<string, number>;
 
 export interface ExerciseSet {
   weight: string | number;

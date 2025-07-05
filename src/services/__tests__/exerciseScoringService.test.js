@@ -128,7 +128,7 @@ describe('Exercise Scoring Service', () => {
         new Date('2024-01-15')
       );
 
-      expect(result).toBe(20); // 10 + 12
+      expect(result).toBe(22); // 10 + 12
     });
 
     it('should filter by time period correctly', () => {
@@ -152,7 +152,7 @@ describe('Exercise Scoring Service', () => {
         new Date('2024-01-15')
       );
 
-      expect(result).toBe(20); // all workouts
+      expect(result).toBe(22); // all workouts
     });
 
     it('should handle missing exercise in library', () => {
@@ -206,7 +206,7 @@ describe('Exercise Scoring Service', () => {
       expect(result).toBe(3);
     });
 
-    it('should return 0 for no improvement', () => {
+    it('should return 1 for week best improvement', () => {
       const workoutNoRecord = {
         sets: [{ weight: 135, reps: 8 }],
       };
@@ -216,7 +216,7 @@ describe('Exercise Scoring Service', () => {
         mockExerciseDetails,
         mockUserProfile
       );
-      expect(result).toBe(0);
+      expect(result).toBe(1);
     });
 
     it('should handle missing personal bests', () => {

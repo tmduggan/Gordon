@@ -1,13 +1,25 @@
 // Simplified Exercise Scoring Service
 // Handles muscle rep tracking and basic personal best bonuses
 
+import type { 
+  WorkoutData, 
+  ExerciseDetails, 
+  UserProfile, 
+  WorkoutLog, 
+  ExerciseLibraryItem,
+  MuscleReps,
+  PersonalBests,
+  TimePeriod
+} from '../../types';
+
 /**
  * Process muscle string and add reps to muscle tracking
- * @param {string} muscleString - Comma-separated muscle names
- * @param {number} reps - Reps to add
- * @param {object} muscleReps - Current muscle reps object
  */
-const processMuscleString = (muscleString, reps, muscleReps) => {
+const processMuscleString = (
+  muscleString: string | undefined, 
+  reps: number, 
+  muscleReps: MuscleReps
+): void => {
   if (!muscleString) return;
 
   muscleString.split(',').forEach((muscle) => {
@@ -24,16 +36,12 @@ const processMuscleString = (muscleString, reps, muscleReps) => {
 
 /**
  * Add workout reps to muscle tracking
- * @param {object} workoutData - Workout data with sets
- * @param {object} exerciseDetails - Exercise details with target/secondary muscles
- * @param {object} existingMuscleReps - Current muscle reps object
- * @returns {object} Updated muscle reps
  */
 export function addWorkoutToMuscleReps(
-  workoutData,
-  exerciseDetails,
-  existingMuscleReps = {}
-) {
+  workoutData: WorkoutData,
+  exerciseDetails: ExerciseDetails,
+  existingMuscleReps: MuscleReps = {}
+): MuscleReps {
   const muscleReps = { ...existingMuscleReps };
 
   // Calculate total reps from all sets
@@ -68,27 +76,21 @@ export function addWorkoutToMuscleReps(
 
 /**
  * Get muscle reps for a specific time period by filtering workout history
- * @param {Array} workoutHistory - Array of workout logs
- * @param {Array} exerciseLibrary - Exercise library for muscle mapping
- * @param {string} muscle - Muscle name
- * @param {string} timePeriod - Time period ('today', '3day', '7day', '14day', '30day', 'lifetime')
- * @param {Date} referenceDate - Reference date for calculations
- * @returns {number} Reps for that time period
  */
 export function getMuscleRepsForPeriod(
-  workoutHistory = [],
-  exerciseLibrary = [],
-  muscle,
-  timePeriod = 'lifetime',
-  referenceDate = new Date()
-) {
+  workoutHistory: WorkoutLog[] = [],
+  exerciseLibrary: ExerciseLibraryItem[] = [],
+  muscle: string,
+  timePeriod: TimePeriod = 'lifetime',
+  referenceDate: Date = new Date()
+): number {
   const muscleName = muscle.toLowerCase().trim();
   let totalReps = 0;
 
   // Calculate cutoff date based on time period
   let cutoffDate = new Date(0); // Beginning of time for lifetime
   if (timePeriod !== 'lifetime') {
-    const days = {
+    const days: Record<string, number> = {
       today: 0,
       '3day': 3,
       '7day': 7,
@@ -112,14 +114,14 @@ export function getMuscleRepsForPeriod(
       if (!exercise) return;
 
       // Calculate total reps from all sets
-      let totalReps = 0;
+      let exerciseReps = 0;
       if (log.sets && log.sets.length > 0) {
-        totalReps = log.sets.reduce(
+        exerciseReps = log.sets.reduce(
           (sum, set) => sum + (parseInt(set.reps) || 0),
           0
         );
       } else if (log.reps) {
-        totalReps = parseInt(log.reps) || 0;
+        exerciseReps = parseInt(log.reps) || 0;
       }
 
       // Check if this exercise targets the muscle
@@ -138,7 +140,7 @@ export function getMuscleRepsForPeriod(
 
       const allMuscles = [...targetMuscles, ...secondaryMuscles];
       if (allMuscles.includes(muscleName)) {
-        totalReps += totalReps;
+        totalReps += exerciseReps;
       }
     }
   });
@@ -148,16 +150,12 @@ export function getMuscleRepsForPeriod(
 
 /**
  * Calculate a simple personal best bonus for muscle volume
- * @param {object} workoutData - Current workout data
- * @param {object} exerciseDetails - Exercise details
- * @param {object} userProfile - User profile with personal bests
- * @returns {number} Bonus points (0-4)
  */
 export function calculatePersonalBestBonus(
-  workoutData,
-  exerciseDetails,
-  userProfile
-) {
+  workoutData: WorkoutData,
+  exerciseDetails: ExerciseDetails,
+  userProfile: UserProfile
+): number {
   if (
     !userProfile?.personalBests ||
     !workoutData.sets ||
@@ -189,4 +187,4 @@ export function calculatePersonalBestBonus(
   if (personalBests.week && currentReps > personalBests.week.reps) return 1;
 
   return 0;
-}
+} 
