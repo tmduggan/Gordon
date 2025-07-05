@@ -16,10 +16,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useToast } from '../../hooks/useToast';
-import {
-  analyzeLaggingMuscles,
-  generateWorkoutSuggestions,
-} from '../../services/gamification/suggestionService';
+import { analyzeLaggingMuscles } from '../../services/gamification/suggestionService';
 import useAuthStore from '../../store/useAuthStore';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import CompletedExerciseBar from './CompletedExerciseBar';

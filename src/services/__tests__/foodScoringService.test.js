@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  calculateDailyFoodXP,
   calculateFoodBaseXP,
   calculateFoodGroupMultiplier,
   calculateFoodXP,
+  calculateDailyFoodXP,
 } from '../gamification/foodScoringService';
 
 describe('Food Scoring Service', () => {
