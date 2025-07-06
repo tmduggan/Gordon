@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { saveWorkoutLog } from '../firebase/firestore/logExerciseEntry';
-import { calculateExerciseScore } from '../services/exercise/exerciseService';
-import { updatePersonalBests } from '../services/gamification/exerciseBestsService';
-import { addWorkoutToMuscleReps } from '../services/gamification/exerciseScoringService';
+import { logExercise } from '../services/exercise/exerciseLoggingService';
 import useAuthStore from '../store/useAuthStore';
 import { useToast } from './useToast';
 import type { 
@@ -70,73 +68,51 @@ export default function useExerciseLogging(
   };
 
   const logCart = async (): Promise<void> => {
-    if (!dateTimePicker) return;
+    if (!dateTimePicker || !userProfile) return;
     
     const timestamp = dateTimePicker.getLogTimestamp();
-    const userWorkoutHistory = exerciseHistory.logs;
     let updatedProfile: UserProfile = { ...userProfile };
-    let profileReps = updatedProfile.muscleReps || {};
     let totalXP = 0;
 
     for (const item of cart.cart) {
       const exerciseDetailsFromCart = currentLogData[item.id] || {};
       const exerciseDetailsFromLib =
-        exerciseLibrary.items.find((e) => e.id === item.id) || {};
+        exerciseLibrary.items.find((e) => e.id === item.id);
+      
+      if (!exerciseDetailsFromLib) {
+        console.error(`Exercise not found in library: ${item.id}`);
+        continue;
+      }
 
       const workoutToScore: WorkoutData = {
         sets: exerciseDetailsFromCart.sets || [],
-        duration: exerciseDetailsFromCart.duration || null,
+        duration: exerciseDetailsFromCart.duration ? Number(exerciseDetailsFromCart.duration) : null,
         timestamp,
-      };
-
-      // Calculate XP using the service
-      const score = calculateExerciseScore(
-        workoutToScore,
-        exerciseDetailsFromLib
-      );
-      totalXP += score;
-
-      // --- Update Muscle Reps ---
-      profileReps = addWorkoutToMuscleReps(
-        workoutToScore,
-        exerciseDetailsFromLib,
-        profileReps
-      );
-      // --- End Reps Update ---
-
-      // Update personal bests if this workout has sets
-      if (workoutToScore.sets && workoutToScore.sets.length > 0) {
-        const bestSet = workoutToScore.sets.reduce((best, set) => {
-          const setValue = (Number(set.weight) || 0) * (1 + (Number(set.reps) || 0) / 30); // 1RM calculation
-          const bestValue = (Number(best.weight) || 0) * (1 + (Number(best.reps) || 0) / 30);
-          return setValue > bestValue ? set : best;
-        }, workoutToScore.sets[0]);
-
-        updatedProfile = updatePersonalBests(
-          item.id,
-          bestSet,
-          exerciseDetailsFromLib,
-          updatedProfile
-        );
-      }
-
-      const logToSave: ExerciseLog = {
-        userId: user.uid,
-        exerciseId: item.id,
-        timestamp,
-        sets: workoutToScore.sets,
-        duration: workoutToScore.duration,
-        score,
       };
 
       try {
-        await saveWorkoutLog(logToSave);
+        // Use centralized exercise logging service
+        const result = await logExercise(
+          workoutToScore,
+          exerciseDetailsFromLib,
+          updatedProfile,
+          user.uid,
+          timestamp
+        );
+
+        // Save the exercise log
+        await saveWorkoutLog(result.exerciseLog);
+        
+        // Update profile and XP
+        updatedProfile = result.updatedProfile;
+        totalXP += result.totalXP;
+
         toast({
-          title: `+${score} XP!`,
+          title: `+${result.totalXP} XP!`,
           description: `Logged ${item.name}.`,
         });
       } catch (error) {
-        console.error('Error saving workout log:', error);
+        console.error('Error logging exercise:', error);
       }
     }
 
@@ -145,8 +121,7 @@ export default function useExerciseLogging(
       await addXP(totalXP);
     }
 
-    // Save updated profile with new personal bests and muscle scores
-    updatedProfile.muscleReps = profileReps;
+    // Save updated profile with new muscle scores and personal bests
     await saveUserProfile(updatedProfile);
 
     cart.clearCart();
@@ -171,8 +146,5 @@ export default function useExerciseLogging(
     handleSelect,
     logCart,
     cartProps,
-    logs,
-    addLog,
-    removeLog,
   };
 } 

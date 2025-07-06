@@ -2,7 +2,20 @@
 
 This directory contains focused documentation files that help prevent common development issues and maintain consistency across the codebase.
 
+## 🚀 Quick Setup
+
+**New to the project?** Start with the [Setup Guide](../SETUP.md) to install all necessary tools and dependencies.
+
 ## 📚 Documentation Structure
+
+### SETUP.md
+**Complete project setup and installation guide**
+- Automated setup scripts for macOS/Linux and Windows
+- Manual installation instructions
+- Environment configuration
+- Common issues and troubleshooting
+
+**When to reference**: When setting up the project on a new device or encountering setup issues
 
 ### 01-patterns.md
 **Established patterns and conventions**

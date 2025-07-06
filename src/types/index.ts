@@ -8,14 +8,33 @@ export interface UserProfile {
   photoURL?: string;
   goals?: NutritionGoals;
   availableEquipment?: string[];
-  muscleReps?: Record<string, number>;
+  muscleScores?: Record<string, {
+    today: number;
+    '3day': number;
+    '7day': number;
+    lastUpdated: Date;
+  }>;
   personalBests?: Record<string, PersonalBests>;
   totalXP?: number;
   level?: number;
   pinnedExercises?: string[];
   favoriteExercises?: string[];
+  pinnedFoods?: string[];
+  recipes?: Recipe[];
+  hiddenExercises?: string[];
+  hideCount?: {
+    date: string;
+    count: number;
+  };
+  subscription?: {
+    status: 'basic' | 'premium' | 'admin';
+    plan: string;
+    expiresAt: string | null;
+    features: string[];
+  };
   exerciseSubmissions?: {
     submitted: string[];
+    rejected?: string[];
   };
   isPremium?: boolean;
   subscriptionStatus?: string;
@@ -88,6 +107,9 @@ export interface Exercise {
   instructions?: string[];
   difficulty?: string;
   muscleGroups?: string[];
+  description?: string;
+  gifUrl_1080?: string; // High-res GIF for desktop
+  gifUrl_360?: string;  // Lower-res GIF for mobile
 }
 
 export interface ExerciseDetails extends Exercise {

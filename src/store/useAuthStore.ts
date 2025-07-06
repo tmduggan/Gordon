@@ -3,6 +3,7 @@ import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { create } from 'zustand';
 import { auth, db } from '../firebase';
 import type { UserProfile, Recipe } from '../types';
+import { decayMuscleScores, needsMuscleScoreDecay } from '../services/exercise/exerciseLoggingService';
 
 const defaultGoals = {
   calories: 2300,
@@ -82,33 +83,25 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const userDocRef = doc(db, 'users', uid);
     const unsubscribe = onSnapshot(
       userDocRef,
-      async (snap) => {
-        if (snap.exists()) {
-          const profileData = snap.data();
-          if (!profileData.subscription) {
-            const currentUser = get().user;
-            const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
-            const updatedProfile = {
-              ...profileData,
-              subscription: {
-                status: isAdminUser ? 'admin' : 'basic',
-                plan: isAdminUser ? 'admin' : 'basic',
-                expiresAt: null,
-                features: isAdminUser
-                  ? ['all_features']
-                  : ['basic_logging', 'basic_tracking'],
-              },
-            };
-            await setDoc(userDocRef, updatedProfile, { merge: true });
-            set({ userProfile: updatedProfile, loading: false });
-          } else {
-            set({ userProfile: profileData, loading: false });
+      async (doc) => {
+        if (doc.exists()) {
+          let userProfile = doc.data() as UserProfile;
+          
+          // Check if muscle scores need to be decayed
+          if (needsMuscleScoreDecay(userProfile.muscleScores)) {
+            const decayedMuscleScores = decayMuscleScores(userProfile.muscleScores);
+            userProfile = { ...userProfile, muscleScores: decayedMuscleScores };
+            
+            // Save the updated profile with decayed scores
+            await get().saveUserProfile({ muscleScores: decayedMuscleScores });
           }
+          
+          set({ userProfile, loading: false });
         } else {
           const currentUser = get().user;
           const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
           const defaultProfile: UserProfile = {
-            goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
+            goals: { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 },
             pinnedFoods: [],
             pinnedExercises: [],
             favoriteExercises: [],
@@ -116,8 +109,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
             muscleScores: {},
             totalXP: 0,
             subscription: {
-              status: isAdminUser ? 'admin' : 'basic',
-              plan: isAdminUser ? 'admin' : 'basic',
+              status: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
+              plan: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
               expiresAt: null,
               features: isAdminUser
                 ? ['all_features']
@@ -132,7 +125,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
               submitted: [],
               rejected: [],
             },
-          } as UserProfile;
+          };
           await setDoc(userDocRef, defaultProfile);
           set({ userProfile: defaultProfile, loading: false });
         }
@@ -151,20 +144,31 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
-        set({ userProfile: snap.data(), loading: false });
+        let userProfile = snap.data() as UserProfile;
+        
+        // Check if muscle scores need to be decayed
+        if (needsMuscleScoreDecay(userProfile.muscleScores)) {
+          const decayedMuscleScores = decayMuscleScores(userProfile.muscleScores);
+          userProfile = { ...userProfile, muscleScores: decayedMuscleScores };
+          
+          // Save the updated profile with decayed scores
+          await get().saveUserProfile({ muscleScores: decayedMuscleScores });
+        }
+        
+        set({ userProfile, loading: false });
       } else {
         const currentUser = get().user;
         const isAdminUser = currentUser?.email === 'timdug4@gmail.com';
         const defaultProfile: UserProfile = {
-          goals: { calories: 2000, protein: 150, carbs: 200, fat: 60 },
+          goals: { calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 25 },
           pinnedFoods: [],
           pinnedExercises: [],
           favoriteExercises: [],
           recipes: [],
           totalXP: 0,
           subscription: {
-            status: isAdminUser ? 'admin' : 'basic',
-            plan: isAdminUser ? 'admin' : 'basic',
+            status: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
+            plan: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
             expiresAt: null,
             features: isAdminUser
               ? ['all_features']
@@ -179,7 +183,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
             submitted: [],
             rejected: [],
           },
-        } as UserProfile;
+        };
         await setDoc(userDocRef, defaultProfile);
         set({ userProfile: defaultProfile, loading: false });
       }
@@ -240,6 +244,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
         ...userProfile.subscription,
         status: newStatus,
         plan: newStatus === 'admin' ? 'admin' : newStatus,
+        expiresAt: userProfile.subscription?.expiresAt ?? null,
+        features: userProfile.subscription?.features ?? [],
       },
     };
     await get().saveUserProfile(newProfile);
@@ -313,9 +319,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       );
       const capXP = calculateTotalXPForLevel(
         5,
-        userProfile.accountCreationDate
-          ? new Date(userProfile.accountCreationDate)
-          : new Date()
+        new Date()
       );
       if (currentXP >= capXP) {
         return;
@@ -450,8 +454,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const newProfile = {
         ...userProfile,
         subscription: {
-          status: isAdminUser ? 'admin' : 'basic',
-          plan: isAdminUser ? 'admin' : 'basic',
+          status: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
+          plan: isAdminUser ? 'admin' as 'admin' : 'basic' as 'basic',
           expiresAt: null,
           features: isAdminUser
             ? ['all_features']

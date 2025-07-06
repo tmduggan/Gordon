@@ -18,6 +18,7 @@ const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const GroqService = require('./groq-service');
+const refreshExerciseDbGifsCore = require('./refreshExerciseDbGifs');
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -367,120 +368,28 @@ exports.groq = functions.https.onRequest(groqApp);
 
 admin.initializeApp();
 
-// Updated refreshExerciseDbGifs with pagination, batching, and name-matching
-exports.refreshExerciseDbGifs = functions.https.onRequest(async (req, res) => {
+// Use only environment variable for ExerciseDB API key
+const EXERCISEDB_API_KEY = process.env.EXERCISEDB_API_KEY;
+
+exports.refreshExerciseDbGifs = functions.https.onRequest({ timeoutSeconds: 300 }, async (req, res) => {
   try {
-    console.log('Function started: Fetching all exercises from ExerciseDB');
-    // 1. Fetch all exercises from ExerciseDB using pagination
-    let allExercises = [];
-    let offset = 0;
-    const limit = 100;
-    while (true) {
-      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?offset=${offset}&limit=${limit}`, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': 'YOUR_EXERCISEDB_API_KEY',
-          'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-        }
-      });
-      const exercises = await response.json();
-      if (!Array.isArray(exercises) || exercises.length === 0) break;
-      allExercises = allExercises.concat(exercises);
-      offset += exercises.length;
-      if (exercises.length < limit) break; // last page
-    }
-    console.log(`Fetched ${allExercises.length} exercises from ExerciseDB`);
-
-    // 2. Fetch all Firestore exerciseLibrary docs
-    const exerciseLibraryRef = admin.firestore().collection('exerciseLibrary');
-    const snapshot = await exerciseLibraryRef.get();
-    const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // 3. Prepare updates: match by 'id' field (string or number)
-    const updates = [];
-    let unmatched = [];
-    for (const ex of allExercises) {
-      // ExerciseDB id is a string, Firestore id may be string or number
-      const exId = ex.id ? String(ex.id) : undefined;
-      const match = allDocs.find(doc => doc.id && String(doc.id) === exId);
-      if (match && ex.gifUrl) {
-        updates.push({ docRef: exerciseLibraryRef.doc(match.id), data: { gifUrl: ex.gifUrl } });
-      } else {
-        unmatched.push(exId);
-      }
-    }
-    console.log(`Prepared ${updates.length} updates for Firestore`);
-    if (unmatched.length > 0) {
-      console.log(`No match for these ExerciseDB ids:`, unmatched.slice(0, 20)); // log first 20 unmatched for brevity
-    }
-
-    // 4. Batch updates in chunks of 500
-    const batchSize = 500;
-    for (let i = 0; i < updates.length; i += batchSize) {
-      const batch = admin.firestore().batch();
-      const chunk = updates.slice(i, i + batchSize);
-      chunk.forEach(({ docRef, data }) => batch.set(docRef, data, { merge: true }));
-      await batch.commit();
-      console.log(`Committed batch ${i / batchSize + 1}`);
-    }
-
-    res.status(200).send(`ExerciseDB GIF URLs refreshed! Updated ${updates.length} exercises.`);
+    const updatedCount = await refreshExerciseDbGifsCore(EXERCISEDB_API_KEY);
+    res.status(200).send(`ExerciseDB GIF URLs refreshed! Updated ${updatedCount} exercises.`);
   } catch (err) {
     console.error('Function error:', err);
     res.status(500).send('Failed to refresh ExerciseDB GIF URLs');
   }
 });
 
-// Replace the old scheduledGifRefresh export with the new v2 API
 exports.scheduledGifRefresh = onSchedule(
   {
-    schedule: 'every 24 hours',
-    timeZone: 'America/Los_Angeles',
+    // Run at 12:05 PM US Central Time (America/Chicago) every day
+    schedule: '5 12 * * *',
+    timeZone: 'America/Chicago',
   },
   async (event) => {
     try {
-      console.log('Scheduled GIF refresh started: Fetching all exercises from ExerciseDB');
-      let allExercises = [];
-      let offset = 0;
-      const limit = 100;
-      while (true) {
-        const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?offset=${offset}&limit=${limit}`, {
-          method: 'GET',
-          headers: {
-            'X-RapidAPI-Key': '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8',
-            'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
-          }
-        });
-        const exercises = await response.json();
-        if (!Array.isArray(exercises) || exercises.length === 0) break;
-        allExercises = allExercises.concat(exercises);
-        offset += exercises.length;
-        if (exercises.length < limit) break;
-      }
-      console.log(`Fetched ${allExercises.length} exercises from ExerciseDB`);
-
-      const exerciseLibraryRef = admin.firestore().collection('exerciseLibrary');
-      const snapshot = await exerciseLibraryRef.get();
-      const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      const updates = [];
-      for (const ex of allExercises) {
-        const exId = ex.id ? String(ex.id) : undefined;
-        const match = allDocs.find(doc => doc.id && String(doc.id) === exId);
-        if (match && ex.gifUrl) {
-          updates.push({ docRef: exerciseLibraryRef.doc(match.id), data: { gifUrl: ex.gifUrl } });
-        }
-      }
-
-      const batchSize = 500;
-      for (let i = 0; i < updates.length; i += batchSize) {
-        const batch = admin.firestore().batch();
-        const chunk = updates.slice(i, i + batchSize);
-        chunk.forEach(({ docRef, data }) => batch.set(docRef, data, { merge: true }));
-        await batch.commit();
-      }
-
-      console.log(`Scheduled GIF refresh complete. Updated ${updates.length} exercises.`);
+      await refreshExerciseDbGifsCore(EXERCISEDB_API_KEY);
     } catch (err) {
       console.error('Scheduled GIF refresh error:', err);
     }
@@ -530,5 +439,134 @@ Current time: ${new Date().toLocaleTimeString()}
   } catch (error) {
     console.error('GROQ meal suggestion error:', error);
     res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Proxy exercise GIFs to handle CORS
+exports.exerciseGif = onRequest({ cors: true }, async (req, res) => {
+  try {
+    const { exerciseId, resolution = '360' } = req.query;
+    
+    if (!exerciseId) {
+      return res.status(400).json({ error: 'exerciseId is required' });
+    }
+
+    // Validate resolution
+    if (!['360', '1080'].includes(resolution)) {
+      return res.status(400).json({ error: 'resolution must be 360 or 1080' });
+    }
+
+    const apiKey = process.env.EXERCISEDB_API_KEY || '3c9d909f7cmsh41ac528c20d2fa5p1cfdb4jsnab216ecf29e8';
+    if (!apiKey) {
+      return res.status(500).json({ error: 'ExerciseDB API key not configured' });
+    }
+
+    // Construct ExerciseDB image URL
+    const imageUrl = `https://exercisedb.p.rapidapi.com/image?exerciseId=${exerciseId}&resolution=${resolution}&rapidapi-key=${apiKey}&t=${Date.now()}`;
+    
+    // Fetch the image
+    const response = await fetch(imageUrl);
+    
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Failed to fetch image' });
+    }
+
+    // Get the image buffer
+    const imageBuffer = await response.arrayBuffer();
+    
+    // Set appropriate headers
+    res.set({
+      'Content-Type': response.headers.get('content-type') || 'image/gif',
+      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+    });
+
+    // Send the image
+    res.send(Buffer.from(imageBuffer));
+    
+  } catch (error) {
+    console.error('Error proxying exercise GIF:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Test and validate exercise GIF URLs
+exports.testAndRefreshGifs = onRequest({ cors: true }, async (req, res) => {
+  try {
+    const { sampleSize = 10 } = req.query;
+    
+    // Get a sample of exercises from Firestore
+    const db = admin.firestore();
+    const exercisesSnapshot = await db.collection('exerciseLibrary').limit(parseInt(sampleSize)).get();
+    
+    if (exercisesSnapshot.empty) {
+      return res.status(404).json({ error: 'No exercises found in library' });
+    }
+    
+    const exercises = exercisesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    let validGifs = 0;
+    let invalidGifs = 0;
+    const missingGifs = [];
+    
+    // Test a sample of GIF URLs
+    for (const exercise of exercises) {
+      const hasValidGifs = exercise.gifUrl_1080 && exercise.gifUrl_360;
+      
+      if (hasValidGifs) {
+        // Test if the GIF URLs are accessible via our proxy
+        try {
+          const testUrl = `https://us-central1-food-tracker-19c9d.cloudfunctions.net/exerciseGif?exerciseId=${exercise.id}&resolution=360`;
+          const testResponse = await fetch(testUrl, { method: 'HEAD' });
+          
+          if (testResponse.ok) {
+            validGifs++;
+          } else {
+            invalidGifs++;
+            missingGifs.push(exercise.id);
+          }
+        } catch (error) {
+          invalidGifs++;
+          missingGifs.push(exercise.id);
+        }
+      } else {
+        invalidGifs++;
+        missingGifs.push(exercise.id);
+      }
+    }
+    
+    const successRate = (validGifs / exercises.length) * 100;
+    
+    // If success rate is below 80%, trigger a refresh
+    const needsRefresh = successRate < 80;
+    
+    let refreshResult = null;
+    if (needsRefresh) {
+      try {
+        console.log(`GIF success rate: ${successRate.toFixed(1)}% - triggering refresh`);
+        refreshResult = await refreshExerciseDbGifsCore(EXERCISEDB_API_KEY);
+      } catch (error) {
+        console.error('Failed to refresh GIFs:', error);
+        refreshResult = { error: error.message };
+      }
+    }
+    
+    res.json({
+      success: true,
+      testResults: {
+        sampleSize: exercises.length,
+        validGifs,
+        invalidGifs,
+        successRate: `${successRate.toFixed(1)}%`,
+        missingGifIds: missingGifs
+      },
+      refreshTriggered: needsRefresh,
+      refreshResult
+    });
+    
+  } catch (error) {
+    console.error('Error testing GIF URLs:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });

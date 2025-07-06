@@ -17,10 +17,18 @@ import {
 export async function loadExerciseLibrary() {
   try {
     const querySnapshot = await getDocs(collection(db, 'exerciseLibrary'));
-    const exercises = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    
+    const exercises = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      const exercise = {
+        id: doc.id,
+        ...data,
+        gifUrl_1080: data.gifUrl_1080 || '',
+        gifUrl_360: data.gifUrl_360 || '',
+      };
+      
+      return exercise;
+    });
 
     // Deduplicate exercises by ID to prevent duplicate key warnings
     const uniqueExercises = exercises.reduce((acc, exercise) => {
@@ -35,7 +43,7 @@ export async function loadExerciseLibrary() {
     }, []);
 
     console.log(
-      `✅ Loaded ${uniqueExercises.length} exercises from local library (${exercises.length - uniqueExercises.length} duplicates removed)`
+      `✅ Loaded ${uniqueExercises.length} exercises from Firestore`
     );
     return uniqueExercises;
   } catch (error) {
@@ -188,6 +196,8 @@ export function prepareExerciseForCart(exercise) {
     instructions: exercise.instructions,
     description: exercise.description,
     gifUrl: exercise.gifUrl,
+    gifUrl_1080: exercise.gifUrl_1080,
+    gifUrl_360: exercise.gifUrl_360,
     secondaryMuscles: exercise.secondaryMuscles,
   };
 }

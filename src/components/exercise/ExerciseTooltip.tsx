@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -46,6 +46,7 @@ export function ExerciseTooltipContent({
 }: ExerciseTooltipContentProps) {
   const [gifError, setGifError] = useState(false);
   const { logs: workoutLog } = useExerciseLogStore();
+  const isMobile = useIsMobile();
   if (!exercise) return null;
 
   // Debug logging
@@ -187,16 +188,16 @@ export function ExerciseTooltipContent({
   return (
     <div className="max-w-xs">
       {/* GIF at the top */}
-      {('gifUrl' in exercise) && exercise.gifUrl && !gifError && (
+      {((isMobile && exercise.gifUrl_360) || (!isMobile && exercise.gifUrl_1080)) && !gifError && (
         <img
-          src={exercise.gifUrl}
+          src={`https://us-central1-food-tracker-19c9d.cloudfunctions.net/exerciseGif?exerciseId=${exercise.id}&resolution=${isMobile ? '360' : '1080'}`}
           alt={exercise.name + ' demo'}
           className="w-full h-36 object-contain rounded mb-2 border border-gray-200 bg-gray-50"
           onError={() => setGifError(true)}
         />
       )}
       {/* Fallback if GIF fails */}
-      {('gifUrl' in exercise) && exercise.gifUrl && gifError && (
+      {((isMobile && exercise.gifUrl_360) || (!isMobile && exercise.gifUrl_1080)) && gifError && (
         <div className="w-full h-36 flex items-center justify-center bg-gray-100 text-xs text-gray-500 rounded mb-2 border border-gray-200">
           GIF unavailable
         </div>
@@ -308,6 +309,10 @@ export default function ExerciseTooltip({
       <Dialog>
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="max-w-xs">
+          <DialogTitle>{toTitleCase(exercise.name)}</DialogTitle>
+          {exercise.description && (
+            <DialogDescription>{exercise.description}</DialogDescription>
+          )}
           <ExerciseTooltipContent
             exercise={exercise}
             bonusXP={bonusXP}
