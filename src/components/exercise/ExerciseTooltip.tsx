@@ -1,18 +1,19 @@
-import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { getLastTrainedDate } from '@/utils/dataUtils';
-import { formatSmartDate } from '@/utils/timeUtils';
-import React, { useMemo, useState, ReactNode } from 'react';
+import React, {
+  useMemo,
+  useState,
+  ReactNode,
+  useRef,
+  useEffect,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import type { Exercise, UserProfile } from '../../types';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import { toTitleCase } from '@/utils/dataUtils';
 import { Zap, Target } from 'lucide-react';
+import { getLastTrainedDate } from '@/utils/dataUtils';
+import { formatSmartDate } from '@/utils/timeUtils';
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -304,38 +305,137 @@ export default function ExerciseTooltip({
   userProfile,
 }: ExerciseTooltipProps) {
   const isMobile = useIsMobile();
-  if (isMobile) {
-    return (
-      <Dialog>
-        <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="max-w-xs">
-          <DialogTitle>{toTitleCase(exercise.name)}</DialogTitle>
-          {exercise.description && (
-            <DialogDescription>{exercise.description}</DialogDescription>
-          )}
-          <ExerciseTooltipContent
-            exercise={exercise}
-            bonusXP={bonusXP}
-            laggingType={laggingType}
-            userProfile={userProfile}
-          />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+
+  // Track tooltip visibility & position
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [touchStartTime, setTouchStartTime] = useState(0);
+
+  // Ensure a portal root exists
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!document.getElementById('tooltip-root')) {
+      const div = document.createElement('div');
+      div.id = 'tooltip-root';
+      document.body.appendChild(div);
+    }
+  }, []);
+
+  // --- Desktop (mouse) handlers ---
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    const offset = 12;
+    setTooltipPos({ top: e.clientY + offset, left: e.clientX + offset });
+    setShowTooltip(true);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMobile || !showTooltip) return;
+    const offset = 12;
+    setTooltipPos({ top: e.clientY + offset, left: e.clientX + offset });
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    setShowTooltip(false);
+    setTooltipPos(null);
+  };
+
+  // --- Mobile (touch) handlers ---
+  const TOUCH_DELAY = 500; // ms until tooltip shows
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    setTouchStartTime(Date.now());
+    const touch = e.touches[0];
+    touchTimeoutRef.current = setTimeout(() => {
+      const offset = 12;
+      setTooltipPos({ top: touch.clientY + offset, left: touch.clientX + offset });
+      setShowTooltip(true);
+    }, TOUCH_DELAY);
+  };
+
+  const cleanupTouch = () => {
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+    }
+    setShowTooltip(false);
+    setTooltipPos(null);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile) return;
+    const duration = Date.now() - touchStartTime;
+    if (duration < TOUCH_DELAY) {
+      // tap – do nothing
+      cleanupTouch();
+    } else {
+      // allow brief view after long-press
+      setTimeout(() => {
+        cleanupTouch();
+      }, 1200);
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (!isMobile) return;
+    cleanupTouch();
+  };
+
+  const getTooltipStyle = (): React.CSSProperties => {
+    if (!tooltipPos) return { display: 'none' };
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      top: tooltipPos.top,
+      left: tooltipPos.left,
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+      padding: 12,
+      maxWidth: 320,
+      minWidth: 220,
+      pointerEvents: 'none',
+    };
+
+    return style;
+  };
+
+  const tooltipBody = (
+    <ExerciseTooltipContent
+      exercise={exercise}
+      bonusXP={bonusXP}
+      laggingType={laggingType}
+      userProfile={userProfile}
+    />
+  );
+
+  // Render portal when tooltip should be visible
+  const portal =
+    showTooltip && tooltipPos
+      ? createPortal(<div style={getTooltipStyle()}>{tooltipBody}</div>, document.getElementById('tooltip-root') as HTMLElement)
+      : null;
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side="right" className="max-w-xs">
-          <ExerciseTooltipContent
-            exercise={exercise}
-            bonusXP={bonusXP}
-            laggingType={laggingType}
-            userProfile={userProfile}
-          />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div
+      ref={triggerRef}
+      className={cn('relative inline-block')}
+      onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+    >
+      {children}
+      {portal}
+    </div>
   );
 } 

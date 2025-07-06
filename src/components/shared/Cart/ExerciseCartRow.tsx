@@ -19,6 +19,9 @@ import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
 import type { Exercise } from '../../../types';
 import { toTitleCase } from '@/utils/dataUtils';
 import ExerciseTooltip from '../../exercise/ExerciseTooltip';
+import { getEquipmentIcon, getMuscleIcon } from '@/utils/iconMappings';
+import { Badge } from '@/components/ui/badge';
+import { Zap } from 'lucide-react';
 
 interface ExerciseLogData {
   [exerciseId: string]: {
@@ -48,6 +51,21 @@ interface InfoDialogProps {
   item: Exercise;
 }
 
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = React.useState(
+    () => typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  );
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+}
+
 export default function ExerciseCartRow({
   item,
   removeFromCart = () => {},
@@ -58,9 +76,12 @@ export default function ExerciseCartRow({
   if ('label' in item) {
     throw new Error('Tried to render a non-exercise item in ExerciseCartRow');
   }
-  const { name, id } = item;
+  const { name, id, target, equipment } = item;
   const [showConfirm, setShowConfirm] = useState<boolean>(false);
   const itemLogData = logData && logData[id] ? logData[id] : {};
+  const equipmentIcon = getEquipmentIcon(equipment);
+  const muscleIcon = getMuscleIcon(target);
+  const isMobile = useIsMobile();
   
   const handleLogChange = (id: string, newValues: any) => {
     onLogDataChange(id, newValues);
@@ -84,28 +105,38 @@ export default function ExerciseCartRow({
     <Card className="border">
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ExerciseTooltip exercise={item}>
-                <span className="font-semibold text-sm cursor-pointer">{toTitleCase(name)}</span>
-              </ExerciseTooltip>
+          <div className="flex flex-col gap-1">
+            <ExerciseTooltip exercise={item}>
+              <span className="font-semibold text-sm cursor-pointer">{toTitleCase(name)}</span>
+            </ExerciseTooltip>
+            <div className="flex flex-row items-center gap-2">
+              {muscleIcon && (
+                <img src={muscleIcon} alt={target} className="h-5 w-5 rounded border border-black" />
+              )}
+              {equipmentIcon && (
+                <img src={equipmentIcon} alt={equipment} className="h-5 w-5 p-0.5 bg-equipment rounded" />
+              )}
+              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs flex items-center gap-1">
+                <Zap className="h-4 w-4" />
+                {!isMobile && <span>Log Sets</span>}
+              </Badge>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setShowConfirm(true)}
-                  className="text-red-600"
-                >
-                  Remove Exercise
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setShowConfirm(true)}
+                className="text-red-600"
+              >
+                Remove Exercise
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ExerciseLogInputs
             exercise={item}
             logData={itemLogData}

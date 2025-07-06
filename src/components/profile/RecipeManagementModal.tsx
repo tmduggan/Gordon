@@ -17,8 +17,8 @@ import { getFoodMacros } from '../../utils/dataUtils';
 import { isValidFoodItem } from '../../utils/isValidFoodItem';
 import FoodCartRow from '../shared/Cart/FoodCartRow';
 
-export default function RecipeManagementModal({ open, onOpenChange }) {
-  const { userProfile, updateRecipe, deleteRecipe } = useAuthStore();
+export default function RecipeManagementModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { userProfile, addRecipe, updateRecipe, deleteRecipe } = useAuthStore();
   const { toast } = useToast();
   const foodLibrary = useLibrary('food');
 
@@ -26,18 +26,26 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [editName, setEditName] = useState('');
   const [editServings, setEditServings] = useState(1);
+  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  if (!userProfile) {
+    return <div className="p-4 text-center text-gray-400">Loading...</div>;
+  }
 
   // Load recipes with calculated macros
   useEffect(() => {
     if (userProfile?.recipes) {
       const recipesWithMacros = userProfile.recipes.map((recipe) => {
-        const calculateRecipeMacros = (recipeItems) => {
+        const calculateRecipeMacros = (recipeItems: any[]) => {
           return recipeItems.reduce(
-            (total, item) => {
+            (total: any, item: any) => {
               if (item.isRecipe) {
                 // Handle nested recipe
                 const nestedRecipe = userProfile.recipes.find(
-                  (r) => r.id === item.id
+                  (r: any) => r.id === item.id
                 );
                 if (nestedRecipe) {
                   const nestedMacros = calculateRecipeMacros(
@@ -55,7 +63,7 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
                 }
               } else {
                 // Regular food ingredient
-                const food = foodLibrary.items.find((f) => f.id === item.id);
+                const food = foodLibrary.items.find((f: any) => f.id === item.id);
                 if (!food) return total;
 
                 const macros = getFoodMacros(food);
@@ -80,12 +88,12 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
         return {
           ...recipe,
           totalMacros,
-          items: recipe.items.map((item) => ({
+          items: recipe.items.map((item: any) => ({
             ...item,
             name: item.isRecipe
-              ? userProfile.recipes.find((r) => r.id === item.id)?.name ||
+              ? userProfile.recipes.find((r: any) => r.id === item.id)?.name ||
                 item.id
-              : foodLibrary.items.find((f) => f.id === item.id)?.food_name ||
+              : foodLibrary.items.find((f: any) => f.id === item.id)?.food_name ||
                 item.id,
           })),
         };
@@ -94,7 +102,7 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
     }
   }, [userProfile?.recipes, foodLibrary.items]);
 
-  const handleEditRecipe = (recipe) => {
+  const handleEditRecipe = (recipe: any) => {
     setEditingRecipe(recipe);
     setEditName(recipe.name);
     setEditServings(recipe.servings || 1);
@@ -135,7 +143,7 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
     }
   };
 
-  const handleDeleteRecipe = async (recipe) => {
+  const handleDeleteRecipe = async (recipe: any) => {
     if (
       window.confirm(
         `Are you sure you want to delete "${recipe.name}"? This action cannot be undone.`
@@ -199,7 +207,7 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {recipes.map((recipe) => (
+          {recipes.map((recipe: any) => (
             <Card key={recipe.id} className="border">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -289,10 +297,10 @@ export default function RecipeManagementModal({ open, onOpenChange }) {
                 <div className="space-y-2">
                   {/* Render each ingredient using FoodCartRow for consistent display */}
                   {recipe.items
-                    .filter((ingredient) =>
+                    .filter((ingredient: any) =>
                       isValidFoodItem(ingredient, foodLibrary)
                     )
-                    .map((ingredient, idx) => (
+                    .map((ingredient: any, idx: number) => (
                       <FoodCartRow
                         key={ingredient.id || idx}
                         item={ingredient}

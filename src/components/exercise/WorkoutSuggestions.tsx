@@ -546,6 +546,9 @@ export default function WorkoutSuggestions({
   if (suggestions.length === 0) {
     return (
       <div className={className}>
+        {equipmentButtons && (
+          <div className="mb-4 flex justify-center">{equipmentButtons}</div>
+        )}
         <div className="text-center py-8">
           <div className="mb-2 text-gray-700">
             No exercises available for your current equipment selection.

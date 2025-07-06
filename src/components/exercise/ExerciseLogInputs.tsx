@@ -156,24 +156,28 @@ const ExerciseLogInputs = ({
   if (isMobile) {
     return (
       <div>
-        {sets.map((set, index) => (
-          <SwipeToDelete
-            key={index}
-            onDelete={() => removeSet(index)}
-            height={64}
-            transitionDuration={250}
-            rtl={false}
-            disabled={sets.length === 1}
-            deleteSwipe={0.85}
-            deleteComponent={
-              <div className="flex items-center justify-end h-full pr-6 bg-red-500 text-white rounded">
-                <Trash className="h-6 w-6" />
-              </div>
-            }
-          >
-            {renderSet(set, index)}
-          </SwipeToDelete>
-        ))}
+        {sets.map((set, index) => {
+          // Disable swipe if set is completed (checked), or if only one set remains
+          const disableSwipe = set.completed || sets.length === 1;
+          return (
+            <SwipeToDelete
+              key={index}
+              onDelete={() => removeSet(index)}
+              height={64}
+              transitionDuration={250}
+              rtl={false}
+              disabled={disableSwipe}
+              deleteSwipe={0.85}
+              deleteComponent={
+                <div className="flex items-center justify-end h-full pr-6 bg-red-500 text-white rounded">
+                  <Trash className="h-6 w-6" />
+                </div>
+              }
+            >
+              {renderSet(set, index)}
+            </SwipeToDelete>
+          );
+        })}
         <div className="pt-2">
           <Button
             type="button"

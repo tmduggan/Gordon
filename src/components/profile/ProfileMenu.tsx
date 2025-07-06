@@ -45,18 +45,31 @@ export default function ProfileMenu() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showHiddenExercises, setShowHiddenExercises] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [simulatedStatus, setSimulatedStatus] = useState(null); // null = real, else 'basic' or 'premium' or 'admin'
+  const [simulatedStatus, setSimulatedStatus] = useState<'basic' | 'premium' | 'admin' | null>(null);
   const [showExerciseLibraryModal, setShowExerciseLibraryModal] =
     useState(false);
   const { toast } = useToast();
   const [showAdminSubmissionsModal, setShowAdminSubmissionsModal] =
     useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [pendingSubmissions, setPendingSubmissions] = useState<any[]>([]);
   const [currentSubmissionIndex, setCurrentSubmissionIndex] = useState(0);
   const [showRecipesModal, setShowRecipesModal] = useState(false);
 
-  if (!user || !userProfile) return null;
+  React.useEffect(() => {
+    if (isAdmin()) {
+      getPendingSubmissions()
+        .then((subs) => {
+          setPendingSubmissions(subs);
+          setPendingCount(subs.length);
+        })
+        .catch(() => setPendingCount(0));
+    }
+  }, [isAdmin]);
+
+  if (!user || !userProfile) {
+    return <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />;
+  }
 
   // Get profile image with fallback
   const getProfileImage = () => {
@@ -104,17 +117,6 @@ export default function ProfileMenu() {
 
   // Calculate recipe count with max of 99
   const recipeCount = Math.min(userProfile.recipes?.length || 0, 99);
-
-  React.useEffect(() => {
-    if (isAdminUser) {
-      getPendingSubmissions()
-        .then((subs) => {
-          setPendingSubmissions(subs);
-          setPendingCount(subs.length);
-        })
-        .catch(() => setPendingCount(0));
-    }
-  }, [isAdminUser]);
 
   // Only for admin: cycle simulated view
   const handleToggleSimulatedStatus = () => {
@@ -192,7 +194,7 @@ export default function ProfileMenu() {
     }
   };
 
-  const handleApprove = async (submission) => {
+  const handleApprove = async (submission: any) => {
     try {
       await approveExerciseSubmission(submission.id, user.uid);
       toast({
@@ -216,7 +218,7 @@ export default function ProfileMenu() {
     }
   };
 
-  const handleReject = async (submission) => {
+  const handleReject = async (submission: any) => {
     try {
       await rejectExerciseSubmission(submission.id, user.uid);
       toast({
@@ -240,7 +242,7 @@ export default function ProfileMenu() {
     }
   };
 
-  const currentSubmission = pendingSubmissions[currentSubmissionIndex];
+  const currentSubmission = pendingSubmissions[currentSubmissionIndex] as any;
 
   return (
     <>

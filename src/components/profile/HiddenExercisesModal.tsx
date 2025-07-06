@@ -29,7 +29,7 @@ const equipmentIconMap = {
   machine: '/icons/machine.png',
 };
 
-const getEquipmentIcon = (equipmentName) => {
+const getEquipmentIcon = (equipmentName: string) => {
   if (!equipmentName) return null;
   const lowerCaseEquipment = equipmentName.toLowerCase();
 
@@ -72,17 +72,31 @@ const muscleIconMap = {
   glutes: '/icons/Muscle-glutes.jpeg',
 };
 
-const getMuscleIcon = (muscleName) => {
+const getMuscleIcon = (muscleName: string) => {
   if (!muscleName) return null;
   const lowerCaseMuscle = muscleName.toLowerCase();
   return muscleIconMap[lowerCaseMuscle] || null;
 };
 
-export default function HiddenExercisesModal({ open, onOpenChange }) {
+const muscleMap: Record<string, string> = { quads: 'Quads', abductors: 'Abductors', abs: 'Abs', adductors: 'Adductors', biceps: 'Biceps', calves: 'Calves', delts: 'Delts', forearms: 'Forearms', hamstrings: 'Hamstrings', pectorals: 'Pectorals', 'serratus anterior': 'Serratus Anterior', traps: 'Traps', triceps: 'Triceps', glutes: 'Glutes' };
+
+const getEquipmentName = (equipmentName: string) => {
+  // ... existing code ...
+};
+
+const getMuscleName = (muscleName: string) => {
+  // ... existing code ...
+};
+
+const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
   const { userProfile, unhideExercise, getRemainingHides } = useAuthStore();
   const exerciseLibrary = useLibrary('exercise');
-  const [hiddenExercises, setHiddenExercises] = useState([]);
-  const [loading, setLoading] = useState({});
+  const [hiddenExercises, setHiddenExercises] = useState<any[]>([]);
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+
+  if (!userProfile || !exerciseLibrary) {
+    return <div className="p-4 text-center text-gray-400">Loading...</div>;
+  }
 
   // Get hidden exercises with full details
   useEffect(() => {
@@ -99,12 +113,12 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
     }
   }, [open, exerciseLibrary.items, userProfile?.hiddenExercises]);
 
-  const handleUnhide = async (exerciseId) => {
+  const handleUnhide = async (exerciseId: string) => {
     setLoading((prev) => ({ ...prev, [exerciseId]: true }));
     try {
       await unhideExercise(exerciseId);
       // Remove from local state
-      setHiddenExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
+      setHiddenExercises((prev: any[]) => prev.filter((ex) => ex.id !== exerciseId));
     } catch (error) {
       console.error('Error unhiding exercise:', error);
     } finally {
@@ -158,107 +172,117 @@ export default function HiddenExercisesModal({ open, onOpenChange }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {hiddenExercises.map((exercise) => {
-                const { target, equipment, difficulty } = exercise;
-                const equipmentIcon = getEquipmentIcon(equipment);
-                const muscleIcon = getMuscleIcon(target);
-                const isLoading = loading[exercise.id];
+              {hiddenExercises
+                .filter((ex: any) => ex)
+                .map((exercise) => {
+                  const { target, equipment, difficulty } = exercise;
+                  const equipmentIcon = getEquipmentIcon(equipment);
+                  const muscleIcon = getMuscleIcon(target);
+                  const isLoading = loading[exercise.id];
 
-                return (
-                  <Card key={exercise.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
-                        {/* Exercise Name */}
-                        <div className="flex-1 min-w-0 w-full sm:w-auto">
-                          <strong className="block text-lg">
-                            {exercise.name}
-                          </strong>
-                        </div>
-
-                        {/* Icons and Badges Row */}
-                        <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-                          {/* Icons Row */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {muscleIcon && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <img
-                                      src={muscleIcon}
-                                      alt={target}
-                                      className="h-6 w-6 rounded-md border border-black"
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="capitalize">{target}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            {equipmentIcon && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <img
-                                      src={equipmentIcon}
-                                      alt={equipment}
-                                      className="h-6 w-6 p-0.5 bg-equipment rounded-md"
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="capitalize">{equipment}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
+                  return (
+                    <Card key={exercise.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
+                          {/* Exercise Name */}
+                          <div className="flex-1 min-w-0 w-full sm:w-auto">
+                            <strong className="block text-lg">
+                              {exercise.name}
+                            </strong>
                           </div>
 
-                          {/* Target Badge */}
-                          <div className="flex-shrink-0">
-                            <Badge variant="outline" className="text-sm">
-                              <Target className="h-4 w-4 mr-1" />
-                              {target}
-                            </Badge>
+                          {/* Icons and Badges Row */}
+                          <div className="flex flex-row items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+                            {/* Icons Row */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {muscleIcon && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <img
+                                        src={muscleIcon}
+                                        alt={target}
+                                        className="h-6 w-6 rounded-md border border-black"
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="capitalize">{target}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {equipmentIcon && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <img
+                                        src={equipmentIcon}
+                                        alt={equipment}
+                                        className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="capitalize">{equipment}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+
+                            {/* Target Badge */}
+                            <div className="flex-shrink-0">
+                              <Badge variant="outline" className="text-sm">
+                                <Target className="h-4 w-4 mr-1" />
+                                {target}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Unhide Button */}
-                      <div className="flex-shrink-0 ml-4">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUnhide(exercise.id)}
-                                disabled={isLoading}
-                                className="h-8 px-3"
-                              >
-                                {isLoading ? (
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                                ) : (
-                                  <>
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    Unhide
-                                  </>
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Show this exercise in suggestions again</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {/* Unhide Button */}
+                        <div className="flex-shrink-0 ml-4">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUnhide(exercise.id)}
+                                  disabled={isLoading}
+                                  className="h-8 px-3"
+                                >
+                                  {isLoading ? (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                  ) : (
+                                    <>
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      Unhide
+                                    </>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Show this exercise in suggestions again</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                );
-              })}
+                    </Card>
+                  );
+                })}
             </div>
+          )}
+
+          {userProfile?.hiddenExercises?.length > 0 && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {userProfile.hiddenExercises.length}
+            </Badge>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+export default HiddenExercisesModal;

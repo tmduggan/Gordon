@@ -52,6 +52,22 @@ export interface ExerciseDisplayProps {
   userProfile?: UserProfile;
 }
 
+// Mobile detection hook (shared with other components)
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = React.useState(
+    () => typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  );
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+}
+
 export default function ExerciseDisplay({
   exercise,
   variant = 'row',
@@ -93,6 +109,8 @@ export default function ExerciseDisplay({
   const muscleIcon = getMuscleIcon(target);
 
   const { logs: workoutLog } = useExerciseLogStore();
+
+  const isMobile = useIsMobile();
 
   // Lagging type badge/icon logic
   const getLaggingTypeIcon = (type: string) => {
@@ -142,8 +160,9 @@ export default function ExerciseDisplay({
               />
             )}
             {showXP && bonusXP !== undefined && (
-              <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
-                <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
+              <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2 flex items-center gap-1">
+                <Zap className="h-4 w-4" />
+                {!isMobile && <span>+{bonusXP} XP</span>}
               </Badge>
             )}
             {laggingType && (
@@ -151,9 +170,11 @@ export default function ExerciseDisplay({
                 className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
               >
                 {getLaggingTypeIcon(laggingType)}
-                <span className="ml-1 capitalize">
-                  {laggingType.replace(/([A-Z])/g, ' $1')}
-                </span>
+                {!isMobile && (
+                  <span className="ml-1 capitalize">
+                    {laggingType.replace(/([A-Z])/g, ' $1')}
+                  </span>
+                )}
               </Badge>
             )}
           </div>
@@ -174,43 +195,48 @@ export default function ExerciseDisplay({
     );
   }
 
-  // Default: row/card
-  const mainContent = (
-    <div className="flex flex-row items-center w-full justify-between">
-      {/* Left: Exercise Name */}
-      <strong className={nameClassName}>{toTitleCase(name)}</strong>
-      {/* Right: Icons and Status */}
-      <div className="flex flex-row items-center gap-2 ml-4">
-        {muscleIcon && (
-          <img
-            src={muscleIcon}
-            alt={target}
-            className="h-6 w-6 rounded-md border border-black"
-          />
-        )}
-        {equipmentIcon && (
-          <img
-            src={equipmentIcon}
-            alt={equipment}
-            className="h-6 w-6 p-0.5 bg-equipment rounded-md"
-          />
-        )}
-        {showXP && bonusXP !== undefined && (
-          <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
-            <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
-          </Badge>
-        )}
-        {laggingType && (
-          <Badge
-            className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
-          >
-            {getLaggingTypeIcon(laggingType)}
-            <span className="ml-1 capitalize">
+  // Default: row/card (two-line layout)
+  const iconsRow = (
+    <div className="flex flex-row items-center gap-2 mt-1 flex-wrap">
+      {muscleIcon && (
+        <img
+          src={muscleIcon}
+          alt={target}
+          className="h-6 w-6 rounded-md border border-black"
+        />
+      )}
+      {equipmentIcon && (
+        <img
+          src={equipmentIcon}
+          alt={equipment}
+          className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+        />
+      )}
+      {showXP && bonusXP !== undefined && (
+        <Badge className="bg-green-100 text-green-800 border-green-200 text-sm flex items-center gap-1">
+          <Zap className="h-4 w-4" />
+          {!isMobile && <span>+{bonusXP} XP</span>}
+        </Badge>
+      )}
+      {laggingType && (
+        <Badge className={`text-sm ${getLaggingTypeColor(laggingType)} flex items-center gap-1`}>
+          {getLaggingTypeIcon(laggingType)}
+          {!isMobile && (
+            <span className="capitalize">
               {laggingType.replace(/([A-Z])/g, ' $1')}
             </span>
-          </Badge>
-        )}
-      </div>
+          )}
+        </Badge>
+      )}
+    </div>
+  );
+
+  const mainContent = (
+    <div className="flex flex-col w-full">
+      {/* Name Row */}
+      <strong className={nameClassName}>{toTitleCase(name)}</strong>
+      {/* Icons / Badges Row */}
+      {iconsRow}
     </div>
   );
 
