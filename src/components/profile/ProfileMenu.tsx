@@ -257,8 +257,8 @@ export default function ProfileMenu() {
                     alt="Profile"
                     className="w-10 h-10 rounded-full cursor-pointer border border-gray-200"
                     onClick={() => setShowDropdown(!showDropdown)}
-                    onError={(e) => {
-                      e.target.src = '/default-avatar.svg';
+                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                      (e.target as HTMLImageElement).src = '/default-avatar.svg';
                     }}
                   />
                 </TooltipTrigger>
@@ -348,8 +348,8 @@ export default function ProfileMenu() {
                   >
                     <EyeOff className="h-4 w-4 mr-2" />
                     Hidden Exercises
-                    {userProfile.hiddenExercises?.length > 0 && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
+                    {userProfile.hiddenExercises && userProfile.hiddenExercises.length > 0 && (
+                      <Badge className={`ml-auto text-xs ${subscriptionInfo.color}`}>
                         {userProfile.hiddenExercises.length}
                       </Badge>
                     )}
@@ -365,7 +365,7 @@ export default function ProfileMenu() {
                   >
                     <ChefHat className="h-4 w-4 mr-2" />
                     Recipes
-                    <Badge variant="secondary" className="ml-auto text-xs">
+                    <Badge className="ml-auto text-xs">
                       {recipeCount}
                     </Badge>
                   </Button>
@@ -388,7 +388,7 @@ export default function ProfileMenu() {
                       >
                         <Dumbbell className="h-4 w-4 mr-2" />
                         View Submissions
-                        <Badge variant="secondary" className="ml-auto text-xs">
+                        <Badge className="ml-auto text-xs">
                           {pendingCount}
                         </Badge>
                       </Button>
@@ -571,44 +571,34 @@ export default function ProfileMenu() {
                     </div>
                   )}
 
-                  {currentSubmission.instructions &&
-                    currentSubmission.instructions.length > 0 && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Instructions
-                        </label>
-                        <ol className="mt-1 space-y-1">
-                          {currentSubmission.instructions.map(
-                            (instruction, index) => (
-                              <li
-                                key={index}
-                                className="p-2 bg-gray-50 rounded"
-                              >
-                                {index + 1}. {instruction}
-                              </li>
-                            )
-                          )}
-                        </ol>
-                      </div>
-                    )}
+                  {currentSubmission.instructions && currentSubmission.instructions.map((instruction: string, index: number) => (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Instructions
+                      </label>
+                      <ol className="mt-1 space-y-1">
+                        <li
+                          key={index}
+                          className="p-2 bg-gray-50 rounded"
+                        >
+                          {index + 1}. {instruction}
+                        </li>
+                      </ol>
+                    </div>
+                  ))}
 
-                  {currentSubmission.secondaryMuscles &&
-                    currentSubmission.secondaryMuscles.length > 0 && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Secondary Muscles
-                        </label>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {currentSubmission.secondaryMuscles.map(
-                            (muscle, index) => (
-                              <Badge key={index} variant="outline">
-                                {muscle}
-                              </Badge>
-                            )
-                          )}
-                        </div>
+                  {currentSubmission.secondaryMuscles && currentSubmission.secondaryMuscles.map((muscle: string, index: number) => (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Secondary Muscles
+                      </label>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <Badge key={index} className="mr-1">
+                          {muscle}
+                        </Badge>
                       </div>
-                    )}
+                    </div>
+                  ))}
 
                   <div className="text-sm text-gray-500">
                     <p>Submitted by: {currentSubmission.submittedBy}</p>

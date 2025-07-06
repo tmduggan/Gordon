@@ -88,24 +88,28 @@ const getMuscleName = (muscleName: string) => {
   // ... existing code ...
 };
 
+// Add a type guard for muscleMap
+function getMuscleLabel(muscle: string): string {
+  const map = muscleMap as Record<string, string>;
+  return Object.prototype.hasOwnProperty.call(map, muscle)
+    ? map[muscle]
+    : muscle;
+}
+
 const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
   const { userProfile, unhideExercise, getRemainingHides } = useAuthStore();
   const exerciseLibrary = useLibrary('exercise');
   const [hiddenExercises, setHiddenExercises] = useState<any[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-  if (!userProfile || !exerciseLibrary) {
-    return <div className="p-4 text-center text-gray-400">Loading...</div>;
-  }
+  // Always run hooks at the top, render loading placeholder below
+  const showLoading = !userProfile || !exerciseLibrary;
 
-  // Get hidden exercises with full details
   useEffect(() => {
     if (open && exerciseLibrary.items && userProfile?.hiddenExercises) {
       const hiddenWithDetails = userProfile.hiddenExercises
-        .map((exerciseId) => {
-          const exercise = exerciseLibrary.items.find(
-            (e) => e.id === exerciseId
-          );
+        .map((exerciseId: string) => {
+          const exercise = exerciseLibrary.items.find((e: any) => e.id === exerciseId);
           return exercise ? { ...exercise, id: exerciseId } : null;
         })
         .filter(Boolean);
@@ -117,7 +121,6 @@ const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenCha
     setLoading((prev) => ({ ...prev, [exerciseId]: true }));
     try {
       await unhideExercise(exerciseId);
-      // Remove from local state
       setHiddenExercises((prev: any[]) => prev.filter((ex) => ex.id !== exerciseId));
     } catch (error) {
       console.error('Error unhiding exercise:', error);
@@ -128,6 +131,10 @@ const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenCha
 
   const remainingHides = getRemainingHides();
   const isBasic = userProfile?.subscription?.status === 'basic';
+
+  if (showLoading) {
+    return <div className="p-4 text-center text-gray-400">Loading...</div>;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -174,7 +181,7 @@ const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenCha
             <div className="space-y-3">
               {hiddenExercises
                 .filter((ex: any) => ex)
-                .map((exercise) => {
+                .map((exercise: any) => {
                   const { target, equipment, difficulty } = exercise;
                   const equipmentIcon = getEquipmentIcon(equipment);
                   const muscleIcon = getMuscleIcon(target);
@@ -231,10 +238,7 @@ const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenCha
 
                             {/* Target Badge */}
                             <div className="flex-shrink-0">
-                              <Badge variant="outline" className="text-sm">
-                                <Target className="h-4 w-4 mr-1" />
-                                {target}
-                              </Badge>
+                              <Badge className="mr-1">{getMuscleLabel(target)}</Badge>
                             </div>
                           </div>
                         </div>
@@ -274,8 +278,8 @@ const HiddenExercisesModal = ({ open, onOpenChange }: { open: boolean; onOpenCha
             </div>
           )}
 
-          {userProfile?.hiddenExercises?.length > 0 && (
-            <Badge variant="secondary" className="ml-auto text-xs">
+          {userProfile.hiddenExercises && userProfile.hiddenExercises.length > 0 && (
+            <Badge className="ml-auto text-xs">
               {userProfile.hiddenExercises.length}
             </Badge>
           )}
