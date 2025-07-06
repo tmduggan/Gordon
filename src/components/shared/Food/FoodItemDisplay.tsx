@@ -64,9 +64,6 @@ const FoodItemDisplay: React.FC<FoodItemDisplayProps> = ({
       <div className="flex flex-col min-w-0 flex-1">
         <div className="flex items-center min-w-0">
           <span className="truncate font-medium text-sm">{name}</span>
-          {isPinned && (
-            <span className="ml-1 text-xs text-yellow-500" title="Pinned">📌</span>
-          )}
         </div>
         <div className="flex items-center min-h-[18px] text-xs text-gray-500">
           {brand && <span>{brand}</span>}
@@ -75,29 +72,26 @@ const FoodItemDisplay: React.FC<FoodItemDisplayProps> = ({
           )}
         </div>
       </div>
-      {/* Calories */}
-      <div className="flex flex-col items-end justify-center min-w-[60px]">
+      {/* Calories and Pin */}
+      <div className="flex flex-row items-center justify-end min-w-[80px] gap-2 ml-2">
         <span className="flex items-baseline">
           <span className="font-mono text-base text-right">{cal}</span>
           <span className="ml-1 text-xs text-gray-500">cal</span>
         </span>
+        {showActions && onPin && (
+          <Button variant="ghost" size="icon" onClick={onPin} className="h-6 w-6 ml-1">
+            <span className="text-lg" title={isPinned ? 'Unpin' : 'Pin'}>
+              {isPinned ? '📌' : '📍'}
+            </span>
+          </Button>
+        )}
+        {showActions && onRemove && (
+          <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6 text-red-500">
+            ✕
+          </Button>
+        )}
+        {children}
       </div>
-      {/* Actions */}
-      {showActions && (
-        <div className="flex items-center gap-1 ml-2">
-          {onPin && (
-            <Button variant="ghost" size="icon" onClick={onPin} className="h-6 w-6">
-              {isPinned ? 'Unpin' : 'Pin'}
-            </Button>
-          )}
-          {onRemove && (
-            <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6 text-red-500">
-              ✕
-            </Button>
-          )}
-          {children}
-        </div>
-      )}
     </div>
   );
 };

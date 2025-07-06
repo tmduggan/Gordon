@@ -225,6 +225,7 @@ export default function FoodSearch({
                         isPinned={isPinned}
                         showActions={true}
                         onPin={item.id && !item.isRecipe ? (() => togglePin(item.id!)) : undefined}
+                        calories={normalized.calories || normalized.macros?.calories || 0}
                       />
                     </FoodItemTooltip>
                   </div>
