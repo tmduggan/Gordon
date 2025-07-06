@@ -8,7 +8,7 @@ export const muscleMapping: Record<string, string[]> = {
   // Example: Exercise with target="shoulders" will shade the "deltoids" SVG muscle group
 
   // Core muscles
-  abs: ['upper abs', 'abs', 'abdominal', 'abdominals', 'core'],
+  abdominals: ['upper abs', 'abs', 'abdominal', 'abdominals', 'core'],
   obliques: ['obliques', 'oblique'],
   lower_abs: ['lower abs'],
 

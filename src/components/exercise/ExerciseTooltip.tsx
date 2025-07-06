@@ -10,6 +10,9 @@ import { formatSmartDate } from '@/utils/timeUtils';
 import React, { useMemo, useState, ReactNode } from 'react';
 import useExerciseLogStore from '../../store/useExerciseLogStore';
 import type { Exercise, UserProfile } from '../../types';
+import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
+import { toTitleCase } from '@/utils/dataUtils';
+import { Zap, Target } from 'lucide-react';
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -54,21 +57,21 @@ export function ExerciseTooltipContent({
   const hasLogs = logs.length > 0;
   const lastTrainedTimestamp = getLastTrainedDate(workoutLog, exercise.id);
   const lastTrainedDate = lastTrainedTimestamp
-    ? lastTrainedTimestamp.seconds
-      ? new Date(lastTrainedTimestamp.seconds * 1000)
-      : new Date(lastTrainedTimestamp)
+    ? (typeof lastTrainedTimestamp === 'object' && 'seconds' in lastTrainedTimestamp)
+      ? new Date((lastTrainedTimestamp as any).seconds * 1000)
+      : new Date(lastTrainedTimestamp as any)
     : null;
 
   // Find the most recent log (by timestamp)
   const lastLog = hasLogs
     ? logs.reduce((latest, l) => {
         if (!latest) return l;
-        const latestTime = latest.timestamp?.seconds
-          ? latest.timestamp.seconds
-          : new Date(latest.timestamp).getTime() / 1000;
-        const lTime = l.timestamp?.seconds
-          ? l.timestamp.seconds
-          : new Date(l.timestamp).getTime() / 1000;
+        const latestTime = (latest.timestamp && typeof latest.timestamp === 'object' && 'seconds' in latest.timestamp)
+          ? (latest.timestamp as any).seconds
+          : new Date(latest.timestamp as any).getTime() / 1000;
+        const lTime = (l.timestamp && typeof l.timestamp === 'object' && 'seconds' in l.timestamp)
+          ? (l.timestamp as any).seconds
+          : new Date(l.timestamp as any).getTime() / 1000;
         return lTime > latestTime ? l : latest;
       }, null as any)
     : null;
@@ -81,16 +84,16 @@ export function ExerciseTooltipContent({
   // Best 1RM (strength)
   const best1RM = logs.reduce(
     (max, l) =>
-      l.oneRepMax && (!max || l.oneRepMax > max.oneRepMax) ? l : max,
+      (l as any).oneRepMax && (!max || (l as any).oneRepMax > (max as any).oneRepMax) ? l : max,
     null as any
   );
 
   // Format time ago
   const timeAgo = (timestamp: any) => {
     if (!timestamp) return '';
-    const date = timestamp.seconds
-      ? new Date(timestamp.seconds * 1000)
-      : new Date(timestamp);
+    const date = (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp)
+      ? new Date((timestamp as any).seconds * 1000)
+      : new Date(timestamp as any);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -118,8 +121,10 @@ export function ExerciseTooltipContent({
   // Format helpers
   const formatAgo = (date: any) => {
     if (!date) return '';
+    const then = (date && typeof date === 'object' && 'seconds' in date)
+      ? new Date((date as any).seconds * 1000)
+      : new Date(date as any);
     const now = new Date();
-    const then = new Date(date.seconds ? date.seconds * 1000 : date);
     const diffMs = now.getTime() - then.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return 'today';
@@ -128,7 +133,9 @@ export function ExerciseTooltipContent({
   };
   const formatDate = (date: any) => {
     if (!date) return '';
-    const d = new Date(date.seconds ? date.seconds * 1000 : date);
+    const d = (date && typeof date === 'object' && 'seconds' in date)
+      ? new Date((date as any).seconds * 1000)
+      : new Date(date);
     return d.toLocaleDateString();
   };
 
@@ -151,8 +158,8 @@ export function ExerciseTooltipContent({
       const s = lastLog.sets[lastLog.sets.length - 1];
       lastLoggedStrength = `${s.weight} lbs x ${s.reps} reps ${formatAgo(lastLog.timestamp)}`;
     }
-    if (best1RM) {
-      bestStrength = `1RM: ${Math.round(best1RM.oneRepMax)} lbs (${best1RM.weight} x ${best1RM.reps}) ${formatAgo(best1RM.timestamp)}`;
+    if (best1RM && (best1RM as any).oneRepMax) {
+      bestStrength = `1RM: ${Math.round((best1RM as any).oneRepMax)} lbs (${(best1RM as any).weight} x ${(best1RM as any).reps}) ${formatAgo((best1RM as any).timestamp)}`;
     }
   }
 
@@ -171,15 +178,15 @@ export function ExerciseTooltipContent({
         }, null as any)
       : null;
   const lastWorkoutDate = lastWorkoutLog
-    ? lastWorkoutLog.timestamp?.seconds
-      ? new Date(lastWorkoutLog.timestamp.seconds * 1000)
-      : new Date(lastWorkoutLog.timestamp)
+    ? (lastWorkoutLog.timestamp && typeof lastWorkoutLog.timestamp === 'object' && 'seconds' in lastWorkoutLog.timestamp)
+      ? new Date((lastWorkoutLog.timestamp as any).seconds * 1000)
+      : new Date(lastWorkoutLog.timestamp as any)
     : null;
 
   return (
     <div className="max-w-xs">
       {/* GIF at the top */}
-      {exercise.gifUrl && !gifError && (
+      {('gifUrl' in exercise) && exercise.gifUrl && !gifError && (
         <img
           src={exercise.gifUrl}
           alt={exercise.name + ' demo'}
@@ -188,12 +195,37 @@ export function ExerciseTooltipContent({
         />
       )}
       {/* Fallback if GIF fails */}
-      {exercise.gifUrl && gifError && (
+      {('gifUrl' in exercise) && exercise.gifUrl && gifError && (
         <div className="w-full h-36 flex items-center justify-center bg-gray-100 text-xs text-gray-500 rounded mb-2 border border-gray-200">
           GIF unavailable
         </div>
       )}
-      <div className="font-semibold text-base mb-2">{exercise.name}</div>
+      {/* Exercise Name and Icons */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="font-semibold text-base">{toTitleCase(exercise.name)}</div>
+        {exercise.target && (
+          <img
+            src={getMuscleIcon(exercise.target) ?? undefined}
+            alt={exercise.target}
+            className="h-6 w-6 rounded-md border border-black"
+          />
+        )}
+        {exercise.equipment && (
+          <img
+            src={getEquipmentIcon(exercise.equipment) ?? undefined}
+            alt={exercise.equipment}
+            className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+          />
+        )}
+        {/* XP Lightning Icon */}
+        {bonusXP !== undefined && (
+          <Zap className="h-5 w-5 text-green-600" title="XP Bonus" />
+        )}
+        {/* Never Trained Target Icon */}
+        {statusText === 'Never Trained' && (
+          <Target className="h-5 w-5 text-red-600" title="Never Trained" />
+        )}
+      </div>
       {/* Stats Section */}
       <div className="mb-2">
         {lastLoggedCardio && (
@@ -226,14 +258,14 @@ export function ExerciseTooltipContent({
       {bests && (
         <div className="mb-2 text-xs text-gray-700">
           <div>Personal Bests:</div>
-          {bests.current && (
+          {(bests.current && (typeof bests.current.value === 'string' || typeof bests.current.value === 'number') && (typeof bests.current.unit === 'string' || typeof bests.current.unit === 'number')) && (
             <div>
-              <span className="font-semibold">Current:</span> {bests.current.value} {bests.current.unit} ({formatDate(bests.current.date)})
+              <span className="font-semibold">Current:</span> {String(bests.current.value)} {String(bests.current.unit)} {bests.current.date ? `(${formatDate(bests.current.date)})` : ''}
             </div>
           )}
-          {bests.allTime && (
+          {(bests.allTime && (typeof bests.allTime.value === 'string' || typeof bests.allTime.value === 'number') && (typeof bests.allTime.unit === 'string' || typeof bests.allTime.unit === 'number')) && (
             <div>
-              <span className="font-semibold">All Time:</span> {bests.allTime.value} {bests.allTime.unit} ({formatDate(bests.allTime.date)})
+              <span className="font-semibold">All Time:</span> {String(bests.allTime.value)} {String(bests.allTime.unit)} {bests.allTime.date ? `(${formatDate(bests.allTime.date)})` : ''}
             </div>
           )}
         </div>

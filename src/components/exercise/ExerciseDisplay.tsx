@@ -23,6 +23,7 @@ import useExerciseLogStore from '../../store/useExerciseLogStore';
 import { getEquipmentIcon, getMuscleIcon } from '../../utils/iconMappings';
 import ExerciseTooltip from './ExerciseTooltip';
 import type { Exercise, UserProfile } from '../../types';
+import { toTitleCase } from '@/utils/dataUtils';
 
 export interface ExerciseDisplayProps {
   exercise: Exercise;
@@ -85,9 +86,7 @@ export default function ExerciseDisplay({
     target,
     equipment,
     difficulty,
-    xp,
     secondaryMuscles,
-    bodyPart,
     category,
   } = exercise;
   const equipmentIcon = getEquipmentIcon(equipment);
@@ -121,14 +120,6 @@ export default function ExerciseDisplay({
     }
   };
 
-  // Utility: Convert string to Title Case
-  function toTitleCase(str: string) {
-    return str.replace(
-      /\w\S*/g,
-      (txt) => txt.charAt(0).toUpperCase() + txt.slice(1)
-    );
-  }
-
   // Layout selection
   if (variant === 'detailed') {
     return (
@@ -150,20 +141,13 @@ export default function ExerciseDisplay({
                 className="h-6 w-6 p-0.5 bg-equipment rounded-md"
               />
             )}
-            {showXP && xp !== undefined && (
-              <Badge variant="secondary" className="text-sm">
-                <Zap className="h-4 w-4 mr-1" />
-                {xp} XP
-              </Badge>
-            )}
-            {bonusXP !== undefined && (
+            {showXP && bonusXP !== undefined && (
               <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
                 <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
               </Badge>
             )}
             {laggingType && (
               <Badge
-                variant="outline"
                 className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
               >
                 {getLaggingTypeIcon(laggingType)}
@@ -181,9 +165,6 @@ export default function ExerciseDisplay({
                 : secondaryMuscles}
             </div>
           )}
-          {showBodyPart && bodyPart && (
-            <div className="text-sm text-gray-600">Body Part: {bodyPart}</div>
-          )}
           {showCategory && category && (
             <div className="text-sm text-gray-600">Category: {category}</div>
           )}
@@ -194,51 +175,55 @@ export default function ExerciseDisplay({
   }
 
   // Default: row/card
+  const mainContent = (
+    <div className="flex flex-row items-center w-full justify-between">
+      {/* Left: Exercise Name */}
+      <strong className={nameClassName}>{toTitleCase(name)}</strong>
+      {/* Right: Icons and Status */}
+      <div className="flex flex-row items-center gap-2 ml-4">
+        {muscleIcon && (
+          <img
+            src={muscleIcon}
+            alt={target}
+            className="h-6 w-6 rounded-md border border-black"
+          />
+        )}
+        {equipmentIcon && (
+          <img
+            src={equipmentIcon}
+            alt={equipment}
+            className="h-6 w-6 p-0.5 bg-equipment rounded-md"
+          />
+        )}
+        {showXP && bonusXP !== undefined && (
+          <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
+            <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
+          </Badge>
+        )}
+        {laggingType && (
+          <Badge
+            className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
+          >
+            {getLaggingTypeIcon(laggingType)}
+            <span className="ml-1 capitalize">
+              {laggingType.replace(/([A-Z])/g, ' $1')}
+            </span>
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+
   const content = (
     <div className="flex items-center justify-between">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
-        {/* Exercise Name */}
-        <strong className={nameClassName}>{toTitleCase(name)}</strong>
-        {/* Exercise Details */}
-        <div className="flex flex-row items-center gap-2">
-          {muscleIcon && (
-            <img
-              src={muscleIcon}
-              alt={target}
-              className="h-6 w-6 rounded-md border border-black"
-            />
-          )}
-          {equipmentIcon && (
-            <img
-              src={equipmentIcon}
-              alt={equipment}
-              className="h-6 w-6 p-0.5 bg-equipment rounded-md"
-            />
-          )}
-          {showXP && xp !== undefined && (
-            <Badge variant="secondary" className="text-sm">
-              <Zap className="h-4 w-4 mr-1" />
-              {xp} XP
-            </Badge>
-          )}
-          {bonusXP !== undefined && (
-            <Badge className="bg-green-100 text-green-800 border-green-200 text-sm ml-2">
-              <Zap className="h-4 w-4 mr-1" />+{bonusXP} XP
-            </Badge>
-          )}
-          {laggingType && (
-            <Badge
-              variant="outline"
-              className={`text-sm ml-2 ${getLaggingTypeColor(laggingType)}`}
-            >
-              {getLaggingTypeIcon(laggingType)}
-              <span className="ml-1 capitalize">
-                {laggingType.replace(/([A-Z])/g, ' $1')}
-              </span>
-            </Badge>
-          )}
-        </div>
-      </div>
+      <ExerciseTooltip
+        exercise={exercise}
+        bonusXP={bonusXP}
+        laggingType={laggingType}
+        userProfile={userProfile}
+      >
+        {mainContent}
+      </ExerciseTooltip>
       {/* Exercise Actions */}
       <div className="flex items-center gap-2">
         {showPinIcon && (

@@ -16,7 +16,9 @@ import { MoreVertical } from 'lucide-react';
 import React, { useState } from 'react';
 import ExerciseLogInputs from '../../exercise/ExerciseLogInputs';
 import { ExerciseTooltipContent } from '../../exercise/ExerciseTooltip';
-import type { Exercise, Log } from '../../../types';
+import type { Exercise } from '../../../types';
+import { toTitleCase } from '@/utils/dataUtils';
+import ExerciseTooltip from '../../exercise/ExerciseTooltip';
 
 interface ExerciseLogData {
   [exerciseId: string]: {
@@ -39,7 +41,7 @@ interface ExerciseCartRowProps {
   removeFromCart?: (id: string) => void;
   logData?: ExerciseLogData;
   onLogDataChange?: (id: string, newValues: any) => void;
-  userWorkoutHistory?: Log[];
+  userWorkoutHistory?: any[];
 }
 
 interface InfoDialogProps {
@@ -53,8 +55,7 @@ export default function ExerciseCartRow({
   onLogDataChange = () => {},
   userWorkoutHistory,
 }: ExerciseCartRowProps) {
-  // Runtime check: throw if not an exercise item
-  if ('label' in item || item.type === 'recipe') {
+  if ('label' in item) {
     throw new Error('Tried to render a non-exercise item in ExerciseCartRow');
   }
   const { name, id } = item;
@@ -79,22 +80,15 @@ export default function ExerciseCartRow({
     }
   }
   
-  const InfoDialog = ({ item }: InfoDialogProps) => (
-    <Dialog>
-      <DialogContent className="w-auto max-w-sm p-0">
-        <ExerciseTooltipContent exercise={item} />
-      </DialogContent>
-    </Dialog>
-  );
-  
   return (
     <Card className="border">
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">{name}</span>
-              <InfoDialog item={item} />
+              <ExerciseTooltip exercise={item}>
+                <span className="font-semibold text-sm cursor-pointer">{toTitleCase(name)}</span>
+              </ExerciseTooltip>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
