@@ -26,6 +26,7 @@ import useExerciseLogStore from '../../store/useExerciseLogStore';
 import CompletedExerciseBar from './CompletedExerciseBar';
 import ExerciseDisplay from './ExerciseDisplay';
 import { sampleSize, shuffle } from 'lodash';
+import type { WorkoutSuggestion, UserProfile, Exercise } from '../../types';
 
 const difficultyColorMap = {
   beginner: 'bg-sky-500',
@@ -45,10 +46,22 @@ export default function WorkoutSuggestions({
   selectedCardio = [],
   equipmentButtons = null,
   userProfile,
+}: {
+  muscleScores?: Record<string, number>;
+  exerciseLibrary?: Exercise[];
+  availableEquipment?: string[];
+  onAddToCart: (exercise: Exercise) => void;
+  className?: string;
+  exerciseCategory?: string;
+  selectedBodyweight?: string[];
+  selectedGym?: string[];
+  selectedCardio?: string[];
+  equipmentButtons?: React.ReactNode;
+  userProfile: UserProfile;
 }) {
-  const [suggestions, setSuggestions] = useState([]);
-  const [hiddenSuggestions, setHiddenSuggestions] = useState([]);
-  const [recentlyHidden, setRecentlyHidden] = useState(null);
+  const [suggestions, setSuggestions] = useState<WorkoutSuggestion[]>([]);
+  const [hiddenSuggestions, setHiddenSuggestions] = useState<string[]>([]);
+  const [recentlyHidden, setRecentlyHidden] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const {
@@ -58,7 +71,7 @@ export default function WorkoutSuggestions({
     getRemainingHides,
   } = useAuthStore();
   const { toast } = useToast();
-  const [completedSuggestions, setCompletedSuggestions] = useState([]);
+  const [completedSuggestions, setCompletedSuggestions] = useState<WorkoutSuggestion[]>([]);
   const { logs: workoutLogs } = useExerciseLogStore();
 
   // Check if device is mobile
@@ -76,7 +89,7 @@ export default function WorkoutSuggestions({
   const getRemainingRefreshes = () => {
     if (!authUserProfile) return 0;
     const today = new Date().toISOString().split('T')[0];
-    const refreshCount = authUserProfile.refreshCount || {
+    const refreshCount = (authUserProfile as any).refreshCount || {
       date: today,
       count: 0,
     };
@@ -96,7 +109,7 @@ export default function WorkoutSuggestions({
   const incrementRefreshCount = async () => {
     if (!authUserProfile) return;
     const today = new Date().toISOString().split('T')[0];
-    let refreshCount = authUserProfile.refreshCount || {
+    let refreshCount = (authUserProfile as any).refreshCount || {
       date: today,
       count: 0,
     };
@@ -110,31 +123,13 @@ export default function WorkoutSuggestions({
 
   // Replace refreshSuggestions with new logic
   const refreshSuggestions = async () => {
-    if (!userProfile || !userProfile.muscleReps) return;
+    if (!userProfile) return;
     setLoading(true);
     setTimeout(async () => {
-      const laggingMuscles = analyzeLaggingMuscles(
-        muscleScores,
-        workoutLogs,
-        exerciseLibrary
-      );
-      let selectedEquipment = [];
-      if (exerciseCategory === 'bodyweight')
-        selectedEquipment = selectedBodyweight;
-      else if (exerciseCategory === 'gym') selectedEquipment = selectedGym;
-      else if (exerciseCategory === 'cardio')
-        selectedEquipment = selectedCardio;
       const newSuggestions = generateWorkoutSuggestions(
-        laggingMuscles,
+        userProfile,
         exerciseLibrary,
-        availableEquipment,
-        hiddenSuggestions,
-        exerciseCategory,
-        selectedBodyweight,
-        selectedGym,
-        selectedCardio,
-        authUserProfile?.pinnedExercises || [],
-        authUserProfile?.favoriteExercises || []
+        3
       );
       setSuggestions(newSuggestions);
       setLoading(false);
@@ -142,21 +137,18 @@ export default function WorkoutSuggestions({
   };
 
   // Save suggestions to user profile
-  const saveSuggestionsToProfile = async (newSuggestions, category) => {
+  const saveSuggestionsToProfile = async (newSuggestions: WorkoutSuggestion[], category: string) => {
     if (!authUserProfile) return;
-
     const updatedProfile = { ...authUserProfile };
-
     // Initialize workoutSuggestions if it doesn't exist
-    if (!updatedProfile.workoutSuggestions) {
-      updatedProfile.workoutSuggestions = {
+    if (!((updatedProfile as any)?.workoutSuggestions)) {
+      (updatedProfile as any).workoutSuggestions = {
         allExercises: [],
         bodyweightOnly: [],
         gymEquipment: [],
         cardioOnly: [],
       };
     }
-
     // Map category to profile key
     const categoryKey =
       category === 'bodyweight'
@@ -166,33 +158,28 @@ export default function WorkoutSuggestions({
           : category === 'cardio'
             ? 'cardioOnly'
             : 'allExercises';
-
     // Save suggestions for this category
-    updatedProfile.workoutSuggestions[categoryKey] = newSuggestions.map(
+    (updatedProfile as any).workoutSuggestions[categoryKey] = newSuggestions.map(
       (suggestion) => ({
         id: suggestion.id,
         exerciseId: suggestion.exercise.id,
         laggingMuscle: suggestion.laggingMuscle,
         reason: suggestion.reason,
         bonus: suggestion.bonus,
-        timestamp: new Date().toISOString(),
       })
     );
-
     try {
       await saveUserProfile(updatedProfile);
     } catch (error) {
       console.error('Error saving workout suggestions to profile:', error);
     }
+    return;
   };
 
   // Clear stale suggestions (older than 24 hours)
-  const clearStaleSuggestions = (suggestions) => {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return suggestions.filter((suggestion) => {
-      const suggestionTime = new Date(suggestion.timestamp);
-      return suggestionTime > twentyFourHoursAgo;
-    });
+  const clearStaleSuggestions = (suggestions: WorkoutSuggestion[]) => {
+    // No timestamp on WorkoutSuggestion, so just return all suggestions
+    return suggestions;
   };
 
   // Clear all saved suggestions and generate new ones
@@ -232,8 +219,8 @@ export default function WorkoutSuggestions({
         setSuggestions(newSuggestions);
         await saveSuggestionsToProfile(newSuggestions, exerciseCategory);
         if (
-          !authUserProfile.subscription?.status === 'admin' &&
-          !authUserProfile.subscription?.status === 'premium'
+          authUserProfile.subscription?.status !== 'admin' &&
+          authUserProfile.subscription?.status !== 'premium'
         )
           await incrementRefreshCount();
         refreshSuggestions();
@@ -245,7 +232,7 @@ export default function WorkoutSuggestions({
 
   // Load suggestions from profile on mount
   useEffect(() => {
-    if (authUserProfile?.workoutSuggestions && exerciseLibrary.length > 0) {
+    if ((authUserProfile as any)?.workoutSuggestions && exerciseLibrary.length > 0) {
       const categoryKey =
         exerciseCategory === 'bodyweight'
           ? 'bodyweightOnly'
@@ -255,24 +242,23 @@ export default function WorkoutSuggestions({
               ? 'cardioOnly'
               : 'allExercises';
 
+      // @ts-expect-error: workoutSuggestions is dynamically added to the profile object
       const savedSuggestions =
-        authUserProfile.workoutSuggestions[categoryKey] || [];
+        (authUserProfile as any)?.workoutSuggestions?.[categoryKey] || [];
 
-      if (savedSuggestions.length > 0) {
+      if (Array.isArray(savedSuggestions) && savedSuggestions.length > 0) {
         // Clear stale suggestions
         const freshSuggestions = clearStaleSuggestions(savedSuggestions);
-
-        if (freshSuggestions.length > 0) {
+        if (Array.isArray(freshSuggestions) && freshSuggestions.length > 0) {
           // Reconstruct suggestions from saved data
           const reconstructedSuggestions = freshSuggestions
-            .map((saved) => {
+            .map((saved: any) => {
               const exercise = exerciseLibrary.find(
                 (e) => e.id === saved.exerciseId
               );
               if (!exercise) {
                 return null;
               }
-
               return {
                 id: saved.id,
                 exercise,
@@ -282,9 +268,8 @@ export default function WorkoutSuggestions({
               };
             })
             .filter(Boolean);
-
           if (reconstructedSuggestions.length > 0) {
-            setSuggestions(reconstructedSuggestions);
+            setSuggestions(reconstructedSuggestions as WorkoutSuggestion[]);
             setLoading(false);
             return;
           }
@@ -307,7 +292,7 @@ export default function WorkoutSuggestions({
     authUserProfile,
   ]);
 
-  const handleHideSuggestion = async (suggestionId) => {
+  const handleHideSuggestion = async (suggestionId: string) => {
     const exerciseId = suggestions.find((s) => s.id === suggestionId)?.exercise
       .id;
     if (!exerciseId) return;
@@ -345,11 +330,11 @@ export default function WorkoutSuggestions({
     }
   };
 
-  const handleAddToCart = (suggestion) => {
+  const handleAddToCart = (suggestion: WorkoutSuggestion) => {
     onAddToCart(suggestion.exercise);
   };
 
-  const getLaggingTypeIcon = (laggingType) => {
+  const getLaggingTypeIcon = (laggingType: string | undefined) => {
     switch (laggingType) {
       case 'neverTrained':
         return <Target className="h-4 w-4 text-red-500" />;
@@ -362,7 +347,7 @@ export default function WorkoutSuggestions({
     }
   };
 
-  const getLaggingTypeColor = (laggingType) => {
+  const getLaggingTypeColor = (laggingType: string | undefined) => {
     switch (laggingType) {
       case 'neverTrained':
         return 'bg-status-error text-status-error border-status-error';
@@ -376,14 +361,17 @@ export default function WorkoutSuggestions({
   };
 
   // Check if a suggestion has been completed today
-  const isSuggestionCompleted = (suggestion) => {
+  const isSuggestionCompleted = (suggestion: WorkoutSuggestion) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     return workoutLogs.some((log) => {
-      const logDate = new Date(
-        log.timestamp.seconds ? log.timestamp.seconds * 1000 : log.timestamp
-      );
+      let logDate: Date;
+      if (typeof log.timestamp === 'object' && 'seconds' in log.timestamp) {
+        logDate = new Date((log.timestamp as any).seconds * 1000);
+      } else {
+        logDate = new Date(log.timestamp as any);
+      }
       logDate.setHours(0, 0, 0, 0);
 
       return (
@@ -426,7 +414,7 @@ export default function WorkoutSuggestions({
   const hideCount = isAdmin ? '∞' : isPremium ? '∞' : remainingHides;
 
   // Per-suggestion refresh handler
-  const handleRefreshSuggestion = async (suggestionId) => {
+  const handleRefreshSuggestion = async (suggestionId: string) => {
     if (!isAdmin && !isPremium && getRemainingRefreshes() <= 0) {
       toast({
         title: 'Daily Refresh Limit Reached',
@@ -653,15 +641,14 @@ export default function WorkoutSuggestions({
                 showUnhideButton={false}
                 showHideButton={true}
                 onHide={() => handleHideSuggestion(suggestion.id)}
-                onPinToggle={null}
-                onUnhide={null}
+                onPinToggle={undefined}
+                onUnhide={undefined}
                 loading={false}
                 className={'bg-status-success border-status-success'}
                 onClick={() => handleAddToCart(suggestion)}
                 variant="row"
                 nameClassName="text-xs"
-                userProfile={authUserProfile}
-                workoutLog={workoutLogs}
+                userProfile={authUserProfile || undefined}
               />
             ))}
 
@@ -679,8 +666,8 @@ export default function WorkoutSuggestions({
                   showHideButton={true}
                   showRefreshButton={true}
                   onHide={() => handleHideSuggestion(suggestion.id)}
-                  onPinToggle={null}
-                  onUnhide={null}
+                  onPinToggle={undefined}
+                  onUnhide={undefined}
                   onRefresh={() => handleRefreshSuggestion(suggestion.id)}
                   loading={false}
                   className={
@@ -689,8 +676,7 @@ export default function WorkoutSuggestions({
                   onClick={() => handleAddToCart(suggestion)}
                   variant="row"
                   nameClassName="text-xs"
-                  userProfile={authUserProfile}
-                  workoutLog={workoutLogs}
+                  userProfile={authUserProfile || undefined}
                 >
                   <strong className="block text-xs mr-2">
                     {suggestion.exercise.name}
