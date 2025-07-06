@@ -9,6 +9,9 @@ import {
 } from '@/components/ui/tooltip';
 import { ChefHat, Trash2 } from 'lucide-react';
 import React from 'react';
+import { normalizeFoodForDisplay } from '../../utils/foodUtils';
+import FoodItemDisplay from '../shared/Food/FoodItemDisplay';
+import FoodItemTooltip from '../shared/Food/FoodItemTooltip';
 
 export default function RecipeSelector({
   recipes = [],
@@ -95,30 +98,38 @@ export default function RecipeSelector({
                 </div>
 
                 {/* Ingredients Preview */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="text-xs text-gray-500 truncate">
-                        {recipe.items
-                          .slice(0, 3)
-                          .map((item) => item.name)
-                          .join(', ')}
-                        {recipe.items.length > 3 &&
-                          ` +${recipe.items.length - 3} more`}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <div className="text-sm">
-                        <div className="font-medium mb-1">Ingredients:</div>
-                        {recipe.items.map((item, index) => (
-                          <div key={index} className="text-xs">
-                            • {item.quantity} {item.unit} {item.name}
-                          </div>
-                        ))}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <div className="text-xs text-gray-500 truncate">
+                  {recipe.items
+                    .slice(0, 3)
+                    .map((item) => item.name)
+                    .join(', ')}
+                  {recipe.items.length > 3 &&
+                    ` +${recipe.items.length - 3} more`}
+                </div>
+                <div className="text-xs text-gray-500">
+                  <span className="font-medium">Ingredients:</span>
+                  {recipe.items.slice(0, 2).map((item, index) => {
+                    const normalizedItem = normalizeFoodForDisplay(item);
+                    return (
+                      <FoodItemTooltip key={index} food={normalizedItem}>
+                        <div className="cursor-pointer">
+                          <FoodItemDisplay
+                            food={normalizedItem}
+                            context="recipe"
+                            showActions={false}
+                            quantity={item.quantity}
+                            unit={item.unit}
+                          />
+                        </div>
+                      </FoodItemTooltip>
+                    );
+                  })}
+                  {recipe.items.length > 2 && (
+                    <div className="text-xs text-gray-400 mt-1">
+                      +{recipe.items.length - 2} more ingredients
+                    </div>
+                  )}
+                </div>
 
                 {/* Recipe Badge */}
                 <Badge variant="outline" className="text-xs">

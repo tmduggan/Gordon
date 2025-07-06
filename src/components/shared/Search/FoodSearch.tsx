@@ -9,6 +9,10 @@ import { Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import useLibrary from '../../../hooks/useLibrary';
 import { useToast } from '../../../hooks/useToast';
+import { normalizeFoodForDisplay } from '../../../utils/foodUtils';
+import FoodItemDisplay from '../Food/FoodItemDisplay';
+import FoodItemTooltip from '../Food/FoodItemTooltip';
+import { Card } from '@/components/ui/card';
 
 interface FoodItem {
   id?: string;
@@ -70,147 +74,6 @@ interface FoodSearchProps {
   getFoodMacros: (item: FoodItem) => any;
   placeholder?: string;
 }
-
-const FoodResult = ({
-  item,
-  onSelect,
-  userProfile,
-  togglePin,
-  getFoodMacros,
-}: FoodResultProps) => {
-  const foodName = item.isRecipe ? item.name : item.food_name || item.label;
-  const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id || '');
-  const isRecipe = item.isRecipe;
-  const thumb = item.photo?.thumb;
-  const macros = getFoodMacros(item);
-  const isBranded = !!item.brand_name;
-  const foodLibrary = useLibrary('food');
-
-  const formatQty = (qty: any): string => {
-    if (typeof qty === 'number') {
-      return qty % 1 === 0 ? qty.toString() : qty.toFixed(2);
-    }
-    if (!isNaN(Number(qty))) {
-      const num = Number(qty);
-      return num % 1 === 0 ? num.toString() : num.toFixed(2);
-    }
-    return qty || '';
-  };
-
-  const subtext = isBranded
-    ? `${item.brand_name || ''}${item.serving_qty && item.serving_unit ? ', ' + formatQty(item.serving_qty) + ' ' + item.serving_unit : ''}`
-    : '';
-
-  let bgColorClass = 'hover:bg-accent';
-  if (isPinned) {
-    bgColorClass =
-      'bg-equipment hover:bg-equipment/80 border-l-4 border-equipment';
-  } else if (isRecipe) {
-    bgColorClass =
-      'bg-status-success hover:bg-status-success/80 border-l-4 border-status-success';
-  }
-
-  const getRecipeCalories = (recipe: FoodItem, servings: number = 1): number => {
-    if (!recipe || !recipe.items) return 0;
-    const recipeServings = recipe.servings || 1;
-    let total = 0;
-    recipe.items.forEach((ingredient) => {
-      if (ingredient.isRecipe) {
-        const nestedRecipe = userProfile?.recipes?.find(
-          (r) => r.id === ingredient.id
-        );
-        if (nestedRecipe) {
-          const nestedCals = getRecipeCalories(
-            nestedRecipe,
-            (ingredient.quantity / recipeServings) * servings
-          );
-          total += nestedCals;
-        }
-      } else {
-        const food = foodLibrary.items.find((f: any) => f.id === ingredient.id);
-        if (food) {
-          const macros = getFoodMacros(food);
-          total +=
-            (macros.calories || 0) *
-            ((ingredient.quantity / recipeServings) * servings);
-        }
-      }
-    });
-    return Math.round(total);
-  };
-
-  const calories = isRecipe ? getRecipeCalories(item, 1) : macros.calories;
-
-  return (
-    <div
-      onClick={() => onSelect(item)}
-      className={`cursor-pointer ${bgColorClass}`}
-    >
-      <div className="grid grid-cols-[minmax(0,1fr)_80px_auto] items-center gap-2 px-2 py-1">
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center min-w-0">
-            {thumb ? (
-              <img
-                src={thumb}
-                alt="food thumb"
-                className="h-7 w-7 rounded object-cover mr-2 flex-shrink-0"
-              />
-            ) : (
-              <div className="h-7 w-7 mr-2 flex-shrink-0 bg-gray-100 rounded" />
-            )}
-            <span className="truncate font-medium text-sm">
-              {foodName}
-              {(item.tags && item.tags.food_group !== undefined
-                ? item.tags.food_group
-                : item.food_group) !== undefined && (
-                <span className="ml-1 text-xs text-gray-400">
-                  fg:
-                  {item.tags && item.tags.food_group !== undefined
-                    ? item.tags.food_group
-                    : item.food_group}
-                </span>
-              )}
-            </span>
-          </div>
-          <div className="flex items-center min-h-[18px] text-xs text-gray-500">
-            {isBranded ? (
-              <span>{subtext}</span>
-            ) : (
-              <span className="opacity-0">placeholder</span>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col items-end justify-center">
-          <span className="flex items-baseline">
-            <span className="font-mono text-base text-right">{calories}</span>
-            <span className="ml-1 text-xs text-gray-500">cal</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2 justify-end">
-          {isRecipe && (
-            <span className="text-green-600 text-xs font-medium" title="Recipe">
-              👨‍🍳
-            </span>
-          )}
-          {item.id && !isRecipe && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={(e) => {
-                e.stopPropagation();
-                togglePin(item.id!);
-              }}
-              title={isPinned ? 'Unpin food' : 'Pin food'}
-            >
-              {isPinned ? '📌' : '📍'}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function FoodSearch({
   searchQuery,
@@ -342,20 +205,31 @@ export default function FoodSearch({
                 </div>
               )}
             {!showLoadingInResults &&
-              uniqueResults.map((item, index) => (
-                <FoodResult
-                  key={item.id || item.food_name || `food-${index}`}
-                  item={item}
-                  onSelect={(selectedItem) => {
-                    handleSelect(selectedItem);
-                    setSearchQuery('');
-                    setIsOpen(false);
-                  }}
-                  userProfile={userProfile}
-                  togglePin={togglePin}
-                  getFoodMacros={getFoodMacros}
-                />
-              ))}
+              uniqueResults.map((item, index) => {
+                const normalized = normalizeFoodForDisplay(item);
+                const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id || '');
+                return (
+                  <div
+                    key={item.id || item.food_name || `food-${index}`}
+                    className={`cursor-pointer hover:bg-accent`}
+                    onClick={() => {
+                      handleSelect(item);
+                      setSearchQuery('');
+                      setIsOpen(false);
+                    }}
+                  >
+                    <FoodItemTooltip food={normalized}>
+                      <FoodItemDisplay
+                        food={normalized}
+                        context="search"
+                        isPinned={isPinned}
+                        showActions={true}
+                        onPin={item.id && !item.isRecipe ? (() => togglePin(item.id!)) : undefined}
+                      />
+                    </FoodItemTooltip>
+                  </div>
+                );
+              })}
           </div>
         </PopoverContent>
       </Popover>

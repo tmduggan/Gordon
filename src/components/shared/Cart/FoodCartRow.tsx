@@ -8,24 +8,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import useLibrary from '../../../hooks/useLibrary';
 import useAuthStore from '../../../store/useAuthStore';
 import { convertToGrams, getFoodMacros } from '../../../utils/dataUtils';
+import { normalizeFoodForDisplay } from '../../../utils/foodUtils';
 import MacroDisplay from '../../nutrition/MacroDisplay';
 import NutritionLabel from '../../nutrition/NutritionLabel';
 import ServingSizeEditor from '../../nutrition/ServingSizeEditor';
-
-interface FoodItem {
-  id: string;
-  label: string;
-  quantity?: number;
-  units?: string;
-  serving_unit?: string;
-  serving_weight_grams?: number;
-  nutritionix_data?: any;
-  nutrition?: any;
-  calories?: number;
-  isRecipeItem?: boolean;
-  recipeName?: string;
-  type?: string;
-}
+import FoodItemDisplay, { FoodItem } from '../Food/FoodItemDisplay';
+import FoodItemTooltip from '../Food/FoodItemTooltip';
 
 interface RecipeItem {
   id: string;
@@ -65,24 +53,10 @@ export default function FoodCartRow({
   removeFromCart = () => {},
   userWorkoutHistory,
 }: FoodCartRowProps) {
-  // Check if the item is a food item by looking for a unique property like 'label'.
   const isFoodItem = 'label' in item;
   const isRecipe = item.type === 'recipe';
   const { userProfile } = useAuthStore();
   const foodLibrary = useLibrary('food');
-
-  const InfoDialog = ({ item }: { item: FoodItem }) => (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <Info className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-auto max-w-sm p-0">
-        <NutritionLabel food={item} />
-      </DialogContent>
-    </Dialog>
-  );
 
   const getFoodCalories = (food: FoodItem): number => {
     const macros = getFoodMacros(food);
@@ -158,10 +132,12 @@ export default function FoodCartRow({
             </div>
             {/* Second row: name left, calories right */}
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm flex items-center gap-1">
-                <ChefHat className="h-4 w-4 text-orange-500" />
-                {(item as RecipeItem).name}
-              </span>
+              <FoodItemTooltip food={normalizeFoodForDisplay(item)}>
+                <span className="font-semibold text-sm flex items-center gap-1 cursor-pointer">
+                  <ChefHat className="h-4 w-4 text-orange-500" />
+                  {(item as RecipeItem).name}
+                </span>
+              </FoodItemTooltip>
               <span className="text-sm font-mono text-gray-700">
                 Cal: {calories}
               </span>
@@ -212,21 +188,16 @@ export default function FoodCartRow({
               </Button>
             </div>
             {/* Food Info Row: name left, calories right */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm">{(item as FoodItem).label}</span>
-                {(item as FoodItem).isRecipeItem && (
-                  <Badge variant="outline" className="text-xs">
-                    <ChefHat className="h-3 w-3 mr-1" />
-                    {(item as FoodItem).recipeName}
-                  </Badge>
-                )}
-                <InfoDialog item={item as FoodItem} />
-              </div>
-              <span className="text-sm font-mono text-gray-700">
-                Cal: {calories}
-              </span>
-            </div>
+            <FoodItemTooltip food={normalizeFoodForDisplay(item)}>
+              <FoodItemDisplay
+                food={normalizeFoodForDisplay(item)}
+                context="cart"
+                showActions={false}
+              />
+            </FoodItemTooltip>
+            <span className="text-sm font-mono text-gray-700">
+              Cal: {calories}
+            </span>
           </div>
         </CardContent>
       </Card>

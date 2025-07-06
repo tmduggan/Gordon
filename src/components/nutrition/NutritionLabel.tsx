@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getFoodMacros } from '../../utils/dataUtils';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
-const Fact = ({ label, value, percent, indent = false, isBold = false }) => (
+const Fact = ({ label, value, percent, indent = false, isBold = false }: { label: any; value: any; percent?: any; indent?: boolean; isBold?: boolean }) => (
   <div
     className={`flex justify-between py-0.5 border-t border-gray-400 ${indent ? 'pl-4' : ''}`}
   >
@@ -44,13 +45,16 @@ const MICRONUTRIENT_ATTRS = [
 ];
 
 // Helper to get value from full_nutrients by attr_id
-function getNutrientValue(full_nutrients, attr_id) {
-  const found = full_nutrients?.find((n) => n.attr_id === attr_id);
-  return found ? found.value : undefined;
+function getNutrientValue(full_nutrients: any[], attr_id: any) {
+  if (!Array.isArray(full_nutrients)) return 0;
+  const n = full_nutrients.find((n) => n.attr_id === attr_id);
+  return n ? n.value : 0;
 }
 
-const NutritionLabel = ({ food }) => {
+const NutritionLabel = ({ food }: { food: any }) => {
   if (!food) return null;
+
+  const [showMicros, setShowMicros] = useState(false);
 
   const macros = getFoodMacros(food);
   // The raw data might be nested differently depending on the source (user-added vs. API)
@@ -104,36 +108,41 @@ const NutritionLabel = ({ food }) => {
         <p className="text-3xl font-extrabold">{macros.calories}</p>
       </div>
 
-      <Fact label="Total Fat" value={`${macros.fat}g`} isBold />
+      <Fact label="Total Fat" value={`${macros.fat}g`} percent={undefined} isBold />
       <Fact
         label="Saturated Fat"
         value={`${Math.round(data.nf_saturated_fat || 0)}g`}
+        percent={undefined}
         indent
       />
 
       <Fact
         label="Sodium"
         value={`${Math.round(data.nf_sodium || 0)}mg`}
+        percent={undefined}
         isBold
       />
 
-      <Fact label="Total Carbohydrate" value={`${macros.carbs}g`} isBold />
-      <Fact label="Dietary Fiber" value={`${macros.fiber}g`} indent />
+      <Fact label="Total Carbohydrate" value={`${macros.carbs}g`} percent={undefined} isBold />
+      <Fact label="Dietary Fiber" value={`${macros.fiber}g`} percent={undefined} indent />
       <Fact
         label="Total Sugars"
         value={`${Math.round(data.nf_sugars || 0)}g`}
+        percent={undefined}
         indent
       />
 
-      <Fact label="Protein" value={`${macros.protein}g`} isBold />
+      <Fact label="Protein" value={`${macros.protein}g`} percent={undefined} isBold />
 
       {/* Micronutrients Section */}
-      {micronutrientRows.length > 0 && (
-        <>
-          <div className="border-t-2 border-black mt-2 mb-1"></div>
-          <div className="font-semibold text-xs mb-1">Micronutrients</div>
-          {micronutrientRows}
-        </>
+      <div className="border-t-2 border-black mt-2 mb-1 flex items-center cursor-pointer select-none" onClick={() => setShowMicros((v) => !v)}>
+        <span className="font-semibold text-xs mb-1 flex items-center gap-1">
+          {showMicros ? <ChevronDown className="inline w-4 h-4" /> : <ChevronRight className="inline w-4 h-4" />}
+          Micronutrients
+        </span>
+      </div>
+      {showMicros && micronutrientRows.length > 0 && (
+        <div className="mb-1">{micronutrientRows}</div>
       )}
       <div className="border-t-8 border-black mt-1 -mx-2"></div>
     </div>

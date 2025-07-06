@@ -19,7 +19,10 @@ import { formatSmartDate } from '../../utils/timeUtils';
 import ScoreDisplay from '../gamification/ScoreDisplay';
 import MacroDisplay from '../nutrition/MacroDisplay';
 import NutritionLabel from '../nutrition/NutritionLabel';
-import type { FoodLog, ExerciseLog, Food, DailyTotals } from '../../types';
+import type { FoodLog, ExerciseLog, Food, DailyTotals, Exercise } from '../../types';
+import FoodItemDisplay from './Food/FoodItemDisplay';
+import FoodItemTooltip from './Food/FoodItemTooltip';
+import { normalizeFoodForDisplay } from '../../utils/foodUtils';
 
 interface FoodLogRowProps {
   log: FoodLog;
@@ -31,8 +34,9 @@ interface FoodLogRowProps {
 
 interface ExerciseLogRowProps {
   log: ExerciseLog;
-  getExerciseName: (id: string) => string;
+  getExerciseName: (exerciseId: string, exerciseLibrary: Exercise[]) => string;
   deleteLog: (id: string) => void;
+  exerciseLibrary?: Exercise[];
 }
 
 interface RecipeGroup {
@@ -84,57 +88,57 @@ const renderFoodProgressBar = (label: string, value: number, goal: number) => {
   );
 };
 
-const FoodLogRow: React.FC<FoodLogRowProps> = ({ log, food, updateLog, deleteLog, disableDelete }) => (
-  <tr className="border-b hover:bg-gray-50">
-    <td className="py-2 px-1">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-default">{food.food_name}</span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <NutritionLabel food={food} />
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </td>
-    <td className="py-2 px-1">
-      <Input
-        type="number"
-        className="w-20 h-8"
-        value={log.serving}
-        onChange={(e) =>
-          updateLog(log.id!, 'serving', parseFloat(e.target.value) || 0)
-        }
-        step="0.1"
-      />
-    </td>
-    <td className="py-2 px-1">{log.units}</td>
-    <MacroDisplay macros={getFoodMacros(food)} format="table-row-cells" />
-    <td className="text-center py-2 px-1">
-      {log.xp && (
-        <span className="text-sm font-medium text-green-600">+{log.xp}</span>
-      )}
-    </td>
-    <td className="text-center py-2 px-1">
-      {!disableDelete && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={() => deleteLog(log.id!)}
-        >
-          <X className="h-4 w-4 text-red-500" />
-        </Button>
-      )}
-    </td>
-  </tr>
-);
+const FoodLogRow: React.FC<FoodLogRowProps> = ({ log, food, updateLog, deleteLog, disableDelete }) => {
+  const normalizedFood = normalizeFoodForDisplay(food);
+  return (
+    <tr className="border-b hover:bg-gray-50">
+      <td className="py-2 px-1">
+        <FoodItemTooltip food={normalizedFood}>
+          <FoodItemDisplay
+            food={normalizedFood}
+            context="log"
+            showActions={false}
+            calories={getFoodMacros(food).calories}
+          />
+        </FoodItemTooltip>
+      </td>
+      <td className="py-2 px-1">
+        <Input
+          type="number"
+          className="w-20 h-8"
+          value={log.serving}
+          onChange={(e) =>
+            updateLog(log.id!, 'serving', parseFloat(e.target.value) || 0)
+          }
+          step="0.1"
+        />
+      </td>
+      <td className="py-2 px-1">{log.units}</td>
+      <MacroDisplay macros={getFoodMacros(food)} format="table-row-cells" />
+      <td className="text-center py-2 px-1">
+        {log.xp && (
+          <span className="text-sm font-medium text-green-600">+{log.xp}</span>
+        )}
+      </td>
+      <td className="text-center py-2 px-1">
+        {!disableDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => deleteLog(log.id!)}
+          >
+            <X className="h-4 w-4 text-red-500" />
+          </Button>
+        )}
+      </td>
+    </tr>
+  );
+};
 
-const ExerciseLogRow: React.FC<ExerciseLogRowProps> = ({ log, getExerciseName, deleteLog }) => (
+const ExerciseLogRow: React.FC<ExerciseLogRowProps> = ({ log, getExerciseName, deleteLog, exerciseLibrary = [] }) => (
   <tr className="border-b hover:bg-gray-50">
-    <td className="py-2 px-1">{getExerciseName(log.exerciseId)}</td>
-    <td className="py-2 px-1">{log.category}</td>
+    <td className="py-2 px-1">{getExerciseName(log.exerciseId, exerciseLibrary)}</td>
     <td className="py-2 px-1">
       {log.duration
         ? `${log.duration} min`
@@ -385,7 +389,6 @@ const HistoryView: React.FC<HistoryViewProps> = ({ type, logs, ...props }) => {
           <thead>
             <tr className="border-b">
               <th className="text-left py-2 px-1 font-semibold">Exercise</th>
-              <th className="text-left py-2 px-1 font-semibold">Category</th>
               <th className="text-left py-2 px-1 font-semibold">Details</th>
               <th className="text-center py-2 px-1 font-semibold">Score</th>
               <th className="py-2 px-1"></th>
@@ -398,6 +401,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ type, logs, ...props }) => {
                 log={log}
                 getExerciseName={getExerciseName}
                 deleteLog={props.deleteLog || (() => {})}
+                exerciseLibrary={[]}
               />
             ))}
           </tbody>
