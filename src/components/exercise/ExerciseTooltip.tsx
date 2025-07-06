@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -63,8 +63,9 @@ export function ExerciseTooltipContent({
     : null;
 
   // Find the most recent log (by timestamp)
+  type LogType = typeof logs extends (infer U)[] ? U : never;
   const lastLog = hasLogs
-    ? logs.reduce((latest, l) => {
+    ? logs.reduce<LogType | null>((latest, l) => {
         if (!latest) return l;
         const latestTime = (latest.timestamp && typeof latest.timestamp === 'object' && 'seconds' in latest.timestamp)
           ? (latest.timestamp as any).seconds
@@ -73,19 +74,19 @@ export function ExerciseTooltipContent({
           ? (l.timestamp as any).seconds
           : new Date(l.timestamp as any).getTime() / 1000;
         return lTime > latestTime ? l : latest;
-      }, null as any)
+      }, null)
     : null;
 
   // Best duration (cardio)
-  const bestDuration = logs.reduce(
-    (max, l) => (l.duration && (!max || l.duration > max.duration) ? l : max),
-    null as any
+  const bestDuration = logs.reduce<LogType | null>(
+    (max, l) => (l.duration && (!max || (max && max.duration === undefined) || l.duration > (max.duration ?? 0)) ? l : max),
+    null
   );
   // Best 1RM (strength)
-  const best1RM = logs.reduce(
+  const best1RM = logs.reduce<LogType | null>(
     (max, l) =>
       (l as any).oneRepMax && (!max || (l as any).oneRepMax > (max as any).oneRepMax) ? l : max,
-    null as any
+    null
   );
 
   // Format time ago
@@ -166,16 +167,16 @@ export function ExerciseTooltipContent({
   // Find the most recent log for any exercise
   const lastWorkoutLog =
     workoutLog.length > 0
-      ? workoutLog.reduce((latest, l) => {
-          const lTime = l.timestamp?.seconds
-            ? l.timestamp.seconds
-            : new Date(l.timestamp).getTime() / 1000;
+      ? workoutLog.reduce<LogType | null>((latest, l) => {
+          const lTime = (l.timestamp && typeof l.timestamp === 'object' && 'seconds' in l.timestamp)
+            ? (l.timestamp as any).seconds
+            : new Date(l.timestamp as any).getTime() / 1000;
           if (!latest) return l;
-          const latestTime = latest.timestamp?.seconds
-            ? latest.timestamp.seconds
-            : new Date(latest.timestamp).getTime() / 1000;
+          const latestTime = (latest.timestamp && typeof latest.timestamp === 'object' && 'seconds' in latest.timestamp)
+            ? (latest.timestamp as any).seconds
+            : new Date(latest.timestamp as any).getTime() / 1000;
           return lTime > latestTime ? l : latest;
-        }, null as any)
+        }, null)
       : null;
   const lastWorkoutDate = lastWorkoutLog
     ? (lastWorkoutLog.timestamp && typeof lastWorkoutLog.timestamp === 'object' && 'seconds' in lastWorkoutLog.timestamp)
@@ -219,11 +220,11 @@ export function ExerciseTooltipContent({
         )}
         {/* XP Lightning Icon */}
         {bonusXP !== undefined && (
-          <Zap className="h-5 w-5 text-green-600" title="XP Bonus" />
+          <Zap className="h-5 w-5 text-green-600" aria-label="XP Bonus" />
         )}
         {/* Never Trained Target Icon */}
         {statusText === 'Never Trained' && (
-          <Target className="h-5 w-5 text-red-600" title="Never Trained" />
+          <Target className="h-5 w-5 text-red-600" aria-label="Never Trained" />
         )}
       </div>
       {/* Stats Section */}
@@ -260,12 +261,12 @@ export function ExerciseTooltipContent({
           <div>Personal Bests:</div>
           {(bests.current && (typeof bests.current.value === 'string' || typeof bests.current.value === 'number') && (typeof bests.current.unit === 'string' || typeof bests.current.unit === 'number')) && (
             <div>
-              <span className="font-semibold">Current:</span> {String(bests.current.value)} {String(bests.current.unit)} {bests.current.date ? `(${formatDate(bests.current.date)})` : ''}
+              <span className="font-semibold">Current:</span> {String(bests.current.value)} {typeof bests.current.unit === 'string' || typeof bests.current.unit === 'number' ? String(bests.current.unit) : ''} {bests.current.date ? `(${formatDate(bests.current.date)})` : ''}
             </div>
           )}
           {(bests.allTime && (typeof bests.allTime.value === 'string' || typeof bests.allTime.value === 'number') && (typeof bests.allTime.unit === 'string' || typeof bests.allTime.unit === 'number')) && (
             <div>
-              <span className="font-semibold">All Time:</span> {String(bests.allTime.value)} {String(bests.allTime.unit)} {bests.allTime.date ? `(${formatDate(bests.allTime.date)})` : ''}
+              <span className="font-semibold">All Time:</span> {String(bests.allTime.value)} {typeof bests.allTime.unit === 'string' || typeof bests.allTime.unit === 'number' ? String(bests.allTime.unit) : ''} {bests.allTime.date ? `(${formatDate(bests.allTime.date)})` : ''}
             </div>
           )}
         </div>
