@@ -103,4 +103,36 @@ export default function Search({
     `Search: Unknown type "${type}". Use FoodSearch or ExerciseSearch instead.`
   );
   return null;
+}
+
+// Universal right-aligned row for search results (pin icon, highlight, etc.)
+export function SearchRowRight({
+  isPinned,
+  onPin,
+  isRecipe = false,
+  children,
+}: {
+  isPinned: boolean;
+  onPin: () => void;
+  isRecipe?: boolean;
+  children?: React.ReactNode;
+}) {
+  // Highlight: blue for pinned, green for recipe
+  let highlightClass = '';
+  if (isRecipe) highlightClass = 'bg-green-100';
+  else if (isPinned) highlightClass = 'bg-blue-100';
+  return (
+    <div className={`flex items-center justify-end w-[90px] gap-2 text-right rounded ${highlightClass}`}>
+      {children}
+      <button
+        aria-label={isPinned ? 'Unpin' : 'Pin'}
+        onClick={onPin}
+        className="ml-1 h-6 w-6 focus:outline-none"
+        tabIndex={0}
+        type="button"
+      >
+        <span className="text-lg">{isPinned ? '📌' : '📍'}</span>
+      </button>
+    </div>
+  );
 } 

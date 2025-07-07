@@ -13,6 +13,7 @@ import { normalizeFoodForDisplay } from '../../../utils/foodUtils';
 import FoodItemDisplay from '../Food/FoodItemDisplay';
 import FoodItemTooltip from '../Food/FoodItemTooltip';
 import { Card } from '@/components/ui/card';
+import { SearchRowRight } from './Search';
 
 interface FoodItem {
   id?: string;
@@ -207,11 +208,14 @@ export default function FoodSearch({
             {!showLoadingInResults &&
               uniqueResults.map((item, index) => {
                 const normalized = normalizeFoodForDisplay(item);
-                const isPinned = item.isPinned || userProfile?.pinnedFoods?.includes(item.id || '');
+                const isPinned = !!(item.isPinned || (userProfile?.pinnedFoods?.includes(item.id || '')));
+                const isRecipe = !!item.isRecipe;
+                const calories = getFoodMacros(normalized).calories;
                 return (
                   <div
                     key={item.id || item.food_name || `food-${index}`}
-                    className={`cursor-pointer hover:bg-accent`}
+                    className={`flex items-center justify-between w-full cursor-pointer hover:bg-accent rounded ${isRecipe ? 'bg-green-100' : isPinned ? 'bg-blue-100' : ''}`}
+                    style={{ minHeight: '44px' }}
                     onClick={() => {
                       handleSelect(item);
                       setSearchQuery('');
@@ -219,15 +223,22 @@ export default function FoodSearch({
                     }}
                   >
                     <FoodItemTooltip food={normalized}>
-                      <FoodItemDisplay
-                        food={normalized}
-                        context="search"
-                        isPinned={isPinned}
-                        showActions={true}
-                        onPin={item.id && !item.isRecipe ? (() => togglePin(item.id!)) : undefined}
-                        calories={normalized.calories || normalized.macros?.calories || 0}
-                      />
+                      <div className="flex flex-1 min-w-0">
+                        <FoodItemDisplay
+                          food={normalized}
+                          context="search"
+                          showActions={false}
+                        />
+                      </div>
                     </FoodItemTooltip>
+                    <SearchRowRight
+                      isPinned={isPinned}
+                      onPin={item.id && !isRecipe ? (() => togglePin(item.id!)) : () => {}}
+                      isRecipe={isRecipe}
+                    >
+                      <span className="font-mono text-base text-right">{calories}</span>
+                      <span className="ml-1 text-xs text-gray-500">cal</span>
+                    </SearchRowRight>
                   </div>
                 );
               })}

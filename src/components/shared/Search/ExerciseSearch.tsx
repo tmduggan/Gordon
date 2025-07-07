@@ -17,6 +17,7 @@ import { ChevronDown, ChevronUp, Filter, Lightbulb, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
+import { SearchRowRight } from './Search';
 
 interface ExerciseItem {
   id?: string;
@@ -310,26 +311,44 @@ export default function ExerciseSearch({
                   }
                 }
               }
+              const isPinned = !!(userProfile?.pinnedExercises?.includes?.(item.id || ''));
               return (
-                <ExerciseDisplay
+                <div
                   key={item.id || `exercise-${index}`}
-                  exercise={item}
-                  variant="row"
-                  showPinIcon={true}
-                  showCategory={true}
-                  showBodyPart={true}
-                  showSecondaryMuscles={true}
-                  onPinToggle={() => togglePin(item.id!)}
-                  onClick={() => {
+                  className={`flex items-center justify-between w-full mb-2 rounded ${isPinned ? 'bg-blue-100' : ''}`}
+                  style={{ minHeight: '44px' }}
+                >
+                  <div className="flex flex-1 min-w-0" style={{ fontSize: '1rem' }} onClick={() => {
                     handleSelect(item);
                     setSearchQuery('');
                     setIsOpen(false);
-                  }}
-                  userProfile={userProfile}
-                  className="mb-2"
-                  bonusXP={bonusXP}
-                  laggingType={laggingType}
-                />
+                  }}>
+                    <ExerciseDisplay
+                      exercise={{
+                        ...item,
+                        id: item.id || '',
+                        name: item.name || '',
+                        target: item.target || '',
+                        equipment: item.equipment || '',
+                        category: item.category || '',
+                        secondaryMuscles: Array.isArray(item.secondaryMuscles) ? item.secondaryMuscles : [],
+                      }}
+                      variant="row"
+                      showPinIcon={false}
+                      showCategory={true}
+                      showBodyPart={true}
+                      showSecondaryMuscles={true}
+                      userProfile={userProfile}
+                      className="w-full"
+                      bonusXP={bonusXP}
+                      laggingType={laggingType}
+                    />
+                  </div>
+                  <SearchRowRight
+                    isPinned={isPinned}
+                    onPin={item.id ? (() => togglePin(item.id!)) : () => {}}
+                  />
+                </div>
               );
             })}
           </div>

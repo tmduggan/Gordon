@@ -52,8 +52,15 @@ const FoodItemDisplay: React.FC<FoodItemDisplayProps> = ({
   const servingUnit = food.serving_unit || unit;
   const cal = typeof calories === 'number' ? calories : food.calories || food.macros?.calories || 0;
 
+  const formatNumber = (val: any) => {
+    if (typeof val === 'number') {
+      return Number.isInteger(val) ? val : val.toFixed(2).replace(/\.00$/, '');
+    }
+    return val;
+  };
+
   return (
-    <div className="flex items-center gap-2 min-w-0">
+    <div className="flex items-center justify-between w-full min-w-0 gap-2">
       {/* Image */}
       {thumb ? (
         <img src={thumb} alt={name} className="h-7 w-7 rounded object-cover flex-shrink-0" />
@@ -68,30 +75,32 @@ const FoodItemDisplay: React.FC<FoodItemDisplayProps> = ({
         <div className="flex items-center min-h-[18px] text-xs text-gray-500">
           {brand && <span>{brand}</span>}
           {servingQty && servingUnit && (
-            <span className="ml-1">{servingQty} {servingUnit}</span>
+            <span className="ml-1">{formatNumber(servingQty)} {servingUnit}</span>
           )}
         </div>
       </div>
-      {/* Calories and Pin */}
-      <div className="flex flex-row items-center justify-end min-w-[80px] gap-2 ml-2">
-        <span className="flex items-baseline">
-          <span className="font-mono text-base text-right">{cal}</span>
-          <span className="ml-1 text-xs text-gray-500">cal</span>
-        </span>
-        {showActions && onPin && (
-          <Button variant="ghost" size="icon" onClick={onPin} className="h-6 w-6 ml-1">
-            <span className="text-lg" title={isPinned ? 'Unpin' : 'Pin'}>
-              {isPinned ? '📌' : '📍'}
-            </span>
-          </Button>
-        )}
-        {showActions && onRemove && (
-          <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6 text-red-500">
-            ✕
-          </Button>
-        )}
-        {children}
-      </div>
+      {/* Calories and Pin: only show in non-search contexts */}
+      {context !== 'search' && (
+        <div className="flex flex-row items-center justify-end w-[90px] gap-2 ml-2 text-right">
+          <span className="flex items-baseline">
+            <span className="font-mono text-base text-right">{formatNumber(cal)}</span>
+            <span className="ml-1 text-xs text-gray-500">cal</span>
+          </span>
+          {showActions && onPin && (
+            <Button variant="ghost" size="icon" onClick={onPin} className="h-6 w-6 ml-1">
+              <span className="text-lg" title={isPinned ? 'Unpin' : 'Pin'}>
+                {isPinned ? '\ud83d\udccc' : '\ud83d\udccd'}
+              </span>
+            </Button>
+          )}
+          {showActions && onRemove && (
+            <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6 text-red-500">
+              \u2715
+            </Button>
+          )}
+          {children}
+        </div>
+      )}
     </div>
   );
 };
