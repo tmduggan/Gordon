@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/select';
 import { getSvgGroupDisplayName } from '@/services/svgMappingService';
 import { ChevronDown, ChevronUp, Filter, Lightbulb, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ExerciseDisplay from '../../exercise/ExerciseDisplay';
 import ExerciseLibraryAdditionModal from '../../exercise/ExerciseLibraryAdditionModal';
-import { SearchRowRight } from './Search';
+import { SearchRowRight, SearchRowWrapper } from './Search';
 
 interface ExerciseItem {
   id?: string;
@@ -200,14 +200,12 @@ export default function ExerciseSearch({
   const [isOpen, setIsOpen] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      setIsOpen(true);
-    } else {
-      setIsOpen(false);
-    }
-  }, [searchQuery]);
+    setIsOpen(isFocused || searchQuery.length > 0);
+  }, [isFocused, searchQuery]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters[filterType](value);
@@ -242,11 +240,13 @@ export default function ExerciseSearch({
           <div className="flex items-center space-x-2">
             <div className="relative flex-grow">
               <Input
+                ref={inputRef}
                 type="text"
                 placeholder={placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsOpen(true)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
               />
             </div>
             <Button
@@ -273,6 +273,7 @@ export default function ExerciseSearch({
         <PopoverContent
           className="w-[--radix-popover-trigger-width] p-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          side="bottom"
         >
           <div
             style={{
@@ -312,17 +313,20 @@ export default function ExerciseSearch({
                 }
               }
               const isPinned = !!(userProfile?.pinnedExercises?.includes?.(item.id || ''));
+              const isLast = index === uniqueResults.length - 1;
               return (
-                <div
+                <SearchRowWrapper
                   key={item.id || `exercise-${index}`}
-                  className={`flex items-center justify-between w-full mb-2 rounded ${isPinned ? 'bg-blue-100' : ''}`}
-                  style={{ minHeight: '44px' }}
-                >
-                  <div className="flex flex-1 min-w-0" style={{ fontSize: '1rem' }} onClick={() => {
+                  isPinned={isPinned}
+                  isRecipe={false}
+                  isLast={isLast}
+                  onClick={() => {
                     handleSelect(item);
                     setSearchQuery('');
                     setIsOpen(false);
-                  }}>
+                  }}
+                >
+                  <div className="flex flex-1 min-w-0">
                     <ExerciseDisplay
                       exercise={{
                         ...item,
@@ -348,7 +352,7 @@ export default function ExerciseSearch({
                     isPinned={isPinned}
                     onPin={item.id ? (() => togglePin(item.id!)) : () => {}}
                   />
-                </div>
+                </SearchRowWrapper>
               );
             })}
           </div>

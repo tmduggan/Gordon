@@ -6,14 +6,14 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import useLibrary from '../../../hooks/useLibrary';
 import { useToast } from '../../../hooks/useToast';
 import { normalizeFoodForDisplay } from '../../../utils/foodUtils';
 import FoodItemDisplay from '../Food/FoodItemDisplay';
 import FoodItemTooltip from '../Food/FoodItemTooltip';
 import { Card } from '@/components/ui/card';
-import { SearchRowRight } from './Search';
+import { SearchRowRight, SearchRowWrapper } from './Search';
 
 interface FoodItem {
   id?: string;
@@ -91,15 +91,13 @@ export default function FoodSearch({
   placeholder = 'Search foods...',
 }: FoodSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      setIsOpen(true);
-    } else {
-      setIsOpen(false);
-    }
-  }, [searchQuery]);
+    setIsOpen(isFocused || searchQuery.length > 0);
+  }, [isFocused, searchQuery]);
 
   const uniqueResults = searchResults
     .slice(0, 40)
@@ -125,6 +123,7 @@ export default function FoodSearch({
           <div className="flex items-center space-x-2">
             <div className="relative flex-grow">
               <Input
+                ref={inputRef}
                 type="text"
                 placeholder={placeholder}
                 value={searchQuery}
@@ -139,7 +138,8 @@ export default function FoodSearch({
                     });
                   }
                 }}
-                onFocus={() => setIsOpen(true)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 maxLength={100}
                 className={`${nutrientsLoading ? 'border-equipment bg-equipment' : ''}`}
               />
@@ -184,6 +184,7 @@ export default function FoodSearch({
         <PopoverContent
           className="w-[--radix-popover-trigger-width] p-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          side="bottom"
         >
           <div
             style={{
@@ -212,10 +213,10 @@ export default function FoodSearch({
                 const isRecipe = !!item.isRecipe;
                 const calories = getFoodMacros(normalized).calories;
                 return (
-                  <div
+                  <SearchRowWrapper
                     key={item.id || item.food_name || `food-${index}`}
-                    className={`flex items-center justify-between w-full cursor-pointer hover:bg-accent rounded ${isRecipe ? 'bg-green-100' : isPinned ? 'bg-blue-100' : ''}`}
-                    style={{ minHeight: '44px' }}
+                    isPinned={isPinned}
+                    isRecipe={isRecipe}
                     onClick={() => {
                       handleSelect(item);
                       setSearchQuery('');
@@ -239,7 +240,7 @@ export default function FoodSearch({
                       <span className="font-mono text-base text-right">{calories}</span>
                       <span className="ml-1 text-xs text-gray-500">cal</span>
                     </SearchRowRight>
-                  </div>
+                  </SearchRowWrapper>
                 );
               })}
           </div>
